@@ -1,0 +1,61 @@
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e40af;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- User -->
+  <circle cx="100" cy="200" r="50" fill="url(#grad1)" />
+  <text x="100" y="205" text-anchor="middle" fill="white" font-family="Arial" font-size="16" font-weight="bold">You</text>
+  
+  <!-- mini-a Orchestrator -->
+  <rect x="275" y="150" width="150" height="100" rx="10" fill="url(#grad1)" />
+  <text x="350" y="190" text-anchor="middle" fill="white" font-family="Arial" font-size="14" font-weight="bold">mini-a</text>
+  <text x="350" y="210" text-anchor="middle" fill="white" font-family="Arial" font-size="12">Orchestrator</text>
+  
+  <!-- LLM Models -->
+  <rect x="550" y="50" width="150" height="70" rx="10" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" />
+  <text x="625" y="80" text-anchor="middle" fill="#1e3a8a" font-family="Arial" font-size="12" font-weight="bold">LLM Models</text>
+  <text x="625" y="100" text-anchor="middle" fill="#1e3a8a" font-family="Arial" font-size="11">(Main & Low-Cost)</text>
+  
+  <!-- MCP Servers -->
+  <rect x="550" y="150" width="150" height="70" rx="10" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" />
+  <text x="625" y="180" text-anchor="middle" fill="#1e3a8a" font-family="Arial" font-size="12" font-weight="bold">MCP Servers</text>
+  <text x="625" y="200" text-anchor="middle" fill="#1e3a8a" font-family="Arial" font-size="11">(Time, Finance, etc.)</text>
+  
+  <!-- Shell -->
+  <rect x="550" y="250" width="150" height="70" rx="10" fill="#bfdbfe" stroke="#1d4ed8" stroke-width="2" />
+  <text x="625" y="280" text-anchor="middle" fill="#1e3a8a" font-family="Arial" font-size="12" font-weight="bold">Optional Shell</text>
+  <text x="625" y="300" text-anchor="middle" fill="#1e3a8a" font-family="Arial" font-size="11">(Commands)</text>
+  
+  <!-- Arrows -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#2563eb" />
+    </marker>
+  </defs>
+  
+  <!-- User to Orchestrator -->
+  <line x1="150" y1="200" x2="275" y2="200" stroke="#2563eb" stroke-width="3" marker-end="url(#arrowhead)" />
+  <text x="212" y="195" text-anchor="middle" fill="#475569" font-family="Arial" font-size="10">Goal</text>
+  
+  <!-- Orchestrator to LLM -->
+  <line x1="425" y1="170" x2="550" y2="95" stroke="#2563eb" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- Orchestrator to MCP -->
+  <line x1="425" y1="200" x2="550" y2="185" stroke="#2563eb" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- Orchestrator to Shell -->
+  <line x1="425" y1="230" x2="550" y2="275" stroke="#2563eb" stroke-width="2" marker-end="url(#arrowhead)" />
+  
+  <!-- Return arrows (dashed) -->
+  <line x1="550" y1="105" x2="425" y2="180" stroke="#64748b" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)" />
+  <line x1="550" y1="195" x2="425" y2="210" stroke="#64748b" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)" />
+  <line x1="550" y1="285" x2="425" y2="240" stroke="#64748b" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowhead)" />
+  
+  <!-- Orchestrator to User (result) -->
+  <line x1="275" y1="210" x2="150" y2="210" stroke="#10b981" stroke-width="3" marker-end="url(#arrowhead)" />
+  <text x="212" y="230" text-anchor="middle" fill="#10b981" font-family="Arial" font-size="10" font-weight="bold">Result</text>
+</svg>
