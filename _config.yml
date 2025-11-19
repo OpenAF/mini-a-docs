@@ -1,0 +1,33 @@
+# Site settings
+title: "mini-a"
+tagline: "Minimalist Autonomous Agent"
+description: "A minimalist autonomous agent that uses LLMs, shell commands and/or MCP servers to achieve user-defined goals."
+baseurl: "/mini-a-docs"
+url: "https://openaf.github.io"
+
+# GitHub repository
+repository: "OpenAF/mini-a"
+github_username: OpenAF
+
+# Build settings
+markdown: kramdown
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+# Navigation
+header_pages:
+  - index.md
+  - getting-started.md
+  - features.md
+  - examples.md
+  - advanced.md
+  - configuration.md
+
+# Exclude from processing
+exclude:
+  - README.md
+  - LICENSE
+  - .git/
+  - .gitignore
