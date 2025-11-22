@@ -34,26 +34,32 @@ title: Home
   <h2>Key Features</h2>
   <div class="feature-grid">
     <div class="feature-card">
+      <hr/>
       <h3>🤖 Multi-Model Support</h3>
       <i>Works with OpenAI, Google Gemini, GitHub Models, AWS Bedrock, Ollama, and more</i>
     </div>
     <div class="feature-card">
+      <hr/>
       <h3>💰 Cost Optimization</h3>
       <i>Dual-model setup with automatic escalation reduces costs by 50-70%</i>
     </div>
     <div class="feature-card">
+      <hr/>
       <h3>🔌 MCP Integration</h3>
       <i>Seamless integration with Model Context Protocol servers (STDIO & HTTP)</i>
     </div>
     <div class="feature-card">
+      <hr/>
       <h3>⚡ Performance</h3>
       <i>Automatic optimizations reduce token usage by 40-60%</i>
     </div>
     <div class="feature-card">
+      <hr/>
       <h3>🛠️ Flexible Tools</h3>
       <i>Shell commands, MCP proxy, built-in utilities, and custom tools</i>
     </div>
     <div class="feature-card">
+      <hr/>
       <h3>🐳 Docker Ready</h3>
       <i>Run in containers for isolated execution and portability</i>
     </div>
