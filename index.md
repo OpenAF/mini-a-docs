@@ -11,6 +11,7 @@ title: Home
     <a href="{{ '/getting-started.html' | relative_url }}" class="btn btn-primary">Get Started</a> | 
     <a href="https://github.com/OpenAF/mini-a" class="btn btn-secondary">View on GitHub</a>
   </div>
+  <br/>
 </div>
 
 <div class="screenshots">
@@ -20,6 +21,7 @@ title: Home
       <img src="assets/images/mini-a-web-screenshot1.jpg" alt="mini-a Web Interface" />
       <div align="center"><i>Modern Web Interface</i></div>
     </div>
+    <br/>
     <div class="screenshot-item">
       <img src="assets/images/mini-a-con-screenshot.png" alt="mini-a Console" />
       <div align="center"><i>Interactive Console</i></div>
