@@ -26,6 +26,7 @@ title: Home
       <img src="assets/images/mini-a-con-screenshot.png" alt="mini-a Console" />
       <div align="center"><i>Interactive Console</i></div>
     </div>
+    <br/>
   </div>
 </div>
 
@@ -34,27 +35,27 @@ title: Home
   <div class="feature-grid">
     <div class="feature-card">
       <h3>🤖 Multi-Model Support</h3>
-      <p>Works with OpenAI, Google Gemini, GitHub Models, AWS Bedrock, Ollama, and more</p>
+      <i>Works with OpenAI, Google Gemini, GitHub Models, AWS Bedrock, Ollama, and more</i>
     </div>
     <div class="feature-card">
       <h3>💰 Cost Optimization</h3>
-      <p>Dual-model setup with automatic escalation reduces costs by 50-70%</p>
+      <i>Dual-model setup with automatic escalation reduces costs by 50-70%</i>
     </div>
     <div class="feature-card">
       <h3>🔌 MCP Integration</h3>
-      <p>Seamless integration with Model Context Protocol servers (STDIO & HTTP)</p>
+      <i>Seamless integration with Model Context Protocol servers (STDIO & HTTP)</i>
     </div>
     <div class="feature-card">
       <h3>⚡ Performance</h3>
-      <p>Automatic optimizations reduce token usage by 40-60%</p>
+      <i>Automatic optimizations reduce token usage by 40-60%</i>
     </div>
     <div class="feature-card">
       <h3>🛠️ Flexible Tools</h3>
-      <p>Shell commands, MCP proxy, built-in utilities, and custom tools</p>
+      <i>Shell commands, MCP proxy, built-in utilities, and custom tools</i>
     </div>
     <div class="feature-card">
       <h3>🐳 Docker Ready</h3>
-      <p>Run in containers for isolated execution and portability</p>
+      <i>Run in containers for isolated execution and portability</i>
     </div>
   </div>
 </div>
