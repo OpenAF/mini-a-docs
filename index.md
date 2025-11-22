@@ -5,7 +5,7 @@ title: Home
 
 <div class="hero">
   <h1 class="hero-title">mini-a</h1>
-  <p class="hero-subtitle">Minimalist Autonomous Agent</p>
+  <p class="hero-subtitle"></p>
   <p class="hero-description"><i>A minimalist autonomous agent that uses LLMs, shell commands and/or MCP servers to achieve user-defined goals. Simple, flexible, and easy to use as a library, CLI tool, or embedded interface.</i></p>
   <div class="hero-buttons">
     <a href="{{ '/getting-started.html' | relative_url }}" class="btn btn-primary">Get Started</a>
