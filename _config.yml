@@ -21,7 +21,16 @@ minima:
     - examples.md
     - advanced.md
     - configuration.md
-  
+
+# Navigation
+header_pages:
+- index.md
+- getting-started.md
+- features.md
+- examples.md
+- advanced.md
+- configuration.md
+
 plugins:
 - jekyll-feed
 - jekyll-seo-tag
