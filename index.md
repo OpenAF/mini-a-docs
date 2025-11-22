@@ -72,7 +72,7 @@ title: Home
     <div class="example-step">
       <h3>1. Set your model</h3>
       {% highlight bash %}
-export OAF_MODEL="(type: openai, model: gpt-4o-mini, key: '...', timeout: 900000)"
+export OAF_MODEL="(type: openai, model: gpt-5.1, key: '...', timeout: 900000)"
       {% endhighlight %}
     </div>
     <div class="example-step">

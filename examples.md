@@ -206,7 +206,7 @@ mini-a goal="Add JSDoc comments to all functions in @src/utils.js" useshell=true
 ```bash
 docker run --rm -ti \
   -e OPACKS=mini-a -e OPACK_EXEC=mini-a \
-  -e OAF_MODEL="(type: openai, model: gpt-4o-mini, key: '...')" \
+  -e OAF_MODEL="(type: openai, model: gpt-5.1, key: '...')" \
   openaf/oaf:edge \
   goal="list environment variables" useshell=true
 ```
@@ -216,7 +216,7 @@ docker run --rm -ti \
 ```bash
 docker run -d --rm \
   -e OPACKS=mini-a -e OPACK_EXEC=mini-a \
-  -e OAF_MODEL="(type: openai, model: gpt-4o-mini, key: '...')" \
+  -e OAF_MODEL="(type: openai, model: gpt-5.1, key: '...')" \
   -p 8888:8888 \
   openaf/oaf:edge onport=8888
 ```
@@ -336,7 +336,7 @@ mini-a goal="Analyze the error stack trace in @error.txt and suggest potential c
 For simple tasks, use a low-cost model:
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5.1, key: '...')"
 mini-a goal="simple task here"
 ```
 
@@ -345,8 +345,8 @@ mini-a goal="simple task here"
 For complex tasks with cost optimization:
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5.1, key: '...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 mini-a goal="complex multi-step task here"
 ```
 

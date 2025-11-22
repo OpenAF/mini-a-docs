@@ -15,7 +15,7 @@ The main LLM model for reasoning and task execution.
 ```bash
 export OAF_MODEL="(
   type: openai,
-  model: gpt-4o-mini,
+  model: gpt-5.1,
   key: 'sk-...',
   timeout: 900000,
   temperature: 1
@@ -41,7 +41,7 @@ Optional secondary model for cost optimization.
 ```bash
 export OAF_LC_MODEL="(
   type: openai,
-  model: gpt-4o-mini,
+  model: gpt-5.1,
   key: 'sk-...',
   timeout: 900000
 )"
@@ -481,8 +481,8 @@ Create a `.env` file:
 
 ```bash
 # .env
-OAF_MODEL=(type: openai, model: gpt-4o-mini, key: 'sk-...')
-OAF_LC_MODEL=(type: openai, model: gpt-4o-mini, key: 'sk-...')
+OAF_MODEL=(type: openai, model: gpt-5.1, key: 'sk-...')
+OAF_LC_MODEL=(type: openai, model: gpt-5-mini, key: 'sk-...')
 ```
 
 Source it:
@@ -557,8 +557,8 @@ mini-a goal="topic" chatbotmode=true
 
 **Cost-optimized:**
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5.1, key: '...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 mini-a goal="complex task"
 ```
 

@@ -36,7 +36,7 @@ You have two options for configuring your LLM model:
 Set the `OAF_MODEL` environment variable:
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o-mini, key: 'sk-...', timeout: 900000, temperature: 1)"
+export OAF_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...', timeout: 900000, temperature: 1)"
 ```
 
 **Supported model types:**
@@ -119,7 +119,7 @@ Run mini-a in a Docker container:
 ```bash
 docker run --rm -ti \
   -e OPACKS=mini-a -e OPACK_EXEC=mini-a \
-  -e OAF_MODEL="(type: openai, model: gpt-4o-mini, key: '...', timeout: 900000)" \
+  -e OAF_MODEL="(type: openai, model: gpt-5.1, key: '...', timeout: 900000)" \
   openaf/oaf:edge
 ```
 
@@ -128,7 +128,7 @@ docker run --rm -ti \
 ```bash
 docker run -d --rm \
   -e OPACKS=mini-a -e OPACK_EXEC=mini-a \
-  -e OAF_MODEL="(type: openai, model: gpt-4o-mini, key: '...', timeout: 900000)" \
+  -e OAF_MODEL="(type: openai, model: gpt-5.1, key: '...', timeout: 900000)" \
   -p 12345:12345 \
   openaf/oaf:edge onport=12345
 ```

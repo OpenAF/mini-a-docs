@@ -26,7 +26,7 @@ Simply change your `OAF_MODEL` configuration:
 
 ```bash
 # OpenAI
-export OAF_MODEL="(type: openai, model: gpt-4o-mini, key: 'sk-...')"
+export OAF_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...')"
 
 # Google Gemini
 export OAF_MODEL="(type: google, model: gemini-1.5-flash-latest, key: '...')"
@@ -59,7 +59,7 @@ mini-a automatically:
 export OAF_MODEL="(type: openai, model: gpt-4o, key: 'sk-...')"
 
 # Low-cost model (efficient)
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: 'sk-...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...')"
 ```
 
 **Cost Savings Example:**
@@ -230,7 +230,7 @@ Run mini-a in containers for:
 ```bash
 docker run --rm -ti \
   -e OPACKS=mini-a -e OPACK_EXEC=mini-a \
-  -e OAF_MODEL="(type: openai, model: gpt-4o-mini, key: '...')" \
+  -e OAF_MODEL="(type: openai, model: gpt-5.1, key: '...')" \
   openaf/oaf:edge
 ```
 

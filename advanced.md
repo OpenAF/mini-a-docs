@@ -15,7 +15,7 @@ The dual-model system is one of mini-a's most powerful features for cost optimiz
 mini-a can use two models simultaneously:
 
 - **Main Model** (`OAF_MODEL`): High-capability model (e.g., GPT-4o, Claude Opus)
-- **Low-Cost Model** (`OAF_LC_MODEL`): Efficient model (e.g., GPT-4o-mini, Gemini Flash)
+- **Low-Cost Model** (`OAF_LC_MODEL`): Efficient model (e.g., gpt-5.1, Gemini Flash)
 
 The system automatically escalates from the low-cost to the main model when needed.
 
@@ -26,7 +26,7 @@ The system automatically escalates from the low-cost to the main model when need
 export OAF_MODEL="(type: openai, model: gpt-4o, key: 'sk-...')"
 
 # Low-cost model (efficient)
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: 'sk-...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...')"
 ```
 
 ### When to Escalate
@@ -570,14 +570,14 @@ Free access to various models:
 ```bash
 export OAF_MODEL="(
   type: github,
-  model: gpt-4o-mini,
+  model: gpt-5.1,
   key: 'ghp_...',
   timeout: 120000
 )"
 ```
 
 Available models:
-- GPT-4o, GPT-4o-mini
+- GPT-4.1, gpt-5.1
 - Llama 3
 - Mistral
 - Phi-3

@@ -65,7 +65,7 @@ This document lists all the places where additional visual content (screenshots,
 **Script**:
 ```bash
 # Terminal recording showing:
-export OAF_MODEL="(type: openai, model: gpt-4o-mini, key: 'sk-...')"
+export OAF_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...')"
 mini-a
 > list files in current directory
 /help
@@ -143,7 +143,7 @@ mini-a goal="help me plan a project" chatbotmode=true
 **Script**:
 ```bash
 export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5.1, key: '...')"
 mini-a goal="complex analysis task" debug=true showstats=true
 # Show which model handled which steps
 ```
