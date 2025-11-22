@@ -4,8 +4,6 @@ title: Features
 permalink: /features/
 ---
 
-# Features
-
 mini-a is packed with powerful features while maintaining simplicity and ease of use.
 
 ## 🤖 Multi-Model Support

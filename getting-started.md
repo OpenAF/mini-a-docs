@@ -4,8 +4,6 @@ title: Getting Started
 permalink: /getting-started/
 ---
 
-# Getting Started with mini-a
-
 Get up and running with mini-a in just a few minutes.
 
 ## Prerequisites

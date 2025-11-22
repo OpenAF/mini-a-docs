@@ -4,8 +4,6 @@ title: Configuration
 permalink: /configuration/
 ---
 
-# Configuration Reference
-
 Complete reference for all mini-a configuration parameters.
 
 ## Model Configuration

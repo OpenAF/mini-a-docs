@@ -4,8 +4,6 @@ title: Examples
 permalink: /examples/
 ---
 
-# Examples
-
 Learn mini-a through practical examples. Each example includes the command and explanation.
 
 ## Basic Examples

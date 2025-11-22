@@ -4,8 +4,6 @@ title: Advanced Usage
 permalink: /advanced/
 ---
 
-# Advanced Usage
-
 Master mini-a's advanced features for maximum efficiency and capability.
 
 ## Dual-Model Setup
