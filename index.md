@@ -6,7 +6,7 @@ title: Home
 <div class="hero">
   <h1 class="hero-title">mini-a</h1>
   <p class="hero-subtitle">Minimalist Autonomous Agent</p>
-  <p class="hero-description">A minimalist autonomous agent that uses LLMs, shell commands and/or MCP servers to achieve user-defined goals. Simple, flexible, and easy to use as a library, CLI tool, or embedded interface.</p>
+  <p class="hero-description"><i>A minimalist autonomous agent that uses LLMs, shell commands and/or MCP servers to achieve user-defined goals. Simple, flexible, and easy to use as a library, CLI tool, or embedded interface.</i></p>
   <div class="hero-buttons">
     <a href="{{ '/getting-started.html' | relative_url }}" class="btn btn-primary">Get Started</a>
     <a href="https://github.com/OpenAF/mini-a" class="btn btn-secondary">View on GitHub</a>
@@ -32,33 +32,27 @@ title: Home
   <h2>Key Features</h2>
   <div class="feature-grid">
     <div class="feature-card">
-      <div class="feature-icon">🤖</div>
-      <h3>Multi-Model Support</h3>
+      <h3>🤖 Multi-Model Support</h3>
       <p>Works with OpenAI, Google Gemini, GitHub Models, AWS Bedrock, Ollama, and more</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">💰</div>
-      <h3>Cost Optimization</h3>
+      <h3>💰 Cost Optimization</h3>
       <p>Dual-model setup with automatic escalation reduces costs by 50-70%</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">🔌</div>
-      <h3>MCP Integration</h3>
+      <h3>🔌 MCP Integration</h3>
       <p>Seamless integration with Model Context Protocol servers (STDIO & HTTP)</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">⚡</div>
-      <h3>Performance</h3>
+      <h3>⚡ Performance</h3>
       <p>Automatic optimizations reduce token usage by 40-60%</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">🛠️</div>
-      <h3>Flexible Tools</h3>
+      <h3>🛠️ Flexible Tools</h3>
       <p>Shell commands, MCP proxy, built-in utilities, and custom tools</p>
     </div>
     <div class="feature-card">
-      <div class="feature-icon">🐳</div>
-      <h3>Docker Ready</h3>
+      <h3>🐳 Docker Ready</h3>
       <p>Run in containers for isolated execution and portability</p>
     </div>
   </div>
