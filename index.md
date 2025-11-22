@@ -18,11 +18,11 @@ title: Home
   <div class="screenshot-grid">
     <div class="screenshot-item">
       <img src="assets/images/mini-a-web-screenshot1.jpg" alt="mini-a Web Interface" />
-      <p>Modern Web Interface</p>
+      <div align="center"><i>Modern Web Interface</i></div>
     </div>
     <div class="screenshot-item">
       <img src="assets/images/mini-a-con-screenshot.png" alt="mini-a Console" />
-      <p>Interactive Console</p>
+      <div align="center"><i>Interactive Console</i></div>
     </div>
   </div>
 </div>
