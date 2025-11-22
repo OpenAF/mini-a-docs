@@ -199,7 +199,7 @@ mini-a goal="task" \
   usethinking=true        # Enable chain-of-thought
 ```
 
-💡 *Suggestion: Add asciinema showing optimization impact on a long session*
+<!--💡 *Suggestion: Add asciinema showing optimization impact on a long session*-->
 
 ## Advanced Shell Usage
 

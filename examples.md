@@ -28,7 +28,7 @@ mini-a goal="find all PDF files larger than 1MB in the current directory" useshe
 mini-a goal="Analyze the project structure in @package.json and list the main dependencies"
 ```
 
-💡 *Suggestion: Add asciinema recording showing file operations here*
+<!--💡 *Suggestion: Add asciinema recording showing file operations here*-->
 
 ### Data Processing
 
@@ -121,7 +121,7 @@ mini-a mcptest=true mcp="(cmd: 'ojob mcps/mcp-time.yaml')"
 mini-a mcptest=true mcp="(type: remote, url: 'http://localhost:9090/mcp')"
 ```
 
-💡 *Suggestion: Add asciinema recording of MCP testing workflow here*
+<!--💡 *Suggestion: Add asciinema recording of MCP testing workflow here*-->
 
 ## Advanced Examples
 

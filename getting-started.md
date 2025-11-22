@@ -108,7 +108,7 @@ For a browser-based UI:
 
 Then open `http://localhost:8888` in your browser.
 
-💡 *Suggestion: Add asciinema recording of first console session here*
+<!--💡 *Suggestion: Add asciinema recording of first console session here*-->
 
 ## Docker Quick Start
 

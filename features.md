@@ -131,7 +131,7 @@ Features:
 - Call tools interactively
 - Debug MCP integrations
 
-💡 *Suggestion: Add asciinema recording of MCP testing session here*
+<!--💡 *Suggestion: Add asciinema recording of MCP testing session here*-->
 
 ## 🛠️ Flexible Tool System
 
