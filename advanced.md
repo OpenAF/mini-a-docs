@@ -609,8 +609,8 @@ Benefits:
 
 ## Next Steps
 
-- [**Configuration Reference**]({{ '/configuration.html' | relative_url }}) - Complete parameter guide
-- [**Examples**]({{ '/examples.html' | relative_url }}) - More practical examples
+- [**Configuration Reference**]({{ '/configuration' | relative_url }}) - Complete parameter guide
+- [**Examples**]({{ '/examples' | relative_url }}) - More practical examples
 - [**GitHub Repository**](https://github.com/OpenAF/mini-a) - Source code and contributions
 
 ## Further Reading

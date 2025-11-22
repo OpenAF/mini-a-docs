@@ -578,9 +578,9 @@ mini-a goal="complex task" \
 
 ## Next Steps
 
-- [**Getting Started**]({{ '/getting-started.html' | relative_url }}) - Installation and setup
-- [**Examples**]({{ '/examples.html' | relative_url }}) - Practical examples
-- [**Advanced Usage**]({{ '/advanced.html' | relative_url }}) - Power user features
+- [**Getting Started**]({{ '/getting-started' | relative_url }}) - Installation and setup
+- [**Examples**]({{ '/examples' | relative_url }}) - Practical examples
+- [**Advanced Usage**]({{ '/advanced' | relative_url }}) - Power user features
 - [**GitHub Repository**](https://github.com/OpenAF/mini-a) - Full documentation
 
 ## Additional Resources

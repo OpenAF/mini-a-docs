@@ -67,7 +67,7 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...')"
 - Dual model: ~$0.15 per complex task
 - **Savings: 70%**
 
-Learn more in the [Advanced Usage]({{ '/advanced.html' | relative_url }}#dual-model-setup) section.
+Learn more in the [Advanced Usage]({{ '/advanced' | relative_url }}#dual-model-setup) section.
 
 ## ⚡ Performance Optimizations
 
@@ -321,6 +321,6 @@ Perfect for:
 ---
 
 Ready to dive deeper? Check out:
-- [**Examples**]({{ '/examples.html' | relative_url }}) - Practical use cases
-- [**Advanced Usage**]({{ '/advanced.html' | relative_url }}) - Power user features
-- [**Configuration**]({{ '/configuration.html' | relative_url }}) - Complete parameter reference
+- [**Examples**]({{ '/examples' | relative_url }}) - Practical use cases
+- [**Advanced Usage**]({{ '/advanced' | relative_url }}) - Power user features
+- [**Configuration**]({{ '/configuration' | relative_url }}) - Complete parameter reference

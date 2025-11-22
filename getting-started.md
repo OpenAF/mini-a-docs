@@ -163,10 +163,10 @@ This is useful for providing context or instructions from files.
 
 Now that you have mini-a installed and running, explore:
 
-- [**Features**]({{ '/features.html' | relative_url }}) - Learn about all capabilities
-- [**Examples**]({{ '/examples.html' | relative_url }}) - See practical use cases
-- [**Advanced Usage**]({{ '/advanced.html' | relative_url }}) - Dual models, MCP integration, and more
-- [**Configuration**]({{ '/configuration.html' | relative_url }}) - Detailed parameter reference
+- [**Features**]({{ '/features' | relative_url }}) - Learn about all capabilities
+- [**Examples**]({{ '/examples' | relative_url }}) - See practical use cases
+- [**Advanced Usage**]({{ '/advanced' | relative_url }}) - Dual models, MCP integration, and more
+- [**Configuration**]({{ '/configuration' | relative_url }}) - Detailed parameter reference
 
 ## Getting Help
 

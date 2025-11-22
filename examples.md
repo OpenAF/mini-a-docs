@@ -391,8 +391,8 @@ See [examples/learn-from-chat.yaml](https://github.com/OpenAF/mini-a/blob/main/e
 
 ## Next Steps
 
-- [**Advanced Usage**]({{ '/advanced.html' | relative_url }}) - Learn about dual-model setup, MCP proxy, and optimizations
-- [**Configuration**]({{ '/configuration.html' | relative_url }}) - Complete parameter reference
+- [**Advanced Usage**]({{ '/advanced' | relative_url }}) - Learn about dual-model setup, MCP proxy, and optimizations
+- [**Configuration**]({{ '/configuration' | relative_url }}) - Complete parameter reference
 - [**GitHub Repository**](https://github.com/OpenAF/mini-a) - Explore more examples and contribute
 
 ## Try It Yourself
