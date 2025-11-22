@@ -14,19 +14,17 @@ markdown: kramdown
 theme: minima
 minima:
   skin: auto
+  nav_pages:
+    - index.md
+    - getting-started.md
+    - features.md
+    - examples.md
+    - advanced.md
+    - configuration.md
   
 plugins:
 - jekyll-feed
 - jekyll-seo-tag
-
-# Navigation
-header_pages:
-- index.md
-- getting-started.md
-- features.md
-- examples.md
-- advanced.md
-- configuration.md
 
 # Exclude from processing
 exclude:
