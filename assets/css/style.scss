@@ -98,7 +98,7 @@ h3 { font-size: 1.5rem; }
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
-  background: var(--surface);
+  background: var(--minima-code-background-color);
 }
 
 .btn-secondary {
@@ -197,8 +197,8 @@ h3 { font-size: 1.5rem; }
 
 .screenshot-note,
 .example-note {
-  background: #fef3c7;
-  border-left: 4px solid #f59e0b;
+  background: var(--minima-code-background-color);
+  border-left: 4px solid var(--accent-color);
   padding: 1rem 1.5rem;
   border-radius: 8px;
   margin: 2rem 0;
