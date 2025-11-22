@@ -29,13 +29,13 @@ Simply change your `OAF_MODEL` configuration:
 export OAF_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...')"
 
 # Google Gemini
-export OAF_MODEL="(type: google, model: gemini-1.5-flash-latest, key: '...')"
+export OAF_MODEL="(type: google, model: gemini-2.5-flash-latest, key: '...')"
 
 # Local Ollama
 export OAF_MODEL="(type: ollama, model: llama3, url: 'http://localhost:11434')"
 
 # AWS Bedrock
-export OAF_MODEL="(type: bedrock, model: anthropic.claude-3-sonnet-20240229-v1:0, region: us-east-1)"
+export OAF_MODEL="(type: bedrock, model: anthropic.claude-sonnet-4-20250115-v1:0, region: us-east-1)"
 ```
 
 ## 💰 Dual-Model Cost Optimization
@@ -56,7 +56,7 @@ mini-a automatically:
 
 ```bash
 # Main model (high capability)
-export OAF_MODEL="(type: openai, model: gpt-4o, key: 'sk-...')"
+export OAF_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...')"
 
 # Low-cost model (efficient)
 export OAF_LC_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...')"

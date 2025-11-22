@@ -40,7 +40,7 @@ export OAF_MODEL="(type: openai, model: gpt-5.1, key: 'sk-...', timeout: 900000,
 ```
 
 **Supported model types:**
-- `openai` - OpenAI models (GPT-4, GPT-4o, etc.)
+- `openai` - OpenAI models (GPT-4, gpt-5.1, etc.)
 - `openai-compatible` - OpenAI-compatible APIs
 - `google` - Google Gemini models
 - `anthropic` - Anthropic Claude models
