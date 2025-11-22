@@ -88,7 +88,7 @@ mini-a goal="list all JavaScript files in this directory" useshell=true
       {% endhighlight %}
     </div>
   </div>
-  <p class="example-note">💡 <!--em>Suggestion: Add asciinema recording of a complete quick start session here</em--></p>
+  <p class="example-note"><!--em>💡 Suggestion: Add asciinema recording of a complete quick start session here</em--></p>
 </div>
 
 <div class="architecture">
