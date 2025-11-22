@@ -25,7 +25,6 @@ title: Home
       <p>Interactive Console</p>
     </div>
   </div>
-  <p class="screenshot-note">💡 <em>Suggestion: Add asciinema recordings showing real-time interactions here</em></p>
 </div>
 
 <div class="features-overview">
