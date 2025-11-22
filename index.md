@@ -8,7 +8,7 @@ title: Home
   <p class="hero-subtitle"></p>
   <p class="hero-description"><i>A minimalist autonomous agent that uses LLMs, shell commands and/or MCP servers to achieve user-defined goals. Simple, flexible, and easy to use as a library, CLI tool, or embedded interface.</i></p>
   <div class="hero-buttons">
-    <a href="{{ '/getting-started.html' | relative_url }}" class="btn btn-primary">Get Started</a> | 
+    <a href="{{ '/getting-started' | relative_url }}" class="btn btn-primary">Get Started</a> | 
     <a href="https://github.com/OpenAF/mini-a" class="btn btn-secondary">View on GitHub</a>
   </div>
   <br/>
@@ -111,5 +111,5 @@ mini-a goal="list all JavaScript files in this directory" useshell=true
 <div class="cta-section">
   <h2>Ready to Get Started?</h2>
   <p>mini-a is easy to install and use. Get up and running in minutes.</p>
-  <a href="{{ '/getting-started.html' | relative_url }}" class="btn btn-primary btn-large">Read the Getting Started Guide</a>
+  <a href="{{ '/getting-started' | relative_url }}" class="btn btn-primary btn-large">Read the Getting Started Guide</a>
 </div>
