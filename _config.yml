@@ -16,21 +16,21 @@ minima:
   skin: auto
   
 plugins:
-  - jekyll-feed
-  - jekyll-seo-tag
+- jekyll-feed
+- jekyll-seo-tag
 
 # Navigation
 header_pages:
-  - index.md
-  - getting-started.md
-  - features.md
-  - examples.md
-  - advanced.md
-  - configuration.md
+- index.md
+- getting-started.md
+- features.md
+- examples.md
+- advanced.md
+- configuration.md
 
 # Exclude from processing
 exclude:
-  - README.md
-  - LICENSE
-  - .git/
-  - .gitignore
+- README.md
+- LICENSE
+- .git/
+- .gitignore
