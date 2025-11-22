@@ -14,9 +14,9 @@ mini-a works with virtually any LLM provider:
 
 ### Supported Providers
 
-- **OpenAI** - GPT-4, GPT-4o, GPT-4o-mini, GPT-3.5-turbo
+- **OpenAI** - GPT-5.1, GPT-5, GPT-4.1
 - **Google** - Gemini Pro, Gemini Flash
-- **Anthropic** - Claude 3 (Opus, Sonnet, Haiku)
+- **Anthropic** - Claude 4, 4.5 (Opus, Sonnet, Haiku)
 - **AWS Bedrock** - Access to multiple models through AWS
 - **GitHub Models** - Free access to various models
 - **Ollama** - Local models (Llama, Mistral, etc.)
