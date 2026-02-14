@@ -4,7 +4,7 @@ permalink: /
 ---
 
 <div class="hero">
-  <h1>mini-a</h1>
+  <h1><span style="color: #62bb47;">mini</span><span style="color: #e594ac;">-a</span></h1>
   <p class="tagline">Your goals. Your LLM. One command.</p>
   <p class="hero-description">
     A minimalist autonomous agent framework built on OpenAF. Connect any LLM,
