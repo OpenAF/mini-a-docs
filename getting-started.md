@@ -67,7 +67,11 @@ mini-a supports multiple LLM providers. Set `OAF_MODEL` using SLON/JSON-style co
 **Example configuration:**
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
+# Optional low-cost routing/planning model
+export OAF_LC_MODEL="(type: openai, model: gpt-5-nano, key: '...')"
+# Optional dedicated validation model for deep research mode
+export OAF_VAL_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 ```
 
 ### Model Manager
@@ -140,12 +144,13 @@ When running in interactive console mode, the following commands are available:
 |---------|-------------|
 | `/help` | Show available commands |
 | `/model` | Show current model |
-| `/compact` | Compact conversation context |
-| `/summarize` | Summarize conversation |
+| `/compact [n]` | Compact older history while keeping the latest `n` exchanges |
+| `/summarize [n]` | Replace older history with a narrative summary and keep the latest `n` exchanges |
+| `/context` | Show token/context breakdown |
 | `/reset` | Reset conversation |
 | `/exit` | Exit mini-a |
-| `/save` | Save conversation |
-| `/load` | Load conversation |
+| `/last [md]` | Reprint the last final answer (`md` prints raw markdown) |
+| `/save <path>` | Save the last final answer to a file |
 | `/clear` | Clear screen |
 | `/metrics` | Show usage metrics |
 
@@ -165,21 +170,38 @@ This reads the contents of `README.md` and sends it along with your instruction 
 
 ## Mode Presets
 
-mini-a provides mode presets that quickly configure common access patterns:
+mini-a provides reusable mode presets that quickly configure related flags.
+Built-ins come from `mini-a-modes.yaml`, and you can extend/override them with `~/.openaf-mini-a_modes.yaml` (custom modes win over built-ins).
 
 | Mode | What it enables |
 |------|----------------|
-| `shell` | Shell access enabled |
-| `chatbot` | Chatbot mode (no tools) |
-| `internet` | Web browsing MCP |
-| `poweruser` | Shell + utilities + tools |
-| `readwrite` | File read/write access |
-| `readonly` | Read-only file access |
+| `shell` | Read-only shell access (`useshell=true`) |
+| `shellrw` | Shell + write access (`useshell=true readwrite=true`) |
+| `shellutils` | Shell + Mini Utils Tool (`useutils=true usetools=true`) |
+| `chatbot` | Chatbot mode (`chatbotmode=true`) |
+| `internet` | Internet-focused MCP/tool mode |
+| `web` | Browser UI optimized preset |
+| `webfull` | Full web UI preset (history, attachments, diagrams/charts, planning) |
 
-**Example:**
+**Built-in mode example:**
 
 ```bash
-mini-a mode=poweruser
+mini-a mode=shellrw goal='Create and run a quick script in the current folder'
+```
+
+**Custom mode example (`~/.openaf-mini-a_modes.yaml`):**
+
+```yaml
+modes:
+  mypreset:
+    useshell: true
+    readwrite: true
+    maxsteps: 30
+    knowledge: "Always use concise responses"
+```
+
+```bash
+mini-a mode=mypreset goal='your goal here'
 ```
 
 ---

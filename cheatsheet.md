@@ -26,7 +26,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 
 | Provider | Config |
 |----------|--------|
-| OpenAI | `export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"` |
+| OpenAI | `export OAF_MODEL="(type: openai, model: gpt-5-mini, key: '...')"` |
 | Google | `export OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"` |
 | Anthropic | `export OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')"` |
 | Ollama | `export OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"` |
@@ -49,11 +49,12 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 |---------|--------|
 | `/help` | Show commands |
 | `/model` | Current model info |
-| `/compact` | Compact context |
-| `/summarize` | Summarize conversation |
+| `/compact [n]` | Compact older history, keep latest `n` exchanges |
+| `/summarize [n]` | Summarize older history, keep latest `n` exchanges |
+| `/context` | Show token/context breakdown |
 | `/reset` | Reset conversation |
-| `/save` | Save conversation |
-| `/load` | Load conversation |
+| `/last [md]` | Reprint last final answer (`md` for raw markdown) |
+| `/save <path>` | Save last final answer to a file |
 | `/metrics` | Usage statistics |
 | `/exit` | Exit mini-a |
 | `/clear` | Clear screen |
@@ -101,18 +102,35 @@ mini-a useutils=true goal='@data.csv Analyze it'
 
 | Mode | Enables |
 |------|---------|
-| `shell` | Shell access |
-| `chatbot` | Chat-only, no tools |
-| `internet` | Web browsing |
-| `poweruser` | Shell + utils + tools |
-| `readwrite` | File read/write |
-| `readonly` | Read-only access |
+| `shell` | Read-only shell access (`useshell=true`) |
+| `shellrw` | Shell + write access (`useshell=true readwrite=true`) |
+| `shellutils` | Shell + Mini Utils Tool (`useutils=true usetools=true`) |
+| `chatbot` | Chat-only mode |
+| `internet` | Internet-focused MCP/tool mode |
+| `web` | Browser UI optimized preset |
+| `webfull` | Full web UI preset (history, attachments, planning, diagrams/charts) |
+
+Custom modes: create `~/.openaf-mini-a_modes.yaml` with a `modes:` map. Custom definitions are merged with built-ins and override duplicates.
+
+```yaml
+# ~/.openaf-mini-a_modes.yaml
+modes:
+  mypreset:
+    useshell: true
+    readwrite: true
+    maxsteps: 30
+```
+
+```bash
+mini-a mode=mypreset goal='your goal here'
+```
 
 ## Dual-Model Setup
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
-export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5-nano, key: '...')"
+export OAF_VAL_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 # Saves 50-70% on token costs
 ```
 
@@ -120,9 +138,9 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 
 ```bash
 # Interactive
-docker run -it -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" openaf/mini-a
+docker run -it -e OAF_MODEL="(type: openai, model: gpt-5-mini, key: '...')" openaf/mini-a
 # Web UI
-docker run -p 8080:8080 -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" openaf/mini-a onport=8080
+docker run -p 8080:8080 -e OAF_MODEL="(type: openai, model: gpt-5-mini, key: '...')" openaf/mini-a onport=8080
 ```
 
 ## Common MCP Servers
