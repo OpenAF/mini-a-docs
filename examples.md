@@ -145,7 +145,7 @@ mini-a useshell=true readwrite=true goal='Generate API documentation for all Jav
 Run mini-a in a container without installing OpenAF locally. Mount your project directory and let it work:
 
 ```bash
-docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -e OPENAI_API_KEY=$OPENAI_API_KEY -v $(pwd):/work openaf/mini-a useutils=true goal='Analyze the project in /work and create a README'
+docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -v $(pwd):/work openaf/mini-a useutils=true goal='Analyze the project in /work and create a README'
 ```
 
 ### oJob Pipeline

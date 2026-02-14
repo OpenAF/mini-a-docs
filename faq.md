@@ -150,7 +150,7 @@ mini-a useshell=true readonly=true shellallow='git,ls,cat,grep'
 Run mini-a in a container so the agent can only affect the container environment:
 
 ```bash
-docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -e OPENAI_API_KEY=$OPENAI_API_KEY \
+docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" \
   -v $(pwd):/work:ro openaf/mini-a useshell=true goal='Analyze the project in /work'
 ```
 
@@ -192,7 +192,6 @@ Check that `OAF_MODEL` is in the expected SLON/JSON-style configuration format a
 
 ```bash
 echo $OAF_MODEL    # Should show something like: (type: openai, model: gpt-4o, key: '...')
-echo $OPENAI_API_KEY  # Should show your key (or relevant provider key)
 ```
 
 ### "Permission denied" when running commands

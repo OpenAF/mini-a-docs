@@ -57,18 +57,17 @@ mini-a supports multiple LLM providers. Set `OAF_MODEL` using SLON/JSON-style co
 
 | Provider | Model variable | API key variable (optional) |
 |----------|---------------|-----------------|
-| OpenAI | `OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"` | `OPENAI_API_KEY` |
-| Google | `OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"` | `GOOGLE_API_KEY` |
-| Anthropic | `OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')"` | `ANTHROPIC_API_KEY` |
+| OpenAI | `OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"` | Optional (only if `key` not in model config) |
+| Google | `OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"` | Optional (only if `key` not in model config) |
+| Anthropic | `OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')"` | Optional (only if `key` not in model config) |
 | Ollama | `OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"` | No key needed (local) |
 | Bedrock | `OAF_MODEL="(type: bedrock, options: (region: eu-west-1, model: 'anthropic.claude-sonnet-4-20250514-v1:0'))"` | Uses AWS credentials |
-| GitHub | `OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-4o, key: $(gh auth token), apiVersion: '')"` | `GITHUB_TOKEN` |
+| GitHub | `OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-4o, key: $(gh auth token), apiVersion: '')"` | Optional (only if `key` not in model config) |
 
 **Example configuration:**
 
 ```bash
 export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-export OPENAI_API_KEY="sk-..."
 ```
 
 ### Model Manager
@@ -126,7 +125,7 @@ Then open [http://localhost:8080](http://localhost:8080) in your browser.
 You can run mini-a directly with Docker without installing OpenAF:
 
 ```bash
-docker run -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -e OPENAI_API_KEY=$OPENAI_API_KEY -p 8080:8080 openaf/mini-a
+docker run -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -p 8080:8080 openaf/mini-a
 ```
 
 This starts the web UI on port 8080. Open [http://localhost:8080](http://localhost:8080) in your browser to get started.

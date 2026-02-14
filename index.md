@@ -104,7 +104,6 @@ permalink: /
 
 ```bash
 export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-export OPENAI_API_KEY="sk-..."
 ```
 
   <div class="step">

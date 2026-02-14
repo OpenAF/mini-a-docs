@@ -230,7 +230,7 @@ Allowlists and ban lists give you layered control over shell safety.
 For maximum safety, run shell commands inside a Docker container. This isolates the agent's shell access from your host system entirely:
 
 ```bash
-docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -e OPENAI_API_KEY=$OPENAI_API_KEY -v $(pwd):/work openaf/mini-a useshell=true goal='Analyze the project in /work'
+docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -v $(pwd):/work openaf/mini-a useshell=true goal='Analyze the project in /work'
 ```
 
 The agent can execute commands freely inside the container without risk to your host filesystem or system.
@@ -480,10 +480,9 @@ Alternatively, configure credentials in `~/.aws/credentials` and set the region 
 
 ### GitHub Models
 
-GitHub Models uses your GitHub personal access token:
+GitHub Models can use your GitHub personal access token directly in `OAF_MODEL`:
 
 ```bash
-export GITHUB_TOKEN="ghp_..."
 export OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-4o, key: $(gh auth token), apiVersion: '')"
 ```
 

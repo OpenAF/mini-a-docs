@@ -26,9 +26,9 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 
 | Provider | Config |
 |----------|--------|
-| OpenAI | `export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" && export OPENAI_API_KEY=sk-...` |
-| Google | `export OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')" && export GOOGLE_API_KEY=...` |
-| Anthropic | `export OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')" && export ANTHROPIC_API_KEY=...` |
+| OpenAI | `export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"` |
+| Google | `export OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"` |
+| Anthropic | `export OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')"` |
 | Ollama | `export OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"` |
 | Bedrock | `export OAF_MODEL="(type: bedrock, options: (region: eu-west-1, model: 'anthropic.claude-sonnet-4-20250514-v1:0'))"` |
 | GitHub | `export OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-4o, key: $(gh auth token), apiVersion: '')"` |
@@ -120,9 +120,9 @@ export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
 
 ```bash
 # Interactive
-docker run -it -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -e OPENAI_API_KEY=$OPENAI_API_KEY openaf/mini-a
+docker run -it -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" openaf/mini-a
 # Web UI
-docker run -p 8080:8080 -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -e OPENAI_API_KEY=$OPENAI_API_KEY openaf/mini-a onport=8080
+docker run -p 8080:8080 -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" openaf/mini-a onport=8080
 ```
 
 ## Common MCP Servers

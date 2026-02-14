@@ -188,10 +188,10 @@ export MINI_A_PARAM=value
 | `OAF_LC_MODEL` | `lmodel` |
 | `MINI_A_GOAL` | `goal` |
 | `MINI_A_PORT` | `onport` |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `GOOGLE_API_KEY` | Google API key |
-| `ANTHROPIC_API_KEY` | Anthropic API key |
-| `GITHUB_TOKEN` | GitHub Models token |
+| `OPENAI_API_KEY` | OpenAI API key (optional when `key` is provided in model config) |
+| `GOOGLE_API_KEY` | Google API key (optional when `key` is provided in model config) |
+| `ANTHROPIC_API_KEY` | Anthropic API key (optional when `key` is provided in model config) |
+| `GITHUB_TOKEN` | GitHub Models token (optional when `key` is provided in model config) |
 
 </div>
 
