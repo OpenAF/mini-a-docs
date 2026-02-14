@@ -1,0 +1,45 @@
+title: mini-a
+tagline: "Your goals. Your LLM. One command."
+description: >-
+  A minimalist autonomous agent framework built on OpenAF that uses LLMs,
+  shell commands, and MCP servers to achieve user-defined goals.
+baseurl: "/mini-a-docs"
+url: "https://openaf.github.io"
+
+theme: minima
+
+minima:
+  skin: auto
+  nav_pages:
+    - getting-started.md
+    - features.md
+    - examples.md
+    - cheatsheet.md
+    - advanced.md
+    - configuration.md
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+permalink: pretty
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: "default"
+
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - PLAN.md
+  - TODO.md
+  - README.md

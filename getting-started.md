@@ -1,0 +1,219 @@
+---
+layout: page
+title: Getting Started
+permalink: /getting-started/
+---
+
+## Prerequisites
+
+Before installing mini-a, make sure you have:
+
+- **OpenAF** installed on your system (see [openaf.io](https://openaf.io) for installation instructions)
+- **An API key** for at least one LLM provider (OpenAI, Google, Anthropic, etc.) — or a local model via Ollama
+
+---
+
+## Installation
+
+1. **Install OpenAF** if you haven't already:
+
+   ```bash
+   # See https://openaf.io for full installation options
+   curl -sSL https://openaf.io/install.sh | sh
+   ```
+
+2. **Install the mini-a opack:**
+
+   ```bash
+   opack install mini-a
+   ```
+
+3. **Optional: add a shell alias (`mini-a`):**
+
+   ```bash
+   # Bash
+   echo 'alias mini-a="opack exec mini-a"' >> ~/.bashrc && . ~/.bashrc
+   # Zsh
+   echo 'alias mini-a="opack exec mini-a"' >> ~/.zshrc && . ~/.zshrc
+   # sh
+   echo 'alias mini-a="opack exec mini-a"' >> ~/.profile && . ~/.profile
+   ```
+
+   If you don't want to set an alias, use `opack exec mini-a [...]` directly.
+
+4. **Verify the installation:**
+
+   ```bash
+   mini-a -h
+   ```
+
+   You should see the mini-a help output listing all available options and parameters.
+
+---
+
+## Model Configuration
+
+mini-a supports multiple LLM providers. Set `OAF_MODEL` using SLON/JSON-style configuration (and use provider key env vars only if you prefer not to embed keys in `OAF_MODEL`):
+
+| Provider | Model variable | API key variable (optional) |
+|----------|---------------|-----------------|
+| OpenAI | `OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"` | `OPENAI_API_KEY` |
+| Google | `OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"` | `GOOGLE_API_KEY` |
+| Anthropic | `OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')"` | `ANTHROPIC_API_KEY` |
+| Ollama | `OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"` | No key needed (local) |
+| Bedrock | `OAF_MODEL="(type: bedrock, options: (region: eu-west-1, model: 'anthropic.claude-sonnet-4-20250514-v1:0'))"` | Uses AWS credentials |
+| GitHub | `OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-4o, key: $(gh auth token), apiVersion: '')"` | `GITHUB_TOKEN` |
+
+**Example configuration:**
+
+```bash
+export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
+export OPENAI_API_KEY="sk-..."
+```
+
+### Model Manager
+
+mini-a includes a built-in TUI (text user interface) for managing models interactively:
+
+```bash
+mini-a modelman=true
+```
+
+<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S5 — Model manager TUI]</div>
+
+---
+
+## Your First Run
+
+mini-a offers three ways to interact with it:
+
+### Console (Interactive)
+
+Launch mini-a in interactive console mode and enter goals conversationally:
+
+```bash
+mini-a
+```
+
+Once started, type your goal at the prompt and press Enter. mini-a will plan and execute steps to achieve it.
+
+<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S6 — Console first-run]</div>
+
+### Direct Goal
+
+Pass a goal directly from the command line for non-interactive execution:
+
+```bash
+mini-a useutils=true goal='List all files in the current directory'
+```
+
+### Web UI
+
+Start mini-a with the web interface and open it in your browser:
+
+```bash
+mini-a onport=8080
+```
+
+Then open [http://localhost:8080](http://localhost:8080) in your browser.
+
+<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S7 — Web UI first-run]</div>
+
+---
+
+## Docker Quick Start
+
+You can run mini-a directly with Docker without installing OpenAF:
+
+```bash
+docker run -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -e OPENAI_API_KEY=$OPENAI_API_KEY -p 8080:8080 openaf/mini-a
+```
+
+This starts the web UI on port 8080. Open [http://localhost:8080](http://localhost:8080) in your browser to get started.
+
+---
+
+## Console Commands
+
+When running in interactive console mode, the following commands are available:
+
+| Command | Description |
+|---------|-------------|
+| `/help` | Show available commands |
+| `/model` | Show current model |
+| `/compact` | Compact conversation context |
+| `/summarize` | Summarize conversation |
+| `/reset` | Reset conversation |
+| `/exit` | Exit mini-a |
+| `/save` | Save conversation |
+| `/load` | Load conversation |
+| `/clear` | Clear screen |
+| `/metrics` | Show usage metrics |
+
+---
+
+## File Inclusion
+
+You can include file contents directly in your prompt using the `@` syntax. Prefix any filename with `@` to inject its contents into the prompt:
+
+```bash
+mini-a useutils=true goal='@README.md Summarize this project'
+```
+
+This reads the contents of `README.md` and sends it along with your instruction to the LLM. You can reference any accessible file path.
+
+---
+
+## Mode Presets
+
+mini-a provides mode presets that quickly configure common access patterns:
+
+| Mode | What it enables |
+|------|----------------|
+| `shell` | Shell access enabled |
+| `chatbot` | Chatbot mode (no tools) |
+| `internet` | Web browsing MCP |
+| `poweruser` | Shell + utilities + tools |
+| `readwrite` | File read/write access |
+| `readonly` | Read-only file access |
+
+**Example:**
+
+```bash
+mini-a mode=poweruser
+```
+
+---
+
+## Common Issues
+
+**"Model not found"**
+Check that your environment variables are set correctly. Verify the model name matches the provider's naming convention and that your API key is valid.
+
+**"Permission denied"**
+Shell access is disabled by default for security. Enable it explicitly:
+
+```bash
+mini-a useshell=true
+```
+
+**"Context too long"**
+The conversation has exceeded the model's context window. Use the `/compact` command to reduce context size, or set a maximum context limit:
+
+```bash
+mini-a maxcontext=4096
+```
+
+**Connection errors**
+Verify your API endpoint is reachable and your network connection is active. For Ollama, ensure the local server is running. For cloud providers, check that your API key has not expired.
+
+---
+
+## Next Steps
+
+Now that you have mini-a up and running, explore more of what it can do:
+
+- **[Features]({{ '/features' | relative_url }})** — Discover all of mini-a's capabilities
+- **[Examples]({{ '/examples' | relative_url }})** — See real-world usage examples
+- **[Cheatsheet]({{ '/cheatsheet' | relative_url }})** — Quick reference for commands and parameters
+- **[Configuration]({{ '/configuration' | relative_url }})** — Fine-tune mini-a for your workflow
