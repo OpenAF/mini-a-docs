@@ -150,18 +150,46 @@ docker run --rm -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" -v $(p
 
 ### oJob Pipeline
 
-Integrate mini-a into an OpenAF oJob workflow for automation:
+Integrate mini-a into an OpenAF oJob workflow for automation. The examples in `OpenAF/mini-a/examples` use a repeatable pattern:
+
+- Add `mini-a` in `ojob.opacks`.
+- Load the packaged job definition with `jobsInclude: [mini-a.yaml]`.
+- Put your instructions in a `to: - (mini-a): ...` block (or route to `MiniAgent`).
+- Configure behavior with args like `useshell`, `readwrite`, `usetools`, `format`, and `outfile`.
 
 ```yaml
+ojob:
+  opacks:
+    - mini-a
+
+jobsInclude:
+  - mini-a.yaml
+
+todo:
+  - Generate CHANGELOG.md
+
 jobs:
-  - name: Analyze Code
-    exec: |
-      var result = $mini_a({
-        goal: "Review the code quality of " + args.file,
-        model: "(type: openai, model: gpt-5.2, key: '...')"
-      });
-      print(result);
+  - name: Generate CHANGELOG.md
+    to:
+      - (mini-a): |
+          Build a markdown changelog from git history.
+          Classify commits by type and write the final output.
+        ((useshell)): true
+        ((shellbatch)): true
+        ((shellallowpipes)): true
+        ((readwrite)): true
+        ((usetools)): true
+        ((format)): md
+        ((outfile)): CHANGELOG.md
 ```
+
+You can reuse the same structure for other automation tasks shown in upstream examples:
+
+- **Documentation refresh (`document.yaml`)**: use `useshell=true`, `useutils=true`, and `readwrite=true` so mini-a can scan repo files and update markdown docs.
+- **Chat post-processing (`learn-from-chat.yaml`)**: validate inputs in `check.in`, pass templated paths (`{{chat}}`, `{{rules}}`), and set `templateArgs=true`.
+- **Folder summary reports (`summary.yaml`)**: generate `summary.md` with mini-a (`format: md`, `outfile: summary.md`) and convert to HTML in a follow-up oJob step.
+
+If you prefer OpenAF JavaScript style, you can still call `$mini_a(...)` directly inside `exec`, but `jobsInclude + (mini-a)` keeps YAML jobs concise and consistent.
 
 ---
 
