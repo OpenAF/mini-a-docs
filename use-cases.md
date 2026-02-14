@@ -215,7 +215,7 @@ mini-a integrates naturally into automated workflows through oJob, OpenAF's job 
 
 ```yaml
 init:
-  model: "(type: openai, model: gpt-4o, key: '...')"
+  model: "(type: openai, model: gpt-5.2, key: '...')"
 
 jobs:
   - name: Review PR
@@ -270,8 +270,8 @@ In high-volume enterprise environments, running every task through a premium mod
 Configure the dual-model strategy using environment variables:
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 ```
 
 Then run the agent with your goal:
@@ -283,8 +283,8 @@ mini-a useshell=true mcp="(cmd: 'ojob mcps/mcp-db.yaml jdbc=jdbc:h2:./support us
 
 ### How It Works
 
-1. **OAF_MODEL** sets the primary model (e.g., `(type: openai, model: gpt-4o, key: '...')`) used for complex reasoning tasks such as nuanced analysis, report generation, and multi-step problem solving.
-2. **OAF_LC_MODEL** sets the lightweight model (e.g., `(type: openai, model: gpt-4o-mini, key: '...')`) used for simpler operations such as ticket categorization, data extraction, and routing decisions.
+1. **OAF_MODEL** sets the primary model (e.g., `(type: openai, model: gpt-5.2, key: '...')`) used for complex reasoning tasks such as nuanced analysis, report generation, and multi-step problem solving.
+2. **OAF_LC_MODEL** sets the lightweight model (e.g., `(type: openai, model: gpt-5-mini, key: '...')`) used for simpler operations such as ticket categorization, data extraction, and routing decisions.
 3. mini-a automatically routes tasks to the appropriate model based on complexity. Routine classification and data parsing go to the lightweight model, while synthesis and recommendation tasks go to the primary model.
 4. The **mcp-db** MCP server provides database access, allowing the agent to query support tickets directly.
 
@@ -292,11 +292,11 @@ mini-a useshell=true mcp="(cmd: 'ojob mcps/mcp-db.yaml jdbc=jdbc:h2:./support us
 
 | Task | Model Used | Relative Cost |
 |------|-----------|---------------|
-| Ticket categorization | gpt-4o-mini (LMODEL) | Low |
-| Data extraction & parsing | gpt-4o-mini (LMODEL) | Low |
-| Pattern analysis | gpt-4o (MODEL) | Standard |
-| Summary report generation | gpt-4o (MODEL) | Standard |
-| Recommendations | gpt-4o (MODEL) | Standard |
+| Ticket categorization | gpt-5-mini (LMODEL) | Low |
+| Data extraction & parsing | gpt-5-mini (LMODEL) | Low |
+| Pattern analysis | gpt-5.2 (MODEL) | Standard |
+| Summary report generation | gpt-5.2 (MODEL) | Standard |
+| Recommendations | gpt-5.2 (MODEL) | Standard |
 
 For a batch of 500 support tickets, this strategy typically routes 60-70% of LLM calls to the lightweight model, resulting in substantial cost savings compared to using the primary model exclusively.
 
@@ -307,8 +307,8 @@ Use the `/metrics` endpoint to track model usage and cost distribution across yo
 ```
 Model Usage Summary
 -------------------
-Primary model (gpt-4o):      142 calls  |  38% of total
-Lightweight model (gpt-4o-mini): 231 calls  |  62% of total
+Primary model (gpt-5.2):      142 calls  |  38% of total
+Lightweight model (gpt-5-mini): 231 calls  |  62% of total
 
 Token Usage
 -----------

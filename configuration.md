@@ -24,7 +24,7 @@ export MINI_A_PARAM=value
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-4o, key: '...')`) |
+| `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5.2, key: '...')`) |
 | `lmodel` | - | Lighter model for simple tasks (dual-model) |
 | `apikey` | - | API key (alternative to env var) |
 | `apiurl` | - | Custom API endpoint URL |

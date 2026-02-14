@@ -145,7 +145,7 @@ mini-a useshell=true readwrite=true goal='Generate API documentation for all Jav
 Run mini-a in a container without installing OpenAF locally. Mount your project directory and let it work:
 
 ```bash
-docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -v $(pwd):/work openaf/mini-a useutils=true goal='Analyze the project in /work and create a README'
+docker run --rm -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" -v $(pwd):/work openaf/mini-a useutils=true goal='Analyze the project in /work and create a README'
 ```
 
 ### oJob Pipeline
@@ -158,7 +158,7 @@ jobs:
     exec: |
       var result = $mini_a({
         goal: "Review the code quality of " + args.file,
-        model: "(type: openai, model: gpt-4o, key: '...')"
+        model: "(type: openai, model: gpt-5.2, key: '...')"
       });
       print(result);
 ```
@@ -182,14 +182,14 @@ Getting the best results from mini-a while keeping costs and latency low:
 - **Use low-cost models for simple tasks.** Not every goal needs a frontier model:
 
   ```bash
-  export OAF_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+  export OAF_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
   ```
 
 - **Enable dual-model for cost savings.** Set a powerful model for planning and a lighter model for execution by configuring both `OAF_MODEL` (main) and `OAF_LC_MODEL` (light):
 
   ```bash
-  export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-  export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+  export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
+  export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
   ```
 
 - **Manage context actively.** Use the `/compact` command regularly in interactive sessions, and set a context limit for long-running tasks:

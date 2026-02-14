@@ -103,7 +103,7 @@ permalink: /
   </div>
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
 ```
 
   <div class="step">

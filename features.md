@@ -14,12 +14,12 @@ mini-a works with **10+ LLM providers** out of the box. Switch between providers
 
 | Provider | Prefix | Example Model |
 |----------|--------|---------------|
-| OpenAI | `openai:` | `gpt-4o`, `gpt-4o-mini` |
+| OpenAI | `openai:` | `gpt-5.2`, `gpt-5-mini` |
 | Google Gemini | `google:` | `gemini-2.0-flash`, `gemini-1.5-pro` |
 | Anthropic Claude | `anthropic:` | `claude-sonnet-4-20250514` |
 | Ollama (local) | `ollama:` | `llama3`, `mistral`, `codellama` |
 | AWS Bedrock | `bedrock:` | `anthropic.claude-v2` |
-| GitHub Models | `github:` | `gpt-4o` |
+| GitHub Models | `github:` | `openai/gpt-5` |
 | Deepseek | `deepseek:` | `deepseek-chat` |
 | Groq | `groq:` | `llama3-70b-8192` |
 | Cerebras | `cerebras:` | `llama3.1-70b` |
@@ -29,7 +29,7 @@ mini-a works with **10+ LLM providers** out of the box. Switch between providers
 Switching is as simple as setting the environment variable:
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"             # OpenAI
+export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"             # OpenAI
 export OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"    # Google
 export OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"              # Local
 ```
@@ -43,8 +43,8 @@ You can embed provider keys directly in `OAF_MODEL`/`OAF_LC_MODEL` using `key: '
 One of mini-a's most powerful features is its **dual-model architecture**. You can assign a cheaper, faster model to handle simple tasks (routing, summarization, classification) while reserving a more capable model for complex reasoning.
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"            # Main model — complex reasoning
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"      # Light model — simple tasks
+export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"            # Main model — complex reasoning
+export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"      # Light model — simple tasks
 ```
 
 The framework automatically decides which model to use for each subtask, optimizing cost without sacrificing quality where it matters.
@@ -187,7 +187,7 @@ Use mini-a programmatically from your own OpenAF scripts.
 loadLib("mini-a.js");
 
 var agent = new MiniA({
-  model: "(type: openai, model: gpt-4o, key: '...')",
+  model: "(type: openai, model: gpt-5.2, key: '...')",
   usetools: true
 });
 
@@ -313,8 +313,8 @@ services:
   mini-a:
     image: openaf/mini-a
     environment:
-      - OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-      - OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+      - OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
+      - OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
     ports:
       - "8080:8080"
     volumes:

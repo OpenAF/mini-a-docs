@@ -15,8 +15,8 @@ mini-a supports a dual-model architecture that lets you pair a powerful reasonin
 **Full configuration:**
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 ```
 
 ### When each model is used
@@ -39,7 +39,7 @@ export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
 
   ```bash
   export OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')"
-  export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+  export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
   ```
 
 When the light model is not set, mini-a uses the main model for everything. Setting the light model is optional but recommended for cost-sensitive workloads.
@@ -230,7 +230,7 @@ Allowlists and ban lists give you layered control over shell safety.
 For maximum safety, run shell commands inside a Docker container. This isolates the agent's shell access from your host system entirely:
 
 ```bash
-docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" -v $(pwd):/work openaf/mini-a useshell=true goal='Analyze the project in /work'
+docker run --rm -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" -v $(pwd):/work openaf/mini-a useshell=true goal='Analyze the project in /work'
 ```
 
 The agent can execute commands freely inside the container without risk to your host filesystem or system.
@@ -258,7 +258,7 @@ Call mini-a directly from OpenAF JavaScript code using the `$mini_a` function:
 ```javascript
 var result = $mini_a({
   goal: "Analyze this data",
-  model: "(type: openai, model: gpt-4o, key: '...')",
+  model: "(type: openai, model: gpt-5.2, key: '...')",
   useshell: false
 });
 print(result.output);
@@ -483,7 +483,7 @@ Alternatively, configure credentials in `~/.aws/credentials` and set the region 
 GitHub Models can use your GitHub personal access token directly in `OAF_MODEL`:
 
 ```bash
-export OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-4o, key: $(gh auth token), apiVersion: '')"
+export OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-5, key: $(gh auth token), apiVersion: '')"
 ```
 
 Model names follow GitHub's model catalog naming. Check the GitHub Models marketplace for available models.

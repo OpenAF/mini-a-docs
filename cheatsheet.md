@@ -26,12 +26,12 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 
 | Provider | Config |
 |----------|--------|
-| OpenAI | `export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"` |
+| OpenAI | `export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"` |
 | Google | `export OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"` |
 | Anthropic | `export OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')"` |
 | Ollama | `export OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"` |
 | Bedrock | `export OAF_MODEL="(type: bedrock, options: (region: eu-west-1, model: 'anthropic.claude-sonnet-4-20250514-v1:0'))"` |
-| GitHub | `export OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-4o, key: $(gh auth token), apiVersion: '')"` |
+| GitHub | `export OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-5, key: $(gh auth token), apiVersion: '')"` |
 
 ## Running mini-a
 
@@ -111,8 +111,8 @@ mini-a useutils=true goal='@data.csv Analyze it'
 ## Dual-Model Setup
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
+export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
+export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 # Saves 50-70% on token costs
 ```
 
@@ -120,9 +120,9 @@ export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"
 
 ```bash
 # Interactive
-docker run -it -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" openaf/mini-a
+docker run -it -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" openaf/mini-a
 # Web UI
-docker run -p 8080:8080 -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" openaf/mini-a onport=8080
+docker run -p 8080:8080 -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" openaf/mini-a onport=8080
 ```
 
 ## Common MCP Servers

@@ -11,7 +11,7 @@ Frequently asked questions about mini-a. Can't find your answer? [Open an issue]
 
 ### What is mini-a?
 
-mini-a is a minimalist autonomous agent framework built on [OpenAF](https://openaf.io). It connects to LLMs (like GPT-4, Gemini, Claude, or local models via Ollama), uses tools through the [MCP protocol](https://modelcontextprotocol.io), and can execute shell commands to achieve goals you define — all from a single command.
+mini-a is a minimalist autonomous agent framework built on [OpenAF](https://openaf.io). It connects to LLMs (like GPT-5, Gemini, Claude, or local models via Ollama), uses tools through the [MCP protocol](https://modelcontextprotocol.io), and can execute shell commands to achieve goals you define — all from a single command.
 
 ### How does mini-a compare to other agent frameworks?
 
@@ -61,8 +61,8 @@ It depends on your needs:
 
 | Use Case | Recommended Model | Why |
 |----------|-------------------|-----|
-| General purpose | `openai:gpt-4o` | Good balance of speed, cost, and quality |
-| Budget-friendly | `openai:gpt-4o-mini` | Low cost, good for simple tasks |
+| General purpose | `openai:gpt-5.2` | Good balance of speed, cost, and quality |
+| Budget-friendly | `openai:gpt-5-mini` | Low cost, good for simple tasks |
 | Best quality | `anthropic:claude-sonnet-4-20250514` | Strong reasoning and coding |
 | Privacy/local | `ollama:llama3` | Runs locally, no data leaves your machine |
 | AWS environments | `bedrock:anthropic.claude-sonnet-4-20250514-v1:0` | Uses existing AWS credentials |
@@ -150,7 +150,7 @@ mini-a useshell=true readonly=true shellallow='git,ls,cat,grep'
 Run mini-a in a container so the agent can only affect the container environment:
 
 ```bash
-docker run --rm -e OAF_MODEL="(type: openai, model: gpt-4o, key: '...')" \
+docker run --rm -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" \
   -v $(pwd):/work:ro openaf/mini-a useshell=true goal='Analyze the project in /work'
 ```
 
@@ -174,8 +174,8 @@ When using the model manager (`modelman=true`), keys are stored encrypted on dis
 Set a powerful model for complex tasks and a cheaper model for simple ones:
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-4o, key: '...')"        # Complex reasoning
-export OAF_LC_MODEL="(type: openai, model: gpt-4o-mini, key: '...')"  # Routing, summarization
+export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"        # Complex reasoning
+export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"  # Routing, summarization
 ```
 
 mini-a automatically routes tasks to the appropriate model. Simple operations (summarization, classification, routing) go to the cheaper model, saving 50-70% on typical workloads.
@@ -191,7 +191,7 @@ Use the `/metrics` command in the console to see token counts, model usage, and 
 Check that `OAF_MODEL` is in the expected SLON/JSON-style configuration format and that credentials are present:
 
 ```bash
-echo $OAF_MODEL    # Should show something like: (type: openai, model: gpt-4o, key: '...')
+echo $OAF_MODEL    # Should show something like: (type: openai, model: gpt-5.2, key: '...')
 ```
 
 ### "Permission denied" when running commands
