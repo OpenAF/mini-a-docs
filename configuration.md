@@ -24,8 +24,9 @@ export MINI_A_PARAM=value
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5.2, key: '...')`) |
+| `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5-mini, key: '...')`) |
 | `lmodel` | - | Lighter model for simple tasks (dual-model) |
+| `vmodel` | - | Optional dedicated validation model used in deep-research scoring |
 | `apikey` | - | API key (alternative to env var) |
 | `apiurl` | - | Custom API endpoint URL |
 | `temperature` | `0.7` | Model temperature (0-2) |
@@ -186,6 +187,9 @@ export MINI_A_PARAM=value
 |----------|---------|
 | `OAF_MODEL` | `model` |
 | `OAF_LC_MODEL` | `lmodel` |
+| `OAF_VAL_MODEL` | `vmodel` |
+| `OAF_MINI_A_NOJSONPROMPT` | Force text prompt mode for main model (Gemini compatibility) |
+| `OAF_MINI_A_LCNOJSONPROMPT` | Force text prompt mode for low-cost model |
 | `MINI_A_GOAL` | `goal` |
 | `MINI_A_PORT` | `onport` |
 | `OAF_MODEL` / `OAF_LC_MODEL` `key` field | Provider API credential (recommended) |
@@ -201,11 +205,12 @@ export MINI_A_PARAM=value
 |---------|-------------|
 | `/help` | Show available commands |
 | `/model` | Show current model info |
-| `/compact` | Compact conversation context |
-| `/summarize` | Summarize conversation |
+| `/compact [n]` | Compact older history while keeping latest `n` exchanges |
+| `/summarize [n]` | Summarize older history while keeping latest `n` exchanges |
+| `/context [llm|analyze]` | Show estimated or model-analyzed context token breakdown |
 | `/reset` | Reset conversation |
-| `/save [file]` | Save conversation to file |
-| `/load [file]` | Load conversation from file |
+| `/last [md]` | Reprint the previous final answer (raw markdown with `md`) |
+| `/save <path>` | Save the previous final answer to a file |
 | `/metrics` | Show usage metrics |
 | `/exit` | Exit mini-a |
 | `/clear` | Clear screen |
@@ -220,10 +225,13 @@ export MINI_A_PARAM=value
 | Preset | Parameters Enabled |
 |--------|-------------------|
 | `shell` | `useshell=true` |
+| `shellrw` | `useshell=true readwrite=true` |
+| `shellutils` | `useshell=true useutils=true usetools=true` (plus docs-aware defaults in upstream presets) |
 | `chatbot` | `chatbotmode=true` |
-| `internet` | MCP web server enabled |
-| `poweruser` | `useshell=true, useutils=true, usetools=true` |
-| `readwrite` | `readwrite=true` |
-| `readonly` | Read-only file access |
+| `internet` | Internet-focused MCP/tool preset from `mini-a-modes.yaml` |
+| `web` | Browser UI optimized preset |
+| `webfull` | Full web UI preset with planning/history/attachments + richer output modes |
+
+User custom presets can be defined in `~/.openaf-mini-a_modes.yaml`. They are merged with built-ins from `mini-a-modes.yaml`, and user definitions take precedence.
 
 </div>
