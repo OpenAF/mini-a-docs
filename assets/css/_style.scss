@@ -29,6 +29,79 @@
   }
 }
 
+// Site navigation
+.site-nav {
+  .nav-items {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .nav-item {
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  #nav-trigger {
+    display: none;
+  }
+
+  label {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .site-nav {
+    label {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border: 1px solid rgba(160, 174, 192, 0.5);
+      border-radius: 6px;
+    }
+
+    .menu-icon {
+      display: inline-block;
+      width: 20px;
+      height: 2px;
+      background: currentColor;
+      position: relative;
+    }
+
+    .menu-icon::before,
+    .menu-icon::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 20px;
+      height: 2px;
+      background: currentColor;
+    }
+
+    .menu-icon::before {
+      top: -6px;
+    }
+
+    .menu-icon::after {
+      top: 6px;
+    }
+
+    .nav-items {
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    #nav-trigger:checked ~ .nav-items {
+      display: flex;
+    }
+  }
+}
+
 // CTA Buttons
 .cta-buttons {
   display: flex;
