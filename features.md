@@ -34,7 +34,7 @@ export OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"    # Goog
 export OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"              # Local
 ```
 
-You can embed provider keys directly in `OAF_MODEL`/`OAF_LC_MODEL` using `key: '...'`, or use provider-specific env vars (e.g., `OPENAI_API_KEY`, `GOOGLE_API_KEY`). Ollama runs locally and requires no key.
+Set credentials directly in `OAF_MODEL`/`OAF_LC_MODEL` using `key: '...'` so configuration stays in one place. Ollama runs locally and requires no key.
 
 ---
 
