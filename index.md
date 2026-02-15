@@ -18,10 +18,8 @@ permalink: /
 </div>
 
 ---
-
 ## See It in Action
 {: .section}
-
 <div class="screenshots-grid">
   <div>
     <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S1 — Web UI showing a multi-step task with streaming output]</div>
@@ -59,10 +57,8 @@ permalink: /
 </div>
 
 ---
-
 ## Features
 {: .section}
-
 <div class="feature-grid">
   <div class="feature-card">
     <h3>Any LLM, Your Choice</h3>
@@ -91,10 +87,8 @@ permalink: /
 </div>
 
 ---
-
 ## Quick Example
 {: .section}
-
 <div class="quick-example">
   <div class="step">
     <span class="step-number">1</span>
@@ -125,23 +119,21 @@ permalink: /
 </div>
 
 ---
-
 ## How It Works
 {: .section}
-
 mini-a follows a simple loop: **understand the goal → plan steps → execute tools → validate results → report back**.
 
 ```
 ┌─────────┐     ┌─────────┐     ┌──────────┐     ┌──────────┐
-│  Your    │────▶│  LLM    │────▶│  Tools   │────▶│  Result  │
-│  Goal    │     │  Engine  │     │  (MCP)   │     │  Output  │
+│  Your   │────▶│  LLM    │────▶│  Tools   │────▶│  Result  │
+│  Goal   │     │  Engine │     │  (MCP)   │     │  Output  │
 └─────────┘     └─────────┘     └──────────┘     └──────────┘
                      │                │
                      ▼                ▼
-                ┌─────────┐     ┌──────────┐
+                ┌──────────┐     ┌──────────┐
                 │ Planning │     │  Shell   │
                 │ & Memory │     │ Commands │
-                └─────────┘     └──────────┘
+                └──────────┘     └──────────┘
 ```
 
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S4 — Architecture diagram (SVG preferred)]</div>
