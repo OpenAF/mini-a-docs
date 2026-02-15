@@ -144,8 +144,8 @@ When running in interactive console mode, the following commands are available:
 |---------|-------------|
 | `/help` | Show available commands |
 | `/model` | Show current model |
-| `/compact [n]` | Compact older history while keeping the latest `n` exchanges |
-| `/summarize [n]` | Replace older history with a narrative summary and keep the latest `n` exchanges |
+| `/compact [n]` | Compact older history while keeping up to the latest `n` exchanges (default 6) |
+| `/summarize [n]` | Replace older history with a narrative summary and keep up to the latest `n` exchanges (default 6) |
 | `/context` | Show token/context breakdown |
 | `/reset` | Reset conversation |
 | `/exit` | Exit mini-a |

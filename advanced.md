@@ -204,8 +204,8 @@ mini-a applies automatic prompt optimization to reduce token usage without losin
 
 In interactive console mode, two commands give you direct control over context size:
 
-- **`/compact`** — Immediately reduces the conversation context by summarizing and removing older turns. Use this when you notice the model slowing down or losing track of earlier instructions.
-- **`/summarize`** — Creates a structured summary of the entire conversation so far and replaces the full history with it. This is more aggressive than `/compact` and is useful for very long sessions.
+- **`/compact [n]`** — Immediately reduces the conversation context by summarizing and removing older turns while keeping up to the latest `n` exchanges (default 6). Use this when you notice the model slowing down or losing track of earlier instructions.
+- **`/summarize [n]`** — Creates a structured summary of the entire conversation so far, replaces older history with that summary, and keeps up to the latest `n` exchanges (default 6). This is more aggressive than `/compact` and is useful for very long sessions.
 
 ### Response Length
 

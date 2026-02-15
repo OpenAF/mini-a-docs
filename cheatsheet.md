@@ -49,8 +49,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 |---------|--------|
 | `/help` | Show commands |
 | `/model` | Current model info |
-| `/compact [n]` | Compact older history, keep latest `n` exchanges |
-| `/summarize [n]` | Summarize older history, keep latest `n` exchanges |
+| `/compact [n]` | Compact older history, keep up to latest `n` exchanges (default 6) |
+| `/summarize [n]` | Summarize older history, keep up to latest `n` exchanges (default 6) |
 | `/context` | Show token/context breakdown |
 | `/reset` | Reset conversation |
 | `/last [md]` | Reprint last final answer (`md` for raw markdown) |

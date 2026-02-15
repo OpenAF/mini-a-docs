@@ -194,8 +194,8 @@ export MINI_A_PARAM=value
 | `OAF_MODEL` | `model` |
 | `OAF_LC_MODEL` | `lmodel` |
 | `OAF_VAL_MODEL` | `vmodel` |
-| `OAF_MINI_A_NOJSONPROMPT` | Force text prompt mode for main model (Gemini compatibility) |
-| `OAF_MINI_A_LCNOJSONPROMPT` | Force text prompt mode for low-cost model |
+| `OAF_MINI_A_NOJSONPROMPT` | Force text prompt mode for main model; Gemini main models auto-enable this behavior when unset |
+| `OAF_MINI_A_LCNOJSONPROMPT` | Force text prompt mode for low-cost model (set explicitly for Gemini low-cost models) |
 | `MINI_A_GOAL` | `goal` |
 | `MINI_A_PORT` | `onport` |
 | `OAF_MODEL` / `OAF_LC_MODEL` `key` field | Provider API credential (recommended) |
@@ -211,8 +211,8 @@ export MINI_A_PARAM=value
 |---------|-------------|
 | `/help` | Show available commands |
 | `/model` | Show current model info |
-| `/compact [n]` | Compact older history while keeping latest `n` exchanges |
-| `/summarize [n]` | Summarize older history while keeping latest `n` exchanges |
+| `/compact [n]` | Compact older history while keeping up to latest `n` exchanges (default 6) |
+| `/summarize [n]` | Summarize older history while keeping up to latest `n` exchanges (default 6) |
 | `/context [llm|analyze]` | Show estimated or model-analyzed context token breakdown |
 | `/reset` | Reset conversation |
 | `/last [md]` | Reprint the previous final answer (raw markdown with `md`) |

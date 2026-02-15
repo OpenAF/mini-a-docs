@@ -395,12 +395,13 @@ mini-a provides several commands for managing conversation context during a sess
 
 | Command | Description |
 |---------|-------------|
-| `/compact [n]` | Compress older history while preserving the latest `n` exchanges |
-| `/summarize [n]` | Replace older history with a narrative summary and keep the latest `n` exchanges |
+| `/compact [n]` | Compress older history while preserving up to the latest `n` exchanges (default 6) |
+| `/summarize [n]` | Replace older history with a narrative summary and keep up to the latest `n` exchanges (default 6) |
 | `/last [md]` | Reprint the most recent final answer (`md` for raw markdown) |
 | `/save <path>` | Save the most recent final answer to a file |
 
 These commands are especially useful in long sessions where context accumulates and token costs increase. Compacting a conversation can reduce context size by 40-60% while preserving the essential information the agent needs.
+When enough history exists, mini-a keeps at least one older entry eligible for summarization instead of preserving the entire tail.
 
 ---
 
