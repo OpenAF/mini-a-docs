@@ -129,10 +129,17 @@ mini-a useshell=true
 
 ### 2. Built-in Utilities
 
-File operations, text search, directory listing, and other common utilities that do not require spawning a shell.
+File operations, text search, directory listing, and other common utilities that do not require spawning a shell.  
+When enabled, Mini Utils provides `init`, `filesystemQuery`, `filesystemModify`, and `markdownFiles`.
 
 ```bash
 mini-a useutils=true
+```
+
+For docs-aware workflows, enable:
+
+```bash
+mini-a useutils=true mini-a-docs=true
 ```
 
 ### 3. MCP Tools
@@ -149,6 +156,7 @@ mini-a usetools=true
 |-----------|----------------|---------|
 | `useshell` | Shell command execution | `false` |
 | `useutils` | Built-in file and search utilities | `true` |
+| `mini-a-docs` | Auto-set docs root for Mini Utils `markdownFiles` when `utilsroot` is unset | `false` |
 | `usetools` | MCP tool servers | `true` |
 
 All three can be combined. When the agent receives a goal, it selects the appropriate tool type based on the task.
@@ -270,6 +278,12 @@ Create markdown templates under `~/.openaf-mini-a/commands/` and invoke them wit
 
 Use placeholders inside the template: `{{args}}`, `{{argv}}`, `{{argc}}`, `{{arg1}}`, `{{arg2}}`, ...
 
+Load additional command directories with:
+
+```bash
+mini-a extracommands=/path/to/team-commands,/path/to/project-commands
+```
+
 ### Skills
 
 mini-a discovers skills from `~/.openaf-mini-a/skills/` in two formats:
@@ -279,6 +293,12 @@ mini-a discovers skills from `~/.openaf-mini-a/skills/` in two formats:
 
 Run skills with either `/<name> ...args...` or `$<name> ...args...`. Use `/skills` (or `/skills <prefix>`) to list discovered skills.
 
+Load additional skill directories with:
+
+```bash
+mini-a extraskills=/path/to/shared-skills,/path/to/project-skills
+```
+
 ### Hooks
 
 mini-a can run local hooks from `~/.openaf-mini-a/hooks/*.yaml|*.yml|*.json` on events like:
@@ -286,6 +306,12 @@ mini-a can run local hooks from `~/.openaf-mini-a/hooks/*.yaml|*.yml|*.json` on 
 - `before_goal`, `after_goal`
 - `before_tool`, `after_tool`
 - `before_shell`, `after_shell`
+
+Load additional hook directories with:
+
+```bash
+mini-a extrahooks=/path/to/team-hooks,/path/to/project-hooks
+```
 
 ### Non-interactive Template Execution
 

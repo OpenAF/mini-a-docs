@@ -72,6 +72,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `maxtokens` | - | Max output tokens |
 | `useplanning` | `false` | Enable planning |
 | `useutils` | `true` | Built-in utilities |
+| `mini-a-docs` | `false` | Docs-aware Mini Utils root (`markdownFiles`) when `utilsroot` is unset |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `usetools` | `true` | Enable tool use |
 | `usestream` | `true` | Stream responses |
@@ -94,7 +95,10 @@ mini-a useutils=true goal='@data.csv Analyze it'
 | Custom slash template | `~/.openaf-mini-a/commands/<name>.md` |
 | Skill (folder) | `~/.openaf-mini-a/skills/<name>/SKILL.md` |
 | Skill (file) | `~/.openaf-mini-a/skills/<name>.md` |
-| Hooks | `~/.openaf-mini-a/hooks/*.yaml` |
+| Hooks | `~/.openaf-mini-a/hooks/*.yaml|*.yml|*.json` |
+| Extra command dirs | `extracommands=/path/a,/path/b` |
+| Extra skill dirs | `extraskills=/path/a,/path/b` |
+| Extra hook dirs | `extrahooks=/path/a,/path/b` |
 | Run one template | `mini-a exec="/<name> arg1 arg2"` |
 | List skills | `/skills` |
 
@@ -104,11 +108,11 @@ mini-a useutils=true goal='@data.csv Analyze it'
 |------|---------|
 | `shell` | Read-only shell access (`useshell=true`) |
 | `shellrw` | Shell + write access (`useshell=true readwrite=true`) |
-| `shellutils` | Shell + Mini Utils Tool (`useutils=true usetools=true`) |
+| `shellutils` | Shell + Mini Utils Tool (`useutils=true mini-a-docs=true usetools=true`) |
 | `chatbot` | Chat-only mode |
-| `internet` | Internet-focused MCP/tool mode |
-| `web` | Browser UI optimized preset |
-| `webfull` | Full web UI preset (history, attachments, planning, diagrams/charts) |
+| `internet` | Internet-focused MCP/tool mode with docs-aware utils |
+| `web` | Browser UI optimized preset with docs-aware utils |
+| `webfull` | Full web UI preset (docs-aware utils, history, attachments, planning, diagrams/charts) |
 
 Custom modes: create `~/.openaf-mini-a_modes.yaml` with a `modes:` map. Custom definitions are merged with built-ins and override duplicates.
 

@@ -98,6 +98,7 @@ Yes. mini-a supports:
 - Custom slash command templates in `~/.openaf-mini-a/commands/<name>.md`
 - Skills in `~/.openaf-mini-a/skills/<name>/SKILL.md` or `~/.openaf-mini-a/skills/<name>.md`
 - Console hooks in `~/.openaf-mini-a/hooks/*.yaml|*.yml|*.json`
+- Extra loading paths via `extracommands=...`, `extraskills=...`, and `extrahooks=...`
 
 You can run templates directly with `mini-a exec="/<name> arg1 arg2"` and list skills with `/skills`.
 

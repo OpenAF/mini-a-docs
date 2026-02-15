@@ -50,6 +50,9 @@ export MINI_A_PARAM=value
 | `youare` | - | Custom system persona/identity |
 | `rules` | - | Additional rules for the agent |
 | `knowledge` | - | Knowledge base content or file path |
+| `extracommands` | - | Comma-separated extra directories for custom slash command templates |
+| `extraskills` | - | Comma-separated extra directories for custom skills |
+| `extrahooks` | - | Comma-separated extra directories for hook definitions |
 
 </div>
 
@@ -73,7 +76,10 @@ export MINI_A_PARAM=value
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `useutils` | `true` | Enable built-in utility tools |
+| `useutils` | `true` | Enable Mini Utils Tool utilities (`init`, `filesystemQuery`, `filesystemModify`, `markdownFiles`) |
+| `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
+| `utilsroot` | - | Root path used by Mini Utils file operations |
+| `mini-a-docs` | `false` | If `true` and `utilsroot` is not set, automatically uses the mini-a oPack docs path as `utilsroot` |
 | `usetools` | `true` | Enable tool usage |
 | `libs` | - | Additional library paths to load |
 
@@ -226,11 +232,11 @@ export MINI_A_PARAM=value
 |--------|-------------------|
 | `shell` | `useshell=true` |
 | `shellrw` | `useshell=true readwrite=true` |
-| `shellutils` | `useshell=true useutils=true usetools=true` (plus docs-aware defaults in upstream presets) |
+| `shellutils` | `useshell=true useutils=true mini-a-docs=true usetools=true` |
 | `chatbot` | `chatbotmode=true` |
-| `internet` | Internet-focused MCP/tool preset from `mini-a-modes.yaml` |
-| `web` | Browser UI optimized preset |
-| `webfull` | Full web UI preset with planning/history/attachments + richer output modes |
+| `internet` | Internet-focused MCP/tool preset with docs-aware utils from `mini-a-modes.yaml` |
+| `web` | Browser UI optimized preset with docs-aware utils |
+| `webfull` | Full web UI preset with docs-aware utils, planning/history/attachments, and richer output modes |
 
 User custom presets can be defined in `~/.openaf-mini-a_modes.yaml`. They are merged with built-ins from `mini-a-modes.yaml`, and user definitions take precedence.
 

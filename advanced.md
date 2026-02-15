@@ -122,6 +122,12 @@ Create markdown templates in `~/.openaf-mini-a/commands/`:
 ~/.openaf-mini-a/commands/<name>.md
 ```
 
+Load additional command directories:
+
+```bash
+mini-a extracommands=/path/to/team-commands,/path/to/project-commands
+```
+
 Run in console:
 
 ```bash
@@ -143,9 +149,21 @@ Supported skill layouts in `~/.openaf-mini-a/skills/`:
 
 Skills can be invoked as `/<name> ...args...` or `$<name> ...args...`.
 
+Load additional skill directories:
+
+```bash
+mini-a extraskills=/path/to/shared-skills,/path/to/project-skills
+```
+
 ### Hooks
 
 Hook definitions are loaded from `~/.openaf-mini-a/hooks/*.yaml`, `*.yml`, `*.json`.
+
+Load additional hook directories:
+
+```bash
+mini-a extrahooks=/path/to/team-hooks,/path/to/project-hooks
+```
 
 Example:
 
