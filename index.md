@@ -101,27 +101,24 @@ permalink: /
     <strong>Configure your model</strong>
   </div>
 
-```bash
-export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
-```
+  <pre><code class="language-bash">export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"
+</code></pre>
 
   <div class="step">
     <span class="step-number">2</span>
     <strong>Run mini-a</strong>
   </div>
 
-```bash
-mini-a
-```
+  <pre><code class="language-bash">mini-a
+</code></pre>
 
   <div class="step">
     <span class="step-number">3</span>
     <strong>Give it a goal</strong>
   </div>
 
-```
-> List all JavaScript files in this project and count the lines of code in each
-```
+  <pre><code>&gt; List all JavaScript files in this project and count the lines of code in each
+</code></pre>
 
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S3 — Terminal recording showing a 30-second quick start]</div>
 
