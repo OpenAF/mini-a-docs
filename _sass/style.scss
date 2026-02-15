@@ -125,8 +125,27 @@
       padding: 0.75rem 1rem;
       border: 1px solid rgba(160, 174, 192, 0.4);
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.96);
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      width: min(92vw, 320px);
+    }
+
+    .nav-item {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .nav-item:hover,
+    .nav-item:focus-visible {
+      background: rgba(15, 23, 42, 0.06);
+      text-decoration: none;
     }
 
     #nav-trigger:checked ~ .nav-items {
