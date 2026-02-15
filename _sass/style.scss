@@ -54,13 +54,23 @@
 
 @media (max-width: 600px) {
   .site-nav {
-    label {
+    position: relative;
+    top: auto;
+    right: auto;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    label,
+    label[for="nav-trigger"] {
       display: inline-flex;
       align-items: center;
       cursor: pointer;
       padding: 0.25rem 0.5rem;
       border: 1px solid rgba(160, 174, 192, 0.5);
       border-radius: 6px;
+      float: none;
+      width: auto;
+      height: auto;
     }
 
     .menu-icon {
@@ -69,6 +79,10 @@
       height: 2px;
       background: currentColor;
       position: relative;
+      line-height: 0;
+      padding-top: 0;
+      text-align: left;
+      float: none;
     }
 
     .menu-icon::before,
@@ -79,6 +93,12 @@
       width: 20px;
       height: 2px;
       background: currentColor;
+      font-family: inherit;
+    }
+
+    #nav-trigger ~ label[for="nav-trigger"] .menu-icon::before,
+    #nav-trigger:checked ~ label[for="nav-trigger"] .menu-icon::before {
+      content: "";
     }
 
     .menu-icon::before {
