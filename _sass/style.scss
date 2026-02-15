@@ -119,6 +119,20 @@
     #nav-trigger:checked ~ .nav-items {
       display: flex;
     }
+
+    #nav-trigger:checked ~ label[for="nav-trigger"] .menu-icon {
+      background: transparent;
+    }
+
+    #nav-trigger:checked ~ label[for="nav-trigger"] .menu-icon::before {
+      top: 0;
+      transform: rotate(45deg);
+    }
+
+    #nav-trigger:checked ~ label[for="nav-trigger"] .menu-icon::after {
+      top: 0;
+      transform: rotate(-45deg);
+    }
   }
 }
 
