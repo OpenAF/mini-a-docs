@@ -181,7 +181,7 @@ Built-ins come from `mini-a-modes.yaml`, and you can extend/override them with `
 | `chatbot` | Chatbot mode (`chatbotmode=true`) |
 | `internet` | Internet-focused MCP/tool mode with docs-aware utils |
 | `web` | Browser UI optimized preset with docs-aware utils |
-| `webfull` | Full web UI preset (docs-aware utils, history, attachments, diagrams/charts, planning) |
+| `webfull` | Full web UI preset (docs-aware utils, history, attachments, diagrams/charts, math rendering guidance, planning) |
 
 **Built-in mode example:**
 

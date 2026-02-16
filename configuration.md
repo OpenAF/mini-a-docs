@@ -53,6 +53,8 @@ export MINI_A_PARAM=value
 | `extracommands` | - | Comma-separated extra directories for custom slash command templates |
 | `extraskills` | - | Comma-separated extra directories for custom skills |
 | `extrahooks` | - | Comma-separated extra directories for hook definitions |
+| `auditch` | - | JSSLON channel definition for agent interaction audit logs |
+| `toollog` | - | JSSLON channel definition for dedicated MCP tool input/output logs |
 
 </div>
 
@@ -118,6 +120,7 @@ export MINI_A_PARAM=value
 |-----------|---------|-------------|
 | `useshell` | `false` | Enable shell commands |
 | `readwrite` | `false` | Allow file write operations |
+| `shelltimeout` | - | Maximum shell command runtime in milliseconds before timeout |
 | `shellallow` | - | Allowed shell commands (comma-separated) |
 | `shellban` | - | Banned shell commands (comma-separated) |
 
@@ -131,6 +134,7 @@ export MINI_A_PARAM=value
 |-----------|---------|-------------|
 | `useascii` | `false` | Enable ASCII art generation |
 | `usemaps` | `false` | Enable map visualization |
+| `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in the web UI |
 | `usediagrams` | `false` | Enable diagram generation |
 | `usecharts` | `false` | Enable chart generation |
 | `usestream` | `true` | Enable response streaming |
@@ -236,7 +240,7 @@ export MINI_A_PARAM=value
 | `chatbot` | `chatbotmode=true` |
 | `internet` | Internet-focused MCP/tool preset with docs-aware utils from `mini-a-modes.yaml` |
 | `web` | Browser UI optimized preset with docs-aware utils |
-| `webfull` | Full web UI preset with docs-aware utils, planning/history/attachments, and richer output modes |
+| `webfull` | Full web UI preset with docs-aware utils, planning/history/attachments, richer output modes, and math rendering guidance |
 
 User custom presets can be defined in `~/.openaf-mini-a_modes.yaml`. They are merged with built-ins from `mini-a-modes.yaml`, and user definitions take precedence.
 

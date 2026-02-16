@@ -75,7 +75,10 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `mini-a-docs` | `false` | Docs-aware Mini Utils root (`markdownFiles`) when `utilsroot` is unset |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `usetools` | `true` | Enable tool use |
+| `toollog` | - | JSSLON channel for MCP tool call logs (input/output) |
+| `shelltimeout` | - | Max shell command runtime (ms) before timeout |
 | `usestream` | `true` | Stream responses |
+| `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
 | `mcp` | - | MCP servers to load |
 | `mcpproxy` | `false` | MCP proxy mode |
 | `usedelegation` | `false` | Agent delegation |
@@ -112,7 +115,7 @@ mini-a useutils=true goal='@data.csv Analyze it'
 | `chatbot` | Chat-only mode |
 | `internet` | Internet-focused MCP/tool mode with docs-aware utils |
 | `web` | Browser UI optimized preset with docs-aware utils |
-| `webfull` | Full web UI preset (docs-aware utils, history, attachments, planning, diagrams/charts) |
+| `webfull` | Full web UI preset (docs-aware utils, history, attachments, planning, diagrams/charts, math rendering guidance) |
 
 Custom modes: create `~/.openaf-mini-a_modes.yaml` with a `modes:` map. Custom definitions are merged with built-ins and override duplicates.
 

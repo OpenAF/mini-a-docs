@@ -469,10 +469,11 @@ mini-a can generate **rich visual outputs** directly in the terminal or web UI b
 | `usediagrams=true` | Diagrams | Flowcharts, architecture diagrams, sequence diagrams |
 | `usecharts=true` | Charts | Bar charts, histograms, data visualizations |
 | `usemaps=true` | Maps | Geographic data, network topology |
+| `usemath=true` | Math rendering | Inline or block LaTeX formulas rendered via KaTeX in web UI |
 
 ```bash
 # Enable all visual outputs
-mini-a useascii=true usediagrams=true usecharts=true usemaps=true
+mini-a useascii=true usediagrams=true usecharts=true usemaps=true usemath=true
 ```
 
 These features instruct the LLM to include visual representations in its responses when appropriate, making outputs more informative and easier to understand at a glance.
