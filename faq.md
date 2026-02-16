@@ -101,6 +101,7 @@ Yes. mini-a supports:
 - Extra loading paths via `extracommands=...`, `extraskills=...`, and `extrahooks=...`
 
 You can run templates directly with `mini-a exec="/<name> arg1 arg2"` and list skills with `/skills`.
+Supported placeholders inside command/skill templates are `{{args}}`, `{{argv}}`, `{{argc}}`, and positional `{{arg1}}`, `{{arg2}}`, ...
 
 Reference: [mini-a `USAGE.md`](https://github.com/OpenAF/mini-a/blob/main/USAGE.md)
 

@@ -140,6 +140,33 @@ Run non-interactively:
 mini-a exec="/<name> arg1 arg2"
 ```
 
+Template placeholders:
+
+- `{{args}}` -> raw argument string after the command name (trimmed)
+- `{{argv}}` -> parsed arguments as a JSON array
+- `{{argc}}` -> parsed argument count
+- `{{arg1}}`, `{{arg2}}`, ... -> positional argument values (1-based)
+
+Example:
+
+```markdown
+~/.openaf-mini-a/commands/review.md
+
+Review target: {{arg1}}
+Flags/raw: {{args}}
+Parsed: {{argv}}
+```
+
+```bash
+/review src --quick "security only"
+```
+
+```text
+Review target: src
+Flags/raw: src --quick "security only"
+Parsed: ["src","--quick","security only"]
+```
+
 ### Skills
 
 Supported skill layouts in `~/.openaf-mini-a/skills/`:

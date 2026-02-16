@@ -278,6 +278,41 @@ Create markdown templates under `~/.openaf-mini-a/commands/` and invoke them wit
 
 Use placeholders inside the template: `{{args}}`, `{{argv}}`, `{{argc}}`, `{{arg1}}`, `{{arg2}}`, ...
 
+Placeholder reference (works for command and skill templates):
+
+- `{{args}}` -> raw argument string after the command name (trimmed)
+- `{{argv}}` -> parsed arguments as a JSON array
+- `{{argc}}` -> parsed argument count
+- `{{arg1}}`, `{{arg2}}`, ... -> positional argument values (1-based)
+
+Example template `~/.openaf-mini-a/commands/my-command.md`:
+
+```markdown
+Follow these instructions exactly.
+
+Primary target: {{arg1}}
+All args (raw): {{args}}
+Parsed args: {{argv}}
+Argument count: {{argc}}
+```
+
+Run:
+
+```bash
+mini-a ➤ /my-command repo-a --fast "include docs"
+```
+
+Rendered prompt:
+
+```text
+Follow these instructions exactly.
+
+Primary target: repo-a
+All args (raw): repo-a --fast "include docs"
+Parsed args: ["repo-a","--fast","include docs"]
+Argument count: 3
+```
+
 Load additional command directories with:
 
 ```bash
