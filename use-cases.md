@@ -6,7 +6,7 @@ permalink: /use-cases/
 
 # Real-World Use Cases
 
-mini-a is designed to be flexible enough for a wide range of tasks. Below are eight practical scenarios that demonstrate how to leverage the framework in real-world workflows, from DevOps automation to cost-optimized enterprise deployments.
+mini-a is designed to be flexible enough for a wide range of tasks. Below are nine practical scenarios that demonstrate how to leverage the framework in real-world workflows, from DevOps automation to cost-optimized enterprise deployments.
 
 ---
 
@@ -259,7 +259,40 @@ When triggered as part of a CI/CD pipeline (e.g., on pull request creation), the
 
 <div class="use-case">
 
-## 8. Cost Optimization: Enterprise Dual-Model Strategy
+## 8. Multi-Agent Orchestration: Distributed Incident Triage
+
+### Context
+
+When incident volume spikes, triage work often spans multiple systems: logs, tickets, deployment history, and service dashboards. mini-a delegation lets a parent agent orchestrate specialized child agents in parallel, then merge their outputs into one coordinated response plan.
+
+### Command
+
+```bash
+mini-a useplanning=true planstyle=validate usedelegation=true \
+  workers='http://worker1:9090,http://worker2:9090' maxconcurrent=4 \
+  goal='Investigate the last 24h production incidents, identify top root causes, and propose a prioritized remediation plan'
+```
+
+### How It Works
+
+1. The parent agent builds a validated plan (`planstyle=validate`) and identifies independent workstreams.
+2. Delegation dispatches sub-tasks to local child agents and remote workers listed in `workers`.
+3. Worker agents run in parallel (bounded by `maxconcurrent`) and return structured intermediate results.
+4. The parent agent reconciles overlaps, resolves conflicts, and produces one final triage report with next actions.
+
+### Expected Behavior
+
+The final output contains grouped root causes (for example deploy regressions, infra saturation, and dependency outages), confidence levels, and a prioritized remediation queue with owners and suggested follow-up checks. Compared to fully serial triage, parallel delegation shortens time-to-report while keeping one coherent, centralized result.
+
+<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S23 -- Delegation orchestration dashboard/report]</div>
+
+</div>
+
+---
+
+<div class="use-case">
+
+## 9. Cost Optimization: Enterprise Dual-Model Strategy
 
 ### Context
 
@@ -320,7 +353,7 @@ Estimated Cost Savings: ~45% vs single-model deployment
 
 This visibility helps teams fine-tune their model selection and monitor spend over time.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S23 -- Metrics showing cost savings]</div>
+<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S24 -- Metrics showing cost savings]</div>
 
 </div>
 

@@ -8,8 +8,8 @@ permalink: /
   <p class="tagline">Your goals. Your LLM. One command.</p>
   <p class="hero-description">
     A minimalist autonomous agent framework built on OpenAF. Connect any LLM,
-    use 20+ built-in MCP tool servers, and let mini-a figure out how to
-    achieve your goals — from the terminal, a web UI, or your own code.
+    use 20+ built-in MCP tool servers, and orchestrate multi-agent delegation
+    for complex goals — from the terminal, a web UI, or your own code.
   </p>
   <div class="cta-buttons">
     <a href="{{ '/getting-started' | relative_url }}" class="btn btn-primary">Get Started</a>
@@ -71,6 +71,10 @@ permalink: /
   <div class="feature-card">
     <h3>20+ Tools, Zero Code</h3>
     <p>Built-in MCP servers for time, finance, databases, web, email, Kubernetes, and more — ready to use.</p>
+  </div>
+  <div class="feature-card">
+    <h3>Multi-Agent Orchestration</h3>
+    <p>Enable delegation to split goals into subtasks and run them in parallel across child agents or remote workers.</p>
   </div>
   <div class="feature-card">
     <h3>40-60% Fewer Tokens</h3>

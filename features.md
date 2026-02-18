@@ -4,7 +4,7 @@ title: Features
 permalink: /features/
 ---
 
-mini-a packs a comprehensive set of features into a minimalist framework. This page covers everything from model selection and cost optimization to security, tooling, and output formats.
+mini-a packs a comprehensive set of features into a minimalist framework. This page covers everything from model selection and cost optimization to multi-agent orchestration, security, tooling, and output formats.
 
 ---
 
@@ -215,9 +215,11 @@ Other agents or applications can then delegate tasks to this worker instance.
 
 ---
 
-## Planning & Delegation
+## Planning & Multi-Agent Delegation
 
 For complex goals, mini-a can **plan** a series of steps before executing them, and optionally **delegate** subtasks to child agents or remote workers.
+
+Think of delegation as an orchestration layer: one parent agent manages task decomposition, parallel execution, and result aggregation across multiple workers.
 
 ### Planning Styles
 
@@ -242,6 +244,21 @@ mini-a usedelegation=true
 ```
 
 Delegation also works with remote workers — the main agent can send subtasks to mini-a instances running in worker mode on other machines.
+
+### Orchestration Pattern
+
+Use this pattern when you want mini-a to coordinate multiple agents for larger workloads:
+
+1. Start one or more worker instances (`mini-a worker=true workerport=9090`).
+2. Run a parent agent with planning and delegation enabled.
+3. Set concurrency limits so execution stays predictable.
+4. Let the parent combine worker outputs into a single final result.
+
+```bash
+mini-a useplanning=true planstyle=validate usedelegation=true \
+  workers='http://worker1:9090,http://worker2:9090' maxconcurrent=4 \
+  goal='Analyze this monorepo, group findings by domain, and produce one prioritized action plan'
+```
 
 ---
 
