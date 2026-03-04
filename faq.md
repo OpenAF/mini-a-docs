@@ -184,7 +184,7 @@ mini-a automatically routes tasks to the appropriate model. Simple operations (s
 
 ### How do I monitor costs?
 
-Use the `/metrics` command in the console to see token counts, model usage, and estimated costs for the current session.
+Use `/stats` in the console to see token counts, model usage, and estimated costs for the current session.
 
 ## Troubleshooting
 

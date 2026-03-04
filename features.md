@@ -49,6 +49,12 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"      # Light
 
 The framework automatically decides which model to use for each subtask, optimizing cost without sacrificing quality where it matters.
 
+Recent updates added dynamic escalation controls so you can tune this behavior:
+
+- `lccontextlimit` escalates to the main model when low-cost context gets too large.
+- `deescalate` controls how many successful steps are needed before returning to the low-cost model.
+- `OAF_MINI_A_NOJSONPROMPT` / `OAF_MINI_A_LCNOJSONPROMPT` let you force text-prompt mode per model tier (Gemini main models auto-enable when unset).
+
 ### Estimated Savings
 
 | Task Type | Model Used | Estimated Savings |
@@ -111,6 +117,17 @@ mini-a usetools=true mcpserver="http://mcp.example.com:8080"
 
 For a complete list of available MCP servers and their capabilities, see the [MCP Catalog]({{ '/mcp-catalog' | relative_url }}).
 
+### Programmatic MCP Tool Calling
+
+mini-a can optionally start a localhost bridge that lets generated scripts list/search/call MCP tools in loops and batches.
+
+```bash
+mini-a useshell=true usetools=true mcpprogcall=true \
+  mcp="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-web.yaml')]"
+```
+
+Useful controls include `mcpprogcallport`, `mcpprogcallmaxbytes`, `mcpprogcallresultttl`, and `mcpprogcalltools`.
+
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S9 — MCP test console listing tools]</div>
 
 ---
@@ -158,6 +175,8 @@ mini-a usetools=true
 | `useutils` | Built-in file and search utilities | `true` |
 | `mini-a-docs` | Auto-set docs root for Mini Utils `markdownFiles` when `utilsroot` is unset | `false` |
 | `usetools` | MCP tool servers | `true` |
+| `shellmaxbytes` | Truncate oversized shell output to keep context stable | `8000` |
+| `shellallowpipes` | Allow shell pipes/redirection/control operators | `false` |
 
 All three can be combined. When the agent receives a goal, it selects the appropriate tool type based on the task.
 
@@ -462,10 +481,10 @@ When enough history exists, mini-a keeps at least one older entry eligible for s
 Track exactly how many tokens you are using and what they cost with built-in **metrics and usage tracking**.
 
 ```
-> /metrics
+> /stats
 ```
 
-The `/metrics` command displays:
+The `/stats` command displays:
 
 - **Token counts** — Input and output tokens for the current session
 - **Cost estimates** — Estimated cost based on provider pricing

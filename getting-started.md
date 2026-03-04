@@ -151,8 +151,9 @@ When running in interactive console mode, the following commands are available:
 | `/exit` | Exit mini-a |
 | `/last [md]` | Reprint the last final answer (`md` prints raw markdown) |
 | `/save <path>` | Save the last final answer to a file |
-| `/clear` | Clear screen |
-| `/metrics` | Show usage metrics |
+| `/clear` | Reset conversation history and accumulated metrics |
+| `/cls` | Clear screen |
+| `/stats [mode] [out=file.json]` | Show usage metrics (`summary`, `detailed`, `tools`) |
 
 ---
 
@@ -176,10 +177,12 @@ Built-ins come from `mini-a-modes.yaml`, and you can extend/override them with `
 | Mode | What it enables |
 |------|----------------|
 | `shell` | Read-only shell access (`useshell=true`) |
-| `shellrw` | Shell + write access (`useshell=true readwrite=true`) |
-| `shellutils` | Shell + Mini Utils Tool (`useutils=true mini-a-docs=true usetools=true`) |
+| `shellrw` | Shell + write access + shell pipes/batch approvals preset |
+| `utils` | Mini Utils Tool (`useutils=true mini-a-docs=true usetools=true`) |
 | `chatbot` | Chatbot mode (`chatbotmode=true`) |
 | `internet` | Internet-focused MCP/tool mode with docs-aware utils |
+| `news` | Web + RSS news-focused MCP mode |
+| `poweruser` | Shell + utils + tools + proxy tuning preset |
 | `web` | Browser UI optimized preset with docs-aware utils |
 | `webfull` | Full web UI preset (docs-aware utils, history, attachments, diagrams/charts, math rendering guidance, planning) |
 

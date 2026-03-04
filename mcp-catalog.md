@@ -17,7 +17,7 @@ mini-a ships with **22 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-time` | Time and timezone operations | STDIO | `getCurrentTime`, `convertTimezone` |
 | `mcp-db` | Database queries and schema | STDIO | `query`, `listTables`, `describeTable` |
 | `mcp-file` | File system operations | STDIO | `readFile`, `writeFile`, `listDir` |
-| `mcp-web` | Web browsing and search | STDIO | `search`, `fetchPage`, `extractText` |
+| `mcp-web` | Web browsing, search, and HTTP requests | STDIO | `web-search`, `get-url`, `http-request` |
 | `mcp-shell` | Shell command execution | STDIO | `execute`, `script` |
 | `mcp-ssh` | Remote SSH operations | STDIO | `connect`, `execute`, `transfer` |
 | `mcp-s3` | AWS S3 operations | STDIO | `listBuckets`, `getObject`, `putObject` |
@@ -90,14 +90,20 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-file.yaml')" goal='Read all JSON files in /tmp 
 
 ### mcp-web
 
-Web browsing, search, and content extraction. Fetch web pages, perform searches, and extract structured text from HTML.
+Web browsing, search, and HTTP request utilities. Perform web searches, fetch/process URLs, and make REST calls.
+
+**Configuration:**
+
+| Argument | Description |
+|----------|-------------|
+| `readwrite` | If `true`, enables mutating `http-request` methods (`POST`, `PUT`, `PATCH`, `DELETE`). Read-only mode allows `GET` and `HEAD`. |
 
 **Usage:**
 ```bash
 mini-a mcp="(cmd: 'ojob mcps/mcp-web.yaml')" goal='Search for the latest OpenAF release and summarize the changelog'
 ```
 
-**Tools:** `search`, `fetchPage`, `extractText`, `screenshot`
+**Tools:** `web-search`, `get-url`, `http-request`
 
 ---
 

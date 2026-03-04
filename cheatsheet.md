@@ -55,9 +55,11 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/reset` | Reset conversation |
 | `/last [md]` | Reprint last final answer (`md` for raw markdown) |
 | `/save <path>` | Save last final answer to a file |
-| `/metrics` | Usage statistics |
+| `/stats [mode] [out=file.json]` | Usage statistics (`summary`, `detailed`, `tools`) |
+| `/history [n]` | Show recent user goals from conversation history |
 | `/exit` | Exit mini-a |
-| `/clear` | Clear screen |
+| `/clear` | Reset conversation history and accumulated metrics |
+| `/cls` | Clear screen |
 
 ## Key Parameters
 
@@ -76,11 +78,22 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `usetools` | `true` | Enable tool use |
 | `toollog` | - | JSSLON channel for MCP tool call logs (input/output) |
+| `debugfile` | - | Write debug output to a NDJSON file (implies `debug=true`) |
+| `outfileall` | - | Deep research only: save full cycle outputs (not only final answer) |
 | `shelltimeout` | - | Max shell command runtime (ms) before timeout |
+| `shellmaxbytes` | `8000` | Cap shell output size and truncate with head/tail excerpt |
+| `shellallowpipes` | `false` | Allow pipes, redirection, and shell control operators |
 | `usestream` | `true` | Stream responses |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
 | `mcp` | - | MCP servers to load |
 | `mcpproxy` | `false` | MCP proxy mode |
+| `mcpproxytoon` | `false` | TOON serialization for spilled proxy results |
+| `mcpprogcall` | `false` | Enable localhost bridge for programmatic MCP tool calls |
+| `mcpprogcallport` | `0` | Programmatic MCP bridge port (`0` auto-selects) |
+| `mcpprogcallmaxbytes` | `4096` | Max inline bridge response size before spill |
+| `mcpprogcallresultttl` | `600` | TTL (seconds) for spilled bridge results |
+| `lccontextlimit` | `0` | Escalate to main model when low-cost model context gets too large |
+| `deescalate` | `3` | Successful steps before returning from main model to low-cost model |
 | `usedelegation` | `false` | Agent delegation |
 | `onport` | - | Web UI port |
 
@@ -110,10 +123,12 @@ mini-a useutils=true goal='@data.csv Analyze it'
 | Mode | Enables |
 |------|---------|
 | `shell` | Read-only shell access (`useshell=true`) |
-| `shellrw` | Shell + write access (`useshell=true readwrite=true`) |
-| `shellutils` | Shell + Mini Utils Tool (`useutils=true mini-a-docs=true usetools=true`) |
+| `shellrw` | Shell + write access + non-interactive shell approvals |
+| `utils` | Mini Utils Tool preset (`useutils=true mini-a-docs=true usetools=true`) |
 | `chatbot` | Chat-only mode |
 | `internet` | Internet-focused MCP/tool mode with docs-aware utils |
+| `news` | Internet + RSS news-focused MCP mode |
+| `poweruser` | High-capability preset with shell, utils, proxy tuning, and docs-aware defaults |
 | `web` | Browser UI optimized preset with docs-aware utils |
 | `webfull` | Full web UI preset (docs-aware utils, history, attachments, planning, diagrams/charts, math rendering guidance) |
 
@@ -139,6 +154,12 @@ export OAF_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 export OAF_LC_MODEL="(type: openai, model: gpt-5-nano, key: '...')"
 export OAF_VAL_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 # Saves 50-70% on token costs
+```
+
+```bash
+# Optional prompt-mode controls (Gemini main auto-enables when unset)
+export OAF_MINI_A_NOJSONPROMPT=true
+export OAF_MINI_A_LCNOJSONPROMPT=true
 ```
 
 ## Docker

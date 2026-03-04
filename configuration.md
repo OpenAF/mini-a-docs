@@ -27,6 +27,8 @@ export MINI_A_PARAM=value
 | `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5-mini, key: '...')`) |
 | `lmodel` | - | Lighter model for simple tasks (dual-model) |
 | `vmodel` | - | Optional dedicated validation model used in deep-research scoring |
+| `lccontextlimit` | `0` | Escalate from low-cost model to main model when context tokens reach this threshold (`0` disables) |
+| `deescalate` | `3` | Consecutive successful steps required before switching back to the low-cost model after escalation |
 | `apikey` | - | API key (alternative to env var) |
 | `apiurl` | - | Custom API endpoint URL |
 | `temperature` | `0.7` | Model temperature (0-2) |
@@ -50,6 +52,10 @@ export MINI_A_PARAM=value
 | `youare` | - | Custom system persona/identity |
 | `rules` | - | Additional rules for the agent |
 | `knowledge` | - | Knowledge base content or file path |
+| `debug` | `false` | Enable debug logging |
+| `debugfile` | - | Write debug output as NDJSON to a file (implies `debug=true`) |
+| `outfile` | - | Save final answer to file |
+| `outfileall` | - | Deep research only: save full cycle history/verdicts/learnings to file |
 | `extracommands` | - | Comma-separated extra directories for custom slash command templates |
 | `extraskills` | - | Comma-separated extra directories for custom skills |
 | `extrahooks` | - | Comma-separated extra directories for hook definitions |
@@ -66,6 +72,14 @@ export MINI_A_PARAM=value
 |-----------|---------|-------------|
 | `mcp` | - | MCP servers to load (comma-separated) |
 | `mcpproxy` | `false` | Enable MCP proxy mode |
+| `mcpproxythreshold` | `0` | Byte threshold to spill large proxy results to temp files (`0` disables spilling) |
+| `mcpproxytoon` | `false` | Serialize spilled proxy object/array payloads as TOON text when proxy spilling is enabled |
+| `mcpprogcall` | `false` | Start localhost programmatic MCP tool-call bridge for scripts |
+| `mcpprogcallport` | `0` | Programmatic MCP bridge port (`0` auto-selects) |
+| `mcpprogcallmaxbytes` | `4096` | Max inline JSON response size before returning a stored `resultId` |
+| `mcpprogcallresultttl` | `600` | TTL (seconds) for oversized stored results served by the MCP bridge |
+| `mcpprogcalltools` | `""` | Optional comma-separated tool allowlist exposed by the MCP bridge |
+| `mcpprogcallbatchmax` | `10` | Maximum calls accepted by one bridge batch request |
 | `mcpdynamic` | `false` | Allow dynamic MCP discovery |
 | `mcplazy` | `false` | Lazy-load MCP servers |
 | `mcpurl` | - | Remote MCP server URL |
@@ -121,7 +135,12 @@ export MINI_A_PARAM=value
 | `useshell` | `false` | Enable shell commands |
 | `readwrite` | `false` | Allow file write operations |
 | `shelltimeout` | - | Maximum shell command runtime in milliseconds before timeout |
+| `shellmaxbytes` | `8000` | Truncate oversized shell output to head/tail excerpts with a banner |
 | `shellallow` | - | Allowed shell commands (comma-separated) |
+| `shellallowpipes` | `false` | Allow pipes, redirection, and shell control operators |
+| `shellbanextra` | - | Additional banned shell commands (comma-separated) |
+| `checkall` | `false` | Ask for confirmation before every shell command |
+| `shellbatch` | `false` | Run shell commands without interactive approval prompts |
 | `shellban` | - | Banned shell commands (comma-separated) |
 
 </div>
@@ -221,10 +240,11 @@ export MINI_A_PARAM=value
 | `/reset` | Reset conversation |
 | `/last [md]` | Reprint the previous final answer (raw markdown with `md`) |
 | `/save <path>` | Save the previous final answer to a file |
-| `/metrics` | Show usage metrics |
+| `/stats [mode] [out=file.json]` | Show session metrics (`summary`/`detailed`/`tools`) and optionally export JSON |
+| `/history [n]` | Show the latest user goals from conversation history |
 | `/exit` | Exit mini-a |
-| `/clear` | Clear screen |
-| `/mode [preset]` | Switch mode preset |
+| `/clear` | Reset conversation history and accumulated metrics |
+| `/cls` | Clear screen |
 
 </div>
 
@@ -235,10 +255,12 @@ export MINI_A_PARAM=value
 | Preset | Parameters Enabled |
 |--------|-------------------|
 | `shell` | `useshell=true` |
-| `shellrw` | `useshell=true readwrite=true` |
-| `shellutils` | `useshell=true useutils=true mini-a-docs=true usetools=true` |
+| `shellrw` | `useshell=true useutils=true readwrite=true shellallowpipes=true shellbatch=true showexecs=true mini-a-docs=true` |
+| `utils` | `useutils=true mini-a-docs=true usetools=true` |
 | `chatbot` | `chatbotmode=true` |
 | `internet` | Internet-focused MCP/tool preset with docs-aware utils from `mini-a-modes.yaml` |
+| `news` | News-focused MCP preset (web + rss + time, proxy enabled) |
+| `poweruser` | Shell + utils + tools with proxy tuning (`mcpproxytoon=true`, low cache TTL, docs-aware defaults) |
 | `web` | Browser UI optimized preset with docs-aware utils |
 | `webfull` | Full web UI preset with docs-aware utils, planning/history/attachments, richer output modes, and math rendering guidance |
 

@@ -571,10 +571,10 @@ Debug output includes timestamps, model selection decisions, token counts, and t
 
 ### Usage Metrics
 
-Use the `/metrics` command in interactive mode to view real-time usage statistics:
+Use the `/stats` command in interactive mode to view real-time usage statistics:
 
 ```
-/metrics
+/stats
 ```
 
 This displays token counts, model call counts, cost estimates, and elapsed time for the current session.
@@ -582,7 +582,7 @@ This displays token counts, model call counts, cost estimates, and elapsed time 
 ### Common Debugging Patterns
 
 - **Unexpected tool selection** — Enable `debug=true` and check the routing decisions. The light model may be misclassifying the task. Try adjusting the goal wording or switching to a more capable light model.
-- **Slow responses** — Check `/metrics` for token counts. If context is very large, use `/compact` to reduce it. Consider setting `maxcontext` to prevent unbounded growth.
+- **Slow responses** — Check `/stats` for token counts. If context is very large, use `/compact` to reduce it. Consider setting `maxcontext` to prevent unbounded growth.
 - **MCP connection failures** — Verify the MCP server is running and reachable. Use `debug=true` to see connection attempts and error messages. For remote MCPs, check firewall rules and network connectivity.
 - **Planning loops** — If the agent keeps replanning without executing, try switching `planstyle` from `validate` to `step` or `full`. Some goals may be too ambiguous for the validation step.
 
