@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <!-- Background -->
+  <rect width="800" height="400" fill="#1a202c"/>
+
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="108" x2="800" y2="108" stroke="#2d3748" stroke-width="1"/>
+  <line x1="0" y1="202" x2="800" y2="202" stroke="#2d3748" stroke-width="1"/>
+
+  <!-- ===== TITLE ===== -->
+  <text x="400" y="20" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="13" font-weight="700" fill="#68d391" letter-spacing="1.5">MINI-A  ARCHITECTURE</text>
+
+  <!-- ===== ROW 1 — ENTRY POINTS ===== -->
+  <text x="400" y="37" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#4a5568" letter-spacing="1">ENTRY POINTS</text>
+
+  <!-- Console -->
+  <rect x="15" y="43" width="144" height="44" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="87" y="60" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">Console</text>
+  <text x="87" y="76" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Interactive REPL</text>
+
+  <!-- Web UI -->
+  <rect x="171" y="43" width="144" height="44" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="243" y="60" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">Web UI</text>
+  <text x="243" y="76" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Browser Chat + SSE</text>
+
+  <!-- CLI -->
+  <rect x="327" y="43" width="144" height="44" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="399" y="60" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">CLI / oJob</text>
+  <text x="399" y="76" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">One-shot Execution</text>
+
+  <!-- Worker API -->
+  <rect x="483" y="43" width="144" height="44" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="555" y="60" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">Worker API</text>
+  <text x="555" y="76" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Remote Delegation</text>
+
+  <!-- Library -->
+  <rect x="639" y="43" width="144" height="44" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="711" y="60" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">Library API</text>
+  <text x="711" y="76" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Embedded Usage</text>
+
+  <!-- Arrows row1 → orchestrator (converge to a single bar) -->
+  <line x1="87"  y1="87" x2="87"  y2="98" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="243" y1="87" x2="243" y2="98" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="399" y1="87" x2="399" y2="98" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="555" y1="87" x2="555" y2="98" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="711" y1="87" x2="711" y2="98" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="87" y1="98" x2="711" y2="98" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="399" y1="98" x2="399" y2="110" stroke="#68d391" stroke-width="1.5" stroke-opacity="0.6"/>
+  <polygon points="399,112 395,107 403,107" fill="#68d391" opacity="0.6"/>
+
+  <!-- ===== ROW 2 — ORCHESTRATOR ===== -->
+  <rect x="15" y="112" width="770" height="88" rx="8" fill="#2d3748" stroke="#68d391" stroke-width="1.5"/>
+
+  <!-- Orchestrator label -->
+  <text x="400" y="130" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#68d391" letter-spacing="0.8">MINI-A ORCHESTRATOR  —  MiniA class</text>
+
+  <!-- Inner box 1: Execution Loop -->
+  <rect x="25" y="136" width="178" height="56" rx="5" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+  <text x="114" y="153" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#e2e8f0">Execution Loop</text>
+  <text x="114" y="167" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Think → Act → Observe</text>
+  <text x="114" y="181" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Retry · Max steps</text>
+
+  <!-- Inner box 2: Dual-Model Router -->
+  <rect x="215" y="136" width="178" height="56" rx="5" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+  <text x="304" y="153" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#e2e8f0">Dual-Model Router</text>
+  <text x="304" y="167" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Main ↔ Low-Cost</text>
+  <text x="304" y="181" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Auto-escalation</text>
+
+  <!-- Inner box 3: Planning & Context -->
+  <rect x="405" y="136" width="178" height="56" rx="5" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+  <text x="494" y="153" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#e2e8f0">Planning &amp; Context</text>
+  <text x="494" y="167" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Step planning · Summarize</text>
+  <text x="494" y="181" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Conversation history</text>
+
+  <!-- Inner box 4: Metrics & Security -->
+  <rect x="595" y="136" width="180" height="56" rx="5" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+  <text x="685" y="153" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#e2e8f0">Metrics &amp; Security</text>
+  <text x="685" y="167" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Token tracking · Cost</text>
+  <text x="685" y="181" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Hooks · Rate limiting</text>
+
+  <!-- Arrows orchestrator → row 3 (fan out) -->
+  <line x1="399" y1="200" x2="399" y2="210" stroke="#68d391" stroke-width="1.5" stroke-opacity="0.6"/>
+  <line x1="114" y1="210" x2="685" y2="210" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="114" y1="210" x2="114" y2="220" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="304" y1="210" x2="304" y2="220" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="494" y1="210" x2="494" y2="220" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="685" y1="210" x2="685" y2="220" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <polygon points="114,222 110,217 118,217" fill="#68d391" opacity="0.5"/>
+  <polygon points="304,222 300,217 308,217" fill="#68d391" opacity="0.5"/>
+  <polygon points="494,222 490,217 498,217" fill="#68d391" opacity="0.5"/>
+  <polygon points="685,222 681,217 689,217" fill="#68d391" opacity="0.5"/>
+
+  <!-- ===== ROW 3 — SUBSYSTEMS ===== -->
+
+  <!-- LLM Models -->
+  <rect x="15" y="222" width="178" height="166" rx="8" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.75"/>
+  <text x="104" y="241" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#68d391">LLM Models</text>
+  <rect x="25" y="248" width="158" height="22" rx="4" fill="#1a202c"/>
+  <text x="104" y="263" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#e2e8f0">Main Model</text>
+  <rect x="25" y="274" width="158" height="22" rx="4" fill="#1a202c"/>
+  <text x="104" y="289" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#a0aec0">Low-Cost Model</text>
+  <text x="104" y="314" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">OpenAI · Anthropic</text>
+  <text x="104" y="328" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Ollama · Gemini · ...</text>
+  <text x="104" y="342" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Streaming · JSON / Text</text>
+  <text x="104" y="356" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Exponential backoff</text>
+  <text x="104" y="370" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Context size tracking</text>
+
+  <!-- MCP Tools -->
+  <rect x="205" y="222" width="178" height="166" rx="8" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.75"/>
+  <text x="294" y="241" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#68d391">MCP Tools</text>
+  <rect x="215" y="248" width="158" height="22" rx="4" fill="#1a202c"/>
+  <text x="294" y="263" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#e2e8f0">20+ Built-in Servers</text>
+  <rect x="215" y="274" width="158" height="22" rx="4" fill="#1a202c"/>
+  <text x="294" y="289" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#a0aec0">Custom MCP Servers</text>
+  <text x="294" y="314" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">STDIO / HTTP-SSE</text>
+  <text x="294" y="328" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Dynamic tool selection</text>
+  <text x="294" y="342" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Result caching (TTL)</text>
+  <text x="294" y="356" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Circuit breaker</text>
+  <text x="294" y="370" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">MCP Proxy aggregation</text>
+
+  <!-- Shell &amp; Files -->
+  <rect x="395" y="222" width="178" height="166" rx="8" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.75"/>
+  <text x="484" y="241" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#68d391">Shell &amp; Files</text>
+  <rect x="405" y="248" width="158" height="22" rx="4" fill="#1a202c"/>
+  <text x="484" y="263" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#e2e8f0">Shell Execution</text>
+  <rect x="405" y="274" width="158" height="22" rx="4" fill="#1a202c"/>
+  <text x="484" y="289" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#a0aec0">Mini Utils</text>
+  <text x="484" y="314" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">OS Sandbox (bwrap /</text>
+  <text x="484" y="328" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">sandbox-exec)</text>
+  <text x="484" y="342" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Command allow / ban</text>
+  <text x="484" y="356" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">File read / write ctrl</text>
+  <text x="484" y="370" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Approval workflow</text>
+
+  <!-- Multi-Agent -->
+  <rect x="585" y="222" width="178" height="166" rx="8" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.75"/>
+  <text x="674" y="241" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#68d391">Multi-Agent</text>
+  <rect x="595" y="248" width="158" height="22" rx="4" fill="#1a202c"/>
+  <text x="674" y="263" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#e2e8f0">Local Subtasks</text>
+  <rect x="595" y="274" width="158" height="22" rx="4" fill="#1a202c"/>
+  <text x="674" y="289" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#a0aec0">Remote Workers</text>
+  <text x="674" y="314" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Concurrent execution</text>
+  <text x="674" y="328" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">A2A HTTP protocol</text>
+  <text x="674" y="342" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Depth control</text>
+  <text x="674" y="356" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Timeout · Retry</text>
+  <text x="674" y="370" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Worker heartbeat</text>
+
+  <!-- Bottom label bar -->
+  <rect x="15" y="394" width="770" height="4" rx="2" fill="#68d391" opacity="0.2"/>
+</svg>

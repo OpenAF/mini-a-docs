@@ -140,7 +140,7 @@ mini-a follows a simple loop: **understand the goal → plan steps → execute t
                 └──────────┘     └──────────┘
 ```
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S4 — Architecture diagram (SVG preferred)]</div>
+<img src="{{ '/assets/images/screenshots/s4-architecture.svg' | relative_url }}" alt="mini-a architecture diagram showing entry points, orchestrator, and subsystems" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3); width:100%;">
 
 ---
 
