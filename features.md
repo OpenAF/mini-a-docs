@@ -146,12 +146,24 @@ mini-a useshell=true
 
 ### 2. Built-in Utilities
 
-File operations, text search, directory listing, and other common utilities that do not require spawning a shell.  
+File operations, text search, directory listing, and other common utilities that do not require spawning a shell.
 When enabled, Mini Utils provides `init`, `filesystemQuery`, `filesystemModify`, and `markdownFiles`.
 
 ```bash
 mini-a useutils=true
 ```
+
+Use `utilsallow` and `utilsdeny` to control which utils are exposed to the agent:
+
+```bash
+# Expose only specific utils
+mini-a useutils=true utilsallow="filesystemQuery,markdownFiles"
+
+# Hide specific utils (applied after utilsallow)
+mini-a useutils=true utilsdeny="filesystemModify"
+```
+
+When running in console mode, `useutils=true` also includes the `userInput` tool, which enables interactive console prompts (ask, choose, struct) for gathering structured input from the user.
 
 For docs-aware workflows, enable:
 
@@ -244,13 +256,15 @@ Think of delegation as an orchestration layer: one parent agent manages task dec
 
 | Style | Description |
 |-------|-------------|
-| `step` | Generates and executes one step at a time |
-| `full` | Creates a complete plan upfront, then executes all steps |
-| `validate` | Creates a full plan with validation checkpoints after each step |
+| `simple` | Flat sequential steps — generates and executes one step at a time (default) |
+| `legacy` | Phase-based hierarchical planning — creates a structured multi-phase plan upfront |
 
 ```bash
-# Enable planning with validation
-mini-a useplanning=true planstyle=validate
+# Enable planning (simple style, default)
+mini-a useplanning=true
+
+# Use legacy hierarchical planning
+mini-a useplanning=true planstyle=legacy
 ```
 
 ### Delegation
@@ -264,6 +278,8 @@ mini-a usedelegation=true
 
 Delegation also works with remote workers — the main agent can send subtasks to mini-a instances running in worker mode on other machines.
 
+Worker registration is also supported: set `workerreg` to a port to have mini-a start a worker registration HTTP server, optionally protected by `workerregtoken`. Use `workerevictionttl` to evict stale worker entries, and `delegationmaxdepth` to cap recursive delegation chains.
+
 ### Orchestration Pattern
 
 Use this pattern when you want mini-a to coordinate multiple agents for larger workloads:
@@ -274,7 +290,7 @@ Use this pattern when you want mini-a to coordinate multiple agents for larger w
 4. Let the parent combine worker outputs into a single final result.
 
 ```bash
-mini-a useplanning=true planstyle=validate usedelegation=true \
+mini-a useplanning=true planstyle=legacy usedelegation=true \
   workers='http://worker1:9090,http://worker2:9090' maxconcurrent=4 \
   goal='Analyze this monorepo, group findings by domain, and produce one prioritized action plan'
 ```
@@ -435,6 +451,7 @@ mini-a is designed to be **secure by default**. Potentially dangerous features r
 | Command ban list | Block specific shell commands | `shellban="rm,shutdown"` |
 | Encrypted key storage | API keys stored encrypted via model manager | Supported |
 | Docker isolation | Run in a container sandbox | Available |
+| OS sandbox | Built-in OS-level sandbox for shell commands | `usesandbox=off` |
 
 ```bash
 # Enable shell with allowlist only
@@ -442,9 +459,15 @@ mini-a useshell=true shellallow="ls,cat,grep,find"
 
 # Enable shell but ban destructive commands
 mini-a useshell=true shellban="rm,rmdir,dd,mkfs"
+
+# Enable sandbox (auto-detects OS)
+mini-a useshell=true usesandbox=auto
+
+# Sandbox without network access
+mini-a useshell=true usesandbox=auto sandboxnonetwork=true
 ```
 
-These controls can be combined. For example, running inside Docker with a shell allowlist provides defense in depth.
+These controls can be combined. For example, running inside Docker with a shell allowlist provides defense in depth. The built-in OS sandbox (`usesandbox`) adds an extra layer by wrapping shell commands in platform-specific OS-level restrictions — no separate container setup required.
 
 ---
 
@@ -473,6 +496,26 @@ mini-a provides several commands for managing conversation context during a sess
 
 These commands are especially useful in long sessions where context accumulates and token costs increase. Compacting a conversation can reduce context size by 40-60% while preserving the essential information the agent needs.
 When enough history exists, mini-a keeps at least one older entry eligible for summarization instead of preserving the entire tail.
+
+---
+
+## Conversation History Persistence
+
+Enable `historykeep=true` to automatically save console conversations to `~/.openaf-mini-a/history` so they can be resumed in future sessions.
+
+```bash
+# Save all console sessions for later resumption
+mini-a historykeep=true
+```
+
+Use `historykeepperiod` and `historykeepcount` to control how many saved sessions are retained:
+
+```bash
+# Delete history files older than 60 minutes, keep at most 10
+mini-a historykeep=true historykeepperiod=60 historykeepcount=10
+```
+
+To resume a saved session, pass the history file path as the conversation input at startup. History files are stored as JSON in `~/.openaf-mini-a/history/`.
 
 ---
 

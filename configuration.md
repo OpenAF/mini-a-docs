@@ -98,6 +98,8 @@ export MINI_A_PARAM=value
 | `mini-a-docs` | `false` | If `true` and `utilsroot` is not set, automatically uses the mini-a oPack docs path as `utilsroot` |
 | `usetools` | `true` | Enable tool usage |
 | `libs` | - | Additional library paths to load |
+| `utilsallow` | - | Comma-separated allowlist of Mini Utils Tool names to expose when `useutils=true` |
+| `utilsdeny` | - | Comma-separated denylist of Mini Utils Tool names to hide when `useutils=true` (applied after `utilsallow`) |
 
 </div>
 
@@ -120,7 +122,7 @@ export MINI_A_PARAM=value
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `useplanning` | `false` | Enable agent planning |
-| `planstyle` | `step` | Planning style: `step`, `full`, `validate` |
+| `planstyle` | `simple` | Planning style: `simple` (flat sequential steps, default) / `legacy` (phase-based hierarchical) |
 | `planfile` | - | File to save/load plans |
 | `usethinking` | `false` | Enable chain-of-thought reasoning |
 
@@ -142,6 +144,14 @@ export MINI_A_PARAM=value
 | `checkall` | `false` | Ask for confirmation before every shell command |
 | `shellbatch` | `false` | Run shell commands without interactive approval prompts |
 | `shellban` | - | Banned shell commands (comma-separated) |
+
+### Shell Sandbox
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `usesandbox` | `off` | Enable built-in OS sandbox presets for shell commands (`off`, `auto`, `linux`, `macos`, `windows`) |
+| `sandboxprofile` | - | Optional macOS sandbox profile path (mini-a auto-generates a restrictive temporary `.sb` profile otherwise) |
+| `sandboxnonetwork` | `false` | Disable network inside the built-in sandbox when supported |
 
 </div>
 
@@ -170,6 +180,22 @@ export MINI_A_PARAM=value
 | `usedelegation` | `false` | Enable agent delegation |
 | `workers` | - | Worker API URLs (comma-separated) |
 | `maxconcurrent` | `3` | Max concurrent delegated tasks |
+| `workerreg` | - | Start worker registration HTTP server on this port |
+| `workerregtoken` | - | Optional token required by the worker registration endpoint |
+| `workerevictionttl` | - | Worker eviction TTL in milliseconds for stale worker entries |
+| `delegationmaxdepth` | - | Maximum recursive delegation depth |
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## 9a. Conversation History
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `historykeep` | `false` | Save console conversations to `~/.openaf-mini-a/history` for future resumption |
+| `historykeepperiod` | - | Delete kept conversation files older than this many minutes |
+| `historykeepcount` | - | Keep only the newest N kept conversation files |
 
 </div>
 

@@ -6,7 +6,7 @@ permalink: /mcp-catalog/
 
 **MCP (Model Context Protocol)** is an open standard that defines how LLMs discover and invoke external tools through a uniform interface. Instead of hard-coding integrations, mini-a connects to MCP servers that expose capabilities as callable tools. Each MCP server runs as a separate process (STDIO) or remote service (HTTP), and mini-a automatically discovers available tools at startup.
 
-mini-a ships with **22 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter.
+mini-a ships with **23 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter.
 
 ---
 
@@ -36,6 +36,7 @@ mini-a ships with **22 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-oaf` | OpenAF utilities | STDIO | `oafp`, `ow.format` |
 | `mcp-oafp` | OpenAF processor | STDIO | `process`, `transform` |
 | `mcp-office` | Office document processing | STDIO | `readExcel`, `readWord`, `readPDF` |
+| `mcp-ollama-web-search` | Web search via Ollama API | STDIO/HTTP | `web-search` |
 
 ---
 
@@ -379,6 +380,27 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-office.yaml')" goal='Read the Excel file report
 ```
 
 **Tools:** `readExcel`, `readWord`, `readPDF`, `listSheets`
+
+---
+
+### mcp-ollama-web-search
+
+Web search through Ollama's web_search API endpoint. Requires an Ollama API key.
+
+**Configuration:**
+
+| Argument | Description |
+|----------|-------------|
+| `apiKey` | Ollama API key (or set `OLLAMA_API_KEY` env var) |
+| `baseUrl` | Ollama API base URL (default: `https://ollama.com`) |
+| `onport` | If set, starts an HTTP MCP server on this port instead of STDIO |
+
+**Usage:**
+```bash
+mini-a mcp="(cmd: 'ojob mcps/mcp-ollama-web-search.yaml apiKey=YOUR_KEY')" goal='Search for latest AI news'
+```
+
+**Tools:** `web-search`
 
 ---
 
