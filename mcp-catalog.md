@@ -33,6 +33,7 @@ mini-a ships with **26 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-ch` | ClickHouse database | STDIO | `query`, `listTables` |
 | `mcp-mini-a` | Spawn sub-agents | STDIO | `delegate`, `status` |
 | `mcp-proxy` | MCP proxy/aggregator | STDIO | `aggregate`, `route` |
+| `mcp-pass` | MCP passthrough combiner | STDIO/HTTP | downstream tools forwarded directly |
 | `mcp-oaf` | OpenAF utilities | STDIO | `oafp`, `ow.format` |
 | `mcp-oafp` | OpenAF processor | STDIO | `process`, `transform` |
 | `mcp-office` | Office document processing | STDIO | `readExcel`, `readWord`, `readPDF` |
@@ -344,6 +345,54 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-proxy.yaml')" goal='Use time and math tools thr
 
 ---
 
+### mcp-pass
+
+Combine one primary MCP server with zero or more additional MCP servers and republish the merged tool set through a single MCP endpoint. Unlike `mcp-proxy`, `mcp-pass` forwards the downstream tools directly, so clients see the merged tools as native tools instead of going through a dispatcher tool.
+
+**Configuration:**
+
+| Argument | Description |
+|----------|-------------|
+| `mainmcp` | Required primary MCP connection descriptor |
+| `othermcps` | Optional array of extra MCP connection descriptors to merge |
+| `includeTool` | Optional comma-separated list of tools to expose |
+| `excludeTool` | Optional comma-separated list of tools to hide |
+| `useprefix` | Optional comma-separated prefixes applied per connection order to avoid name collisions |
+| `serverdesc` | Optional server metadata override for the exposed MCP identity |
+| `onport` | If set, runs as an HTTP MCP server instead of STDIO |
+| `uri` | Custom HTTP route prefix when using `onport` |
+| `usesse` | If `true`, HTTP responses are returned as SSE events |
+
+**Best for:**
+
+- Exposing several MCP servers as one endpoint when the client expects a single MCP connection
+- Adding local helper tools to an existing remote MCP without changing the remote server
+- Publishing only a curated subset of tools from a larger tool estate
+- Avoiding tool-name collisions by prefixing tools per upstream connection
+- Passing HTTP request headers through to downstream MCP calls when auth or tenant context matters
+
+**Usage:**
+```bash
+ojob mcps/mcp-pass.yaml onport=9091 \
+  mainmcp="(type: remote, url: 'http://localhost:8080/mcp')" \
+  othermcps="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-random.yaml')]"
+```
+
+```bash
+ojob mcps/mcp-pass.yaml onport=9091 uri=/mcp usesse=true \
+  mainmcp="(type: remote, url: 'http://localhost:8080/mcp')" \
+  othermcps="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-random.yaml')]" \
+  useprefix="core-,time-,rand-" \
+  excludeTool="rand-pick"
+```
+
+**When to choose `mcp-pass` vs `mcp-proxy`:**
+
+- Use `mcp-pass` when you want the merged tools to appear directly to the client.
+- Use `mcp-proxy` when you want an explicit proxy or dispatcher layer in front of multiple MCP backends.
+
+---
+
 ### mcp-oaf
 
 Access OpenAF utilities and formatting functions directly as MCP tools. Useful for data processing and transformation within the OpenAF ecosystem.
@@ -442,9 +491,18 @@ mini-a mcp="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-math.yaml'),
 
 When using three or more MCP servers, enable **proxy mode** for better performance. The proxy aggregates all tool definitions into a single interface, reducing overhead.
 
+If you need to republish several MCP servers as one standalone MCP endpoint for another client or service, use `mcp-pass` instead of `mcpproxy=true`. `mcp-pass` exposes the merged downstream tools directly, while proxy mode is primarily an internal aggregation mechanism for a running mini-a session.
+
 ```bash
 # With proxy (recommended for 3+ MCPs)
 mini-a mcpproxy=true mcp="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-math.yaml'), (cmd: 'ojob mcps/mcp-web.yaml')]"
+```
+
+```bash
+# Republish multiple MCPs as one MCP endpoint for another client
+ojob mcps/mcp-pass.yaml onport=9091 \
+  mainmcp="(cmd: 'ojob mcps/mcp-web.yaml')" \
+  othermcps="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-random.yaml')]"
 ```
 
 You can also combine STDIO and HTTP servers in a single session:
