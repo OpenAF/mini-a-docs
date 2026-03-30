@@ -43,3 +43,6 @@ exclude:
   - PLAN.md
   - TODO.md
   - README.md
+
+ga_tracking: G-VC702B2LH6
+ga_tracking_anonymize_ip: true
