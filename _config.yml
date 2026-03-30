@@ -44,5 +44,9 @@ exclude:
   - TODO.md
   - README.md
 
-ga_tracking: G-X31CZ4BY7S
-ga_tracking_anonymize_ip: true
+analytics:
+  provider: "google-gtag"
+  google:
+    tracking_id: "G-X31CZ4BY7S"
+    anonymize_ip: true 
+
