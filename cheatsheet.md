@@ -89,6 +89,10 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `shellallowpipes` | `false` | Allow pipes, redirection, and shell control operators |
 | `usestream` | `false` | Stream responses |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
+| `usesvg` | `false` | Enable SVG generation for custom visuals and infographics |
+| `usediagrams` | `false` | Enable diagram generation |
+| `usecharts` | `false` | Enable chart generation |
+| `usevectors` | `false` | Enable vector bundle (`usesvg=true` + `usediagrams=true`) |
 | `mcp` | - | MCP servers to load |
 | `mcpproxy` | `false` | MCP proxy mode |
 | `mcpproxytoon` | `false` | TOON serialization for spilled proxy results |

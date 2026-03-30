@@ -160,10 +160,12 @@ export MINI_A_PARAM=value
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `useascii` | `false` | Enable ASCII art generation |
+| `usesvg` | `false` | Enable SVG generation for custom visuals and infographics |
 | `usemaps` | `false` | Enable map visualization |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in the web UI |
 | `usediagrams` | `false` | Enable diagram generation |
 | `usecharts` | `false` | Enable chart generation |
+| `usevectors` | `false` | Enable the vector bundle (`usesvg=true` + `usediagrams=true`), preferring Mermaid for structural diagrams and SVG for infographics/custom visuals |
 | `usestream` | `false` | Enable response streaming |
 | `format` | - | Output format constraint |
 
