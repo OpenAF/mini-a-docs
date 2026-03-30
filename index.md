@@ -23,7 +23,7 @@ permalink: /
 {: .section}
 <div class="screenshots-grid">
   <div>
-    <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S1 — Web UI showing a multi-step task with streaming output]</div>
+    <img src="{{ '/assets/images/screenshots/s1-web-ui.jpg' | relative_url }}" alt="Web UI showing a multi-step task with streaming output" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
     <p style="text-align:center"><em>Web interface with real-time streaming</em></p>
   </div>
   <div>

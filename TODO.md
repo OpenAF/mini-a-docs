@@ -41,7 +41,7 @@ All screenshot placeholders in the documentation site. Replace `[SCREENSHOT-PLAC
 
 ## Progress
 
-- [ ] S1 — Web UI multi-step task
+- [x] S1 — Web UI multi-step task
 - [x] S2 — Console interactive goal
 - [ ] S3 — Terminal quick start recording
 - [x] S4 — Architecture diagram
