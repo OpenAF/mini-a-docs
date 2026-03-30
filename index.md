@@ -123,7 +123,7 @@ permalink: /
   <pre><code>&gt; List all JavaScript files in this project and count the lines of code in each
 </code></pre>
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S3 — Terminal recording showing a 30-second quick start]</div>
+<img src="{{ '/assets/images/screenshots/s3-quick-start.gif' | relative_url }}" alt="Terminal recording of 30-second quick start" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
 
 </div>
 
