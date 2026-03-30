@@ -416,12 +416,11 @@ The `planstyle` parameter controls how plans are generated:
 
 | Style | Behavior |
 |-------|----------|
-| `step` | Step-by-step incremental planning. The agent plans one step ahead at a time. |
-| `full` | Complete plan upfront. The agent creates the entire plan before executing any step. |
-| `validate` | Plan with validation. The agent creates a plan, validates it for feasibility, then executes. |
+| `simple` | Flat sequential plan steps. The agent creates numbered steps upfront and executes them in order. This is the default. |
+| `legacy` | Phase-based hierarchical planning. The agent groups steps into phases before executing. |
 
 ```bash
-mini-a useplanning=true planstyle=validate
+mini-a useplanning=true planstyle=legacy
 ```
 
 ### Saving Plans
@@ -594,11 +593,7 @@ mini-a's web interface supports additional configuration for production and team
 
 ### Authentication
 
-Protect the web interface with basic authentication:
-
-```bash
-mini-a onport=8080 auth='user:password'
-```
+mini-a's web interface does not include built-in authentication. Protect it by placing it behind a reverse proxy with authentication at that layer.
 
 ### Reverse Proxy Setup
 
@@ -711,7 +706,7 @@ This displays token counts, model call counts, cost estimates, and elapsed time 
 - **Unexpected tool selection** — Enable `debug=true` and check the routing decisions. The light model may be misclassifying the task. Try adjusting the goal wording or switching to a more capable light model.
 - **Slow responses** — Check `/stats` for token counts. If context is very large, use `/compact` to reduce it. Consider setting `maxcontext` to prevent unbounded growth.
 - **MCP connection failures** — Verify the MCP server is running and reachable. Use `debug=true` to see connection attempts and error messages. For remote MCPs, check firewall rules and network connectivity.
-- **Planning loops** — If the agent keeps replanning without executing, try switching `planstyle` from `validate` to `step` or `full`. Some goals may be too ambiguous for the validation step.
+- **Planning loops** — If the agent keeps replanning without executing, try switching `planstyle` from `legacy` to `simple` (the default). Phase-based planning can stall on ambiguous goals where a flat sequential plan works better.
 
 ---
 

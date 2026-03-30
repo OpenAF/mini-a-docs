@@ -25,13 +25,9 @@ export MINI_A_PARAM=value
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5-mini, key: '...')`) |
-| `lmodel` | - | Lighter model for simple tasks (dual-model) |
-| `vmodel` | - | Optional dedicated validation model used in deep-research scoring |
+| `modellc` | - | Lighter model for simple tasks (dual-model); set via `OAF_LC_MODEL` env var |
 | `lccontextlimit` | `0` | Escalate from low-cost model to main model when context tokens reach this threshold (`0` disables) |
 | `deescalate` | `3` | Consecutive successful steps required before switching back to the low-cost model after escalation |
-| `apikey` | - | API key (alternative to env var) |
-| `apiurl` | - | Custom API endpoint URL |
-| `temperature` | `0.7` | Model temperature (0-2) |
 | `maxtokens` | - | Maximum output tokens |
 | `rpm` | - | Requests per minute limit |
 | `tpm` | - | Tokens per minute limit |
@@ -213,8 +209,6 @@ export MINI_A_PARAM=value
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `onport` | - | Port for web UI (enables web mode) |
-| `auth` | - | Basic auth credentials (`user:pass`) |
-| `cors` | `false` | Enable CORS headers |
 | `maxpromptchars` | `120000` | Maximum accepted prompt size for incoming web `/prompt` requests |
 
 </div>
@@ -249,8 +243,7 @@ export MINI_A_PARAM=value
 | Variable | Maps to |
 |----------|---------|
 | `OAF_MODEL` | `model` |
-| `OAF_LC_MODEL` | `lmodel` |
-| `OAF_VAL_MODEL` | `vmodel` |
+| `OAF_LC_MODEL` | `modellc` |
 | `OAF_MINI_A_NOJSONPROMPT` | Force text prompt mode for main model; Gemini main models auto-enable this behavior when unset |
 | `OAF_MINI_A_LCNOJSONPROMPT` | Force text prompt mode for low-cost model (set explicitly for Gemini low-cost models) |
 | `MINI_A_GOAL` | `goal` |

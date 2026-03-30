@@ -137,14 +137,14 @@ mini-a mcpproxy=true mcp="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mc
 
 Shell access is **off by default**. When enabled (`useshell=true`), consider:
 
-- Use `readonly=true` to prevent file modifications
+- Keep `readwrite=false` (the default) to prevent file modifications
 - Use `shellallow` to whitelist specific commands
 - Use `shellban` to block dangerous commands
 - Use Docker for full isolation
 
 ```bash
 # Safe shell access: read-only with allowed commands only
-mini-a useshell=true readonly=true shellallow='git,ls,cat,grep'
+mini-a useshell=true readwrite=false shellallow='git,ls,cat,grep'
 ```
 
 ### How does Docker isolation work?
