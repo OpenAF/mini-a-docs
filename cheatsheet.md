@@ -73,10 +73,18 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `chatbotmode` | `false` | Chat-only mode |
 | `maxsteps` | `15` | Max agent steps |
 | `maxcontext` | - | Max context tokens |
+| `maxcontent` | - | Alias for `maxcontext` |
 | `maxtokens` | - | Max output tokens |
+| `deepresearch` | `false` | Enable iterative research/validation cycles |
+| `validationgoal` | - | Quality criteria for deep research |
+| `valgoal` | - | Alias for `validationgoal` |
+| `maxcycles` | `3` | Max deep research cycles |
+| `validationthreshold` | `PASS` | Validation verdict/score required to stop |
+| `persistlearnings` | `true` | Carry learnings forward between cycles |
 | `useplanning` | `false` | Enable planning |
 | `useutils` | `false` | Built-in utilities |
 | `mini-a-docs` | `false` | Docs-aware Mini Utils root (`markdownFiles`) when `utilsroot` is unset |
+| `miniadocs` | `false` | Alias for `mini-a-docs` |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `usetools` | `false` | Enable tool use |
 | `usejsontool` | `false` | Compatibility `json` tool for some tool-calling models |
@@ -91,6 +99,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
 | `usesvg` | `false` | Enable SVG generation for custom visuals and infographics |
 | `usediagrams` | `false` | Enable diagram generation |
+| `usemermaid` | `false` | Alias for `usediagrams` |
 | `usecharts` | `false` | Enable chart generation |
 | `usevectors` | `false` | Enable vector bundle (`usesvg=true` + `usediagrams=true`) |
 | `mcp` | - | MCP servers to load |
@@ -104,7 +113,10 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `maxpromptchars` | `120000` | Max accepted prompt size for incoming web prompts |
 | `lccontextlimit` | `0` | Escalate to main model when low-cost model context gets too large |
 | `deescalate` | `3` | Successful steps before returning from main model to low-cost model |
+| `modellock` | `auto` | Force model tier: `main`, `lc`, or `auto` |
+| `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
 | `usedelegation` | `false` | Agent delegation |
+| `workers` | - | Remote worker URLs for delegation |
 | `onport` | - | Web UI port |
 
 ## File Inclusion

@@ -26,8 +26,12 @@ export MINI_A_PARAM=value
 |-----------|---------|-------------|
 | `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5-mini, key: '...')`) |
 | `modellc` | - | Lighter model for simple tasks (dual-model); set via `OAF_LC_MODEL` env var |
+| `modellock` | `auto` | Force model-tier selection: `main`, `lc`, or `auto` |
 | `lccontextlimit` | `0` | Escalate from low-cost model to main model when context tokens reach this threshold (`0` disables) |
 | `deescalate` | `3` | Consecutive successful steps required before switching back to the low-cost model after escalation |
+| `lcescalatedefer` | `true` | Defer LC-to-main escalation by one step when LC confidence remains high |
+| `lcbudget` | `0` | Maximum total LC token budget before permanently switching to the main model (`0` = unlimited) |
+| `llmcomplexity` | `false` | Use a quick LC validation call for medium-complexity routing heuristics |
 | `maxtokens` | - | Maximum output tokens |
 | `rpm` | - | Requests per minute limit |
 | `tpm` | - | Tokens per minute limit |
@@ -41,21 +45,32 @@ export MINI_A_PARAM=value
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `goal` | - | The task/goal for the agent to accomplish |
+| `verbose` | `false` | Print more detailed runtime logs |
 | `useshell` | `false` | Enable shell command execution |
 | `chatbotmode` | `false` | Pure chat mode without tools |
 | `maxsteps` | `15` | Maximum number of agent steps |
+| `rtm` | - | Legacy alias for `rpm` |
 | `format` | - | Output format (e.g., `json`, `yaml`, `markdown`) |
 | `youare` | - | Custom system persona/identity |
+| `chatyouare` | - | Chatbot-mode persona override when `chatbotmode=true` |
 | `rules` | - | Additional rules for the agent |
 | `knowledge` | - | Knowledge base content or file path |
+| `conversation` | - | Conversation history file to preload at startup |
+| `state` | - | Structured initial state data (JSON/SLON) provided to the agent |
+| `raw` | `false` | Return raw output without extra formatting |
+| `showthinking` | `false` | Surface XML-tagged model thinking blocks as thought logs |
 | `debug` | `false` | Enable debug logging |
 | `debugfile` | - | Write debug output as NDJSON to a file (implies `debug=true`) |
+| `debugch` | - | Dedicated debug channel for main-model LLM traffic |
+| `debuglcch` | - | Dedicated debug channel for low-cost-model LLM traffic |
 | `debugvalch` | - | Dedicated debug channel for validation-model traffic when `llmcomplexity=true` |
 | `outfile` | - | Save final answer to file |
 | `outfileall` | - | Deep research only: save full cycle history/verdicts/learnings to file |
+| `outputfile` | - | Alternate key for `outfile`, mainly used by plan conversion flows |
 | `extracommands` | - | Comma-separated extra directories for custom slash command templates |
 | `extraskills` | - | Comma-separated extra directories for custom skills |
 | `extrahooks` | - | Comma-separated extra directories for hook definitions |
+| `secpass` | - | Password used to open OpenAF sBucket model secrets |
 | `auditch` | - | JSSLON channel definition for agent interaction audit logs |
 | `toollog` | - | JSSLON channel definition for dedicated MCP tool input/output logs |
 
@@ -80,6 +95,7 @@ export MINI_A_PARAM=value
 | `mcpdynamic` | `false` | Allow dynamic MCP discovery |
 | `mcplazy` | `false` | Lazy-load MCP servers |
 | `mcpurl` | - | Remote MCP server URL |
+| `nosetmcpwd` | `false` | Do not set the default MCP command working directory to the mini-a install path |
 
 </div>
 
@@ -93,9 +109,11 @@ export MINI_A_PARAM=value
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `utilsroot` | - | Root path used by Mini Utils file operations |
 | `mini-a-docs` | `false` | If `true` and `utilsroot` is not set, automatically uses the mini-a oPack docs path as `utilsroot` |
+| `miniadocs` | `false` | Alias for `mini-a-docs` |
 | `usetools` | `false` | Enable tool usage |
 | `usejsontool` | `false` | Register a compatibility `json` tool for models that sometimes emit `json` tool calls |
 | `libs` | - | Additional library paths to load |
+| `toolcachettl` | `600000` | Default cache TTL in milliseconds for MCP tool results |
 | `utilsallow` | - | Comma-separated allowlist of Mini Utils Tool names to expose when `useutils=true` |
 | `utilsdeny` | - | Comma-separated denylist of Mini Utils Tool names to hide when `useutils=true` (applied after `utilsallow`) |
 
@@ -108,6 +126,7 @@ export MINI_A_PARAM=value
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `maxcontext` | - | Maximum context window tokens |
+| `maxcontent` | - | Alias for `maxcontext` |
 | `maxtokens` | - | Maximum response tokens |
 | `autocompact` | `true` | Auto-compact when context is full |
 
@@ -115,24 +134,53 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 6. Planning
+## 6. Deep Research
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `deepresearch` | `false` | Enable iterative research-validate-learn cycles |
+| `validationgoal` | - | Validation criteria for deep research output quality (inline text or file path) |
+| `valgoal` | - | Alias for `validationgoal` |
+| `maxcycles` | `3` | Maximum number of deep-research cycles |
+| `validationthreshold` | `PASS` | Validation verdict or score rule required to stop iterating |
+| `persistlearnings` | `true` | Carry learnings from failed validation cycles into the next cycle |
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## 7. Planning
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `useplanning` | `false` | Enable agent planning |
+| `forceplanning` | `false` | Force planning even when heuristics would normally skip it |
 | `planstyle` | `simple` | Planning style: `simple` (flat sequential steps, default) / `legacy` (phase-based hierarchical) |
+| `earlystopthreshold` | `3` | Consecutive think/error-like steps before stronger recovery logic is triggered |
+| `planmode` | `false` | Run in plan-only mode without executing the plan |
+| `validateplan` | `false` | Validate a plan without executing it |
+| `convertplan` | `false` | Convert a loaded/generated plan to another format and exit |
+| `resumefailed` | `false` | Attempt to resume the last failed goal on startup |
 | `planfile` | - | File to save/load plans |
+| `planformat` | - | Plan format override, typically `md` or `json` |
+| `plancontent` | - | Inline Markdown or JSON plan content |
+| `updatefreq` | `auto` | Plan update cadence: `auto`, `always`, `checkpoints`, or `never` |
+| `updateinterval` | `3` | Steps between automatic updates when `updatefreq=auto` |
+| `forceupdates` | `false` | Force plan updates even after failed actions |
+| `planlog` | - | File path to append plan update logs |
+| `saveplannotes` | `false` | Save execution notes back into the plan file after execution |
 | `usethinking` | `false` | Enable chain-of-thought reasoning |
 
 </div>
 
 <div class="config-category" markdown="1">
 
-## 7. Shell Access
+## 8. Shell Access
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `useshell` | `false` | Enable shell commands |
+| `shell` | - | Prefix applied to every shell command |
 | `readwrite` | `false` | Allow file write operations |
 | `shelltimeout` | - | Maximum shell command runtime in milliseconds before timeout |
 | `shellmaxbytes` | `8000` | Truncate oversized shell output to head/tail excerpts with a banner |
@@ -141,6 +189,7 @@ export MINI_A_PARAM=value
 | `shellbanextra` | - | Additional banned shell commands (comma-separated) |
 | `checkall` | `false` | Ask for confirmation before every shell command |
 | `shellbatch` | `false` | Run shell commands without interactive approval prompts |
+| `shellprefix` | - | Override shell prefix when converting or replaying stored plans |
 | `shellban` | - | Banned shell commands (comma-separated) |
 
 ### Shell Sandbox
@@ -155,7 +204,7 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 8. Visual & Output
+## 9. Visual & Output
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -164,6 +213,7 @@ export MINI_A_PARAM=value
 | `usemaps` | `false` | Enable map visualization |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in the web UI |
 | `usediagrams` | `false` | Enable diagram generation |
+| `usemermaid` | `false` | Alias for `usediagrams` |
 | `usecharts` | `false` | Enable chart generation |
 | `usevectors` | `false` | Enable the vector bundle (`usesvg=true` + `usediagrams=true`), preferring Mermaid for structural diagrams and SVG for infographics/custom visuals |
 | `usestream` | `false` | Enable response streaming |
@@ -173,7 +223,7 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 9. Delegation
+## 10. Delegation
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -194,7 +244,7 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 9a. Conversation History
+## 10a. Conversation History
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -206,7 +256,7 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 10. Web Interface
+## 11. Web Interface
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -217,30 +267,32 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 11. Knowledge & Persona
+## 12. Knowledge & Persona
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `knowledge` | - | Knowledge base content or file |
 | `youare` | - | Agent persona/identity description |
+| `chatyouare` | - | Chatbot-mode persona override |
 | `rules` | - | Behavioral rules for the agent |
 
 </div>
 
 <div class="config-category" markdown="1">
 
-## 12. Rate Limiting
+## 13. Rate Limiting
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `rpm` | - | Requests per minute limit |
 | `tpm` | - | Tokens per minute limit |
+| `rtm` | - | Legacy alias for `rpm` |
 
 </div>
 
 <div class="config-category" markdown="1">
 
-## 13. Docker Environment Variables
+## 14. Docker Environment Variables
 
 | Variable | Maps to |
 |----------|---------|
@@ -257,7 +309,7 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 14. Console Commands Reference
+## 15. Console Commands Reference
 
 | Command | Description |
 |---------|-------------|
@@ -279,7 +331,7 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 15. Mode Presets
+## 16. Mode Presets
 
 | Preset | Parameters Enabled |
 |--------|-------------------|
