@@ -27,7 +27,7 @@ permalink: /
     <p style="text-align:center"><em>Web interface with real-time streaming</em></p>
   </div>
   <div>
-    <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S2 — Console interactive goal execution]</div>
+    <img src="{{ '/assets/images/screenshots/s2-console-interactive-goal.jpg' | relative_url }}" alt="Console interactive goal execution" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
     <p style="text-align:center"><em>Interactive console mode</em></p>
   </div>
 </div>
