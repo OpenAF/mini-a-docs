@@ -183,6 +183,48 @@ jobs:
         ((outfile)): CHANGELOG.md
 ```
 
+When you need the pipeline to verify that the generated result actually meets the intended outcome, enable deep research and add a `valgoal` (alias for `validationgoal`) with explicit acceptance criteria:
+
+```yaml
+ojob:
+  opacks:
+    - mini-a
+
+jobsInclude:
+  - mini-a.yaml
+
+todo:
+  - Build release summary with validation
+
+jobs:
+  - name: Build release summary with validation
+    to:
+      - (mini-a): |
+          Create docs/release-summary.md from the latest git changes.
+          Focus on user-visible changes, breaking changes, and upgrade notes.
+        ((useshell)): true
+        ((shellbatch)): true
+        ((shellallowpipes)): true
+        ((readwrite)): true
+        ((usetools)): true
+        ((deepresearch)): true
+        ((valgoal)): |
+          Validate that the result:
+          - is written in markdown
+          - includes sections for Features, Fixes, Breaking Changes, and Upgrade Notes
+          - mentions only changes supported by the repository evidence
+          - does not leave TODOs or placeholders
+          - is ready to publish as-is
+        ((validationthreshold)): PASS
+        ((format)): md
+        ((outfile)): docs/release-summary.md
+```
+
+You can also route validation to a different model than the main execution model:
+
+- Set `OAF_VAL_MODEL` in the environment to use a dedicated validation model for all deep-research runs.
+- Or set `vmodel` directly in the job parameters when you want the override to be local to that specific pipeline step.
+
 You can reuse the same structure for other automation tasks shown in upstream examples:
 
 - **Documentation refresh (`document.yaml`)**: use `useshell=true`, `useutils=true`, and `readwrite=true` so mini-a can scan repo files and update markdown docs.

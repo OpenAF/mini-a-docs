@@ -141,6 +141,7 @@ export MINI_A_PARAM=value
 | `deepresearch` | `false` | Enable iterative research-validate-learn cycles |
 | `validationgoal` | - | Validation criteria for deep research output quality (inline text or file path) |
 | `valgoal` | - | Alias for `validationgoal` |
+| `vmodel` | - | Optional dedicated validation model used in deep-research scoring |
 | `maxcycles` | `3` | Maximum number of deep-research cycles |
 | `validationthreshold` | `PASS` | Validation verdict or score rule required to stop iterating |
 | `persistlearnings` | `true` | Carry learnings from failed validation cycles into the next cycle |

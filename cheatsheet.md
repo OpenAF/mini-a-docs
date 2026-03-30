@@ -78,6 +78,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `deepresearch` | `false` | Enable iterative research/validation cycles |
 | `validationgoal` | - | Quality criteria for deep research |
 | `valgoal` | - | Alias for `validationgoal` |
+| `vmodel` | - | Optional dedicated validation model used in deep-research scoring |
 | `maxcycles` | `3` | Max deep research cycles |
 | `validationthreshold` | `PASS` | Validation verdict/score required to stop |
 | `persistlearnings` | `true` | Carry learnings forward between cycles |

@@ -74,6 +74,8 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5-nano, key: '...')"
 export OAF_VAL_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 ```
 
+If you need the validation override only for one run or one oJob step, set `vmodel` directly instead of exporting `OAF_VAL_MODEL`.
+
 If you prefer not to keep raw model definitions in shell profile files, launch the interactive model manager:
 
 ```bash
