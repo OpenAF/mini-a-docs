@@ -3,8 +3,8 @@ tagline: "Your goals. Your LLM. One command."
 description: >-
   A minimalist autonomous agent framework built on OpenAF that uses LLMs,
   shell commands, and MCP servers to achieve user-defined goals.
-baseurl: "/mini-a-docs"
-url: "https://openaf.github.io"
+baseurl: "/"
+url: "https://mini-a.ai"
 
 theme: minima
 
@@ -43,3 +43,10 @@ exclude:
   - PLAN.md
   - TODO.md
   - README.md
+
+analytics:
+  provider: "google-gtag"
+  google:
+    tracking_id: "G-X31CZ4BY7S"
+    anonymize_ip: true 
+
