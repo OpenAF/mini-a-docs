@@ -44,5 +44,4 @@ exclude:
   - TODO.md
   - README.md
 
-google_analytics: "G-X31CZ4BY7S"
-
+ga4_measurement_id: "G-X31CZ4BY7S"
