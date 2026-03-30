@@ -49,6 +49,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 |---------|--------|
 | `/help` | Show commands |
 | `/model` | Current model info |
+| `/show [prefix]` | Show active parameters |
+| `/skills [prefix]` | List discovered skills |
 | `/compact [n]` | Compact older history, keep up to latest `n` exchanges (default 6) |
 | `/summarize [n]` | Summarize older history, keep up to latest `n` exchanges (default 6) |
 | `/context` | Show token/context breakdown |
@@ -69,21 +71,23 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `useshell` | `false` | Enable shell commands |
 | `readwrite` | `false` | Allow file writes |
 | `chatbotmode` | `false` | Chat-only mode |
-| `maxsteps` | `50` | Max agent steps |
+| `maxsteps` | `15` | Max agent steps |
 | `maxcontext` | - | Max context tokens |
 | `maxtokens` | - | Max output tokens |
 | `useplanning` | `false` | Enable planning |
-| `useutils` | `true` | Built-in utilities |
+| `useutils` | `false` | Built-in utilities |
 | `mini-a-docs` | `false` | Docs-aware Mini Utils root (`markdownFiles`) when `utilsroot` is unset |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
-| `usetools` | `true` | Enable tool use |
+| `usetools` | `false` | Enable tool use |
+| `usejsontool` | `false` | Compatibility `json` tool for some tool-calling models |
 | `toollog` | - | JSSLON channel for MCP tool call logs (input/output) |
 | `debugfile` | - | Write debug output to a NDJSON file (implies `debug=true`) |
+| `debugvalch` | - | Separate debug channel for the validation model |
 | `outfileall` | - | Deep research only: save full cycle outputs (not only final answer) |
 | `shelltimeout` | - | Max shell command runtime (ms) before timeout |
 | `shellmaxbytes` | `8000` | Cap shell output size and truncate with head/tail excerpt |
 | `shellallowpipes` | `false` | Allow pipes, redirection, and shell control operators |
-| `usestream` | `true` | Stream responses |
+| `usestream` | `false` | Stream responses |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
 | `mcp` | - | MCP servers to load |
 | `mcpproxy` | `false` | MCP proxy mode |
@@ -92,6 +96,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `mcpprogcallport` | `0` | Programmatic MCP bridge port (`0` auto-selects) |
 | `mcpprogcallmaxbytes` | `4096` | Max inline bridge response size before spill |
 | `mcpprogcallresultttl` | `600` | TTL (seconds) for spilled bridge results |
+| `mcpprogcallbatchmax` | `10` | Max tool calls accepted per bridge batch request |
+| `maxpromptchars` | `120000` | Max accepted prompt size for incoming web prompts |
 | `lccontextlimit` | `0` | Escalate to main model when low-cost model context gets too large |
 | `deescalate` | `3` | Successful steps before returning from main model to low-cost model |
 | `usedelegation` | `false` | Agent delegation |
@@ -129,8 +135,8 @@ mini-a useutils=true goal='@data.csv Analyze it'
 | `internet` | Internet-focused MCP/tool mode with docs-aware utils |
 | `news` | Internet + RSS news-focused MCP mode |
 | `poweruser` | High-capability preset with shell, utils, proxy tuning, and docs-aware defaults |
-| `web` | Browser UI optimized preset with docs-aware utils |
-| `webfull` | Full web UI preset (docs-aware utils, history, attachments, planning, diagrams/charts, math rendering guidance) |
+| `web` | Browser UI preset with MCP tools enabled |
+| `webfull` | Full web UI preset with history, attachments, proxying, and richer rendering modes |
 
 Custom modes: create `~/.openaf-mini-a_modes.yaml` with a `modes:` map. Custom definitions are merged with built-ins and override duplicates.
 

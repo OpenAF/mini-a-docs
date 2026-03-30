@@ -74,6 +74,12 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5-nano, key: '...')"
 export OAF_VAL_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 ```
 
+If you prefer not to keep raw model definitions in shell profile files, launch the interactive model manager:
+
+```bash
+mini-a modelman=true
+```
+
 ### Model Manager
 
 mini-a includes a built-in TUI (text user interface) for managing models interactively:
@@ -107,7 +113,7 @@ Once started, type your goal at the prompt and press Enter. mini-a will plan and
 Pass a goal directly from the command line for non-interactive execution:
 
 ```bash
-mini-a useutils=true goal='List all files in the current directory'
+mini-a goal='List all files in the current directory'
 ```
 
 ### Web UI
@@ -129,7 +135,7 @@ Then open [http://localhost:8080](http://localhost:8080) in your browser.
 You can run mini-a directly with Docker without installing OpenAF:
 
 ```bash
-docker run -e OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')" -p 8080:8080 openaf/mini-a
+docker run -e OAF_MODEL="(type: openai, model: gpt-5-mini, key: '...')" -p 8080:8080 openaf/mini-a onport=8080
 ```
 
 This starts the web UI on port 8080. Open [http://localhost:8080](http://localhost:8080) in your browser to get started.
@@ -144,6 +150,8 @@ When running in interactive console mode, the following commands are available:
 |---------|-------------|
 | `/help` | Show available commands |
 | `/model` | Show current model |
+| `/show [prefix]` | Show active parameters, optionally filtered by prefix |
+| `/skills [prefix]` | List discovered skills, optionally filtered by prefix |
 | `/compact [n]` | Compact older history while keeping up to the latest `n` exchanges (default 6) |
 | `/summarize [n]` | Replace older history with a narrative summary and keep up to the latest `n` exchanges (default 6) |
 | `/context` | Show token/context breakdown |
@@ -183,8 +191,8 @@ Built-ins come from `mini-a-modes.yaml`, and you can extend/override them with `
 | `internet` | Internet-focused MCP/tool mode with docs-aware utils |
 | `news` | Web + RSS news-focused MCP mode |
 | `poweruser` | Shell + utils + tools + proxy tuning preset |
-| `web` | Browser UI optimized preset with docs-aware utils |
-| `webfull` | Full web UI preset (docs-aware utils, history, attachments, diagrams/charts, math rendering guidance, planning) |
+| `web` | Browser UI preset with MCP tools enabled |
+| `webfull` | Full web UI preset with history, attachments, charts/diagrams, proxying, and richer rendering options |
 
 **Built-in mode example:**
 

@@ -6,7 +6,7 @@ permalink: /mcp-catalog/
 
 **MCP (Model Context Protocol)** is an open standard that defines how LLMs discover and invoke external tools through a uniform interface. Instead of hard-coding integrations, mini-a connects to MCP servers that expose capabilities as callable tools. Each MCP server runs as a separate process (STDIO) or remote service (HTTP), and mini-a automatically discovers available tools at startup.
 
-mini-a ships with **23 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter.
+mini-a ships with **26 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
 
 ---
 

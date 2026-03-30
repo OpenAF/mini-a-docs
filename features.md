@@ -4,7 +4,7 @@ title: Features
 permalink: /features/
 ---
 
-mini-a packs a comprehensive set of features into a minimalist framework. This page covers everything from model selection and cost optimization to multi-agent orchestration, security, tooling, and output formats.
+mini-a packs a comprehensive set of features into a minimalist framework. This page covers current capabilities across models, tool orchestration, delegation, security, and output/runtime options.
 
 ---
 
@@ -49,10 +49,11 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"      # Light
 
 The framework automatically decides which model to use for each subtask, optimizing cost without sacrificing quality where it matters.
 
-Recent updates added dynamic escalation controls so you can tune this behavior:
+Recent updates added dynamic escalation controls and per-run cost tracking so you can tune and measure this behavior:
 
 - `lccontextlimit` escalates to the main model when low-cost context gets too large.
 - `deescalate` controls how many successful steps are needed before returning to the low-cost model.
+- `getCostStats()` returns a per-session usage breakdown for low-cost and main model tiers.
 - `OAF_MINI_A_NOJSONPROMPT` / `OAF_MINI_A_LCNOJSONPROMPT` let you force text-prompt mode per model tier (Gemini main models auto-enable when unset).
 
 ### Estimated Savings
@@ -64,7 +65,7 @@ Recent updates added dynamic escalation controls so you can tune this behavior:
 | Planning & step decomposition | Light model (`OAF_LC_MODEL`) | ~50% cheaper |
 | Complex reasoning & analysis | Main model (`OAF_MODEL`) | 0% (full model needed) |
 
-When both models are configured, mini-a reports separate token usage and cost estimates for each, so you can track exactly how much you are saving.
+When both models are configured, mini-a can report separate token usage and cost estimates for each tier, so you can track exactly how much you are saving.
 
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S8 — Token stats with dual-model cost breakdown]</div>
 
@@ -98,7 +99,7 @@ mini-a maxcontext=32000 maxtokens=4096
 
 **MCP (Model Context Protocol)** is an open standard that defines how LLMs discover and invoke external tools. Instead of hard-coding tool integrations, mini-a uses MCP servers that expose capabilities through a uniform interface.
 
-mini-a ships with **20+ built-in MCP servers** covering common tasks — file operations, web browsing, databases, Kubernetes, finance, email, and more.
+mini-a ships with **25+ built-in MCP servers** covering common tasks such as file operations, web browsing, databases, Kubernetes, finance, office documents, OpenAF helpers, and more.
 
 ### STDIO vs HTTP Mode
 
@@ -117,7 +118,18 @@ mini-a usetools=true mcpserver="http://mcp.example.com:8080"
 
 For a complete list of available MCP servers and their capabilities, see the [MCP Catalog]({{ '/mcp-catalog' | relative_url }}).
 
-### Programmatic MCP Tool Calling
+### MCP Proxy and Programmatic Tool Calling
+
+When many tools are active, `mcpproxy=true` can collapse them into a single `proxy-dispatch` tool to reduce prompt bloat.
+
+```bash
+mini-a goal="compare release dates across APIs" \
+  usetools=true mcpproxy=true \
+  mcp="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-fin.yaml')]" \
+  useutils=true
+```
+
+Large proxy calls can spill arguments/results to files with `argumentsFile` and `resultToFile=true`, and `mcpproxytoon=true` can serialize spilled object payloads in TOON format for easier scanning.
 
 mini-a can optionally start a localhost bridge that lets generated scripts list/search/call MCP tools in loops and batches.
 
@@ -126,7 +138,7 @@ mini-a useshell=true usetools=true mcpprogcall=true \
   mcp="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-web.yaml')]"
 ```
 
-Useful controls include `mcpprogcallport`, `mcpprogcallmaxbytes`, `mcpprogcallresultttl`, and `mcpprogcalltools`.
+Useful controls include `mcpprogcallport`, `mcpprogcallmaxbytes`, `mcpprogcallresultttl`, `mcpprogcalltools`, and `mcpprogcallbatchmax`.
 
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S9 — MCP test console listing tools]</div>
 
@@ -213,7 +225,7 @@ mini-a
 A browser-based interface with session management, conversation history, and streaming output.
 
 ```bash
-mini-a web=true webport=8080
+mini-a onport=8080
 ```
 
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S10 — Web UI with session management]</div>
@@ -238,8 +250,22 @@ print(result);
 
 Run mini-a as a remote agent that accepts goals via an API endpoint.
 
+Dynamic worker registration is also available. Parents can open a registration port with `workerreg=<port>`, and worker instances can self-register with `workerregurl=<url>` and heartbeat via `workerreginterval=<ms>`.
+
+---
+
+## Streaming, Debugging, and Safety
+
+Recent releases added several runtime improvements that are useful in production setups:
+
+- `planner_stream` SSE events distinguish planning tokens from normal answer tokens when `usestream=true`.
+- `debugfile=<path>` writes debug output as NDJSON instead of flooding the console with raw blocks.
+- `debugvalch` routes validation-model debugging to its own channel when `llmcomplexity=true`.
+- `maxpromptchars` caps inbound web prompt size before any model call is made.
+- Untrusted input blocks and prompt normalization reduce prompt-injection risk from goals, chat text, and attachments.
+
 ```bash
-mini-a worker=true workerport=9090
+mini-a workermode=true onport=9090
 ```
 
 Other agents or applications can then delegate tasks to this worker instance.
@@ -284,7 +310,7 @@ Worker registration is also supported: set `workerreg` to a port to have mini-a 
 
 Use this pattern when you want mini-a to coordinate multiple agents for larger workloads:
 
-1. Start one or more worker instances (`mini-a worker=true workerport=9090`).
+1. Start one or more worker instances (`mini-a workermode=true onport=9090`).
 2. Run a parent agent with planning and delegation enabled.
 3. Set concurrency limits so execution stays predictable.
 4. Let the parent combine worker outputs into a single final result.
@@ -432,7 +458,7 @@ services:
       - "8080:8080"
     volumes:
       - ./workspace:/workspace
-    command: mini-a web=true webport=8080
+    command: onport=8080
 ```
 
 Docker containers provide a natural sandbox for shell execution — you can enable `useshell=true` inside the container without exposing your host system.

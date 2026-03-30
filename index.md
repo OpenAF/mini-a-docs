@@ -8,8 +8,9 @@ permalink: /
   <p class="tagline">Your goals. Your LLM. One command.</p>
   <p class="hero-description">
     A minimalist autonomous agent framework built on OpenAF. Connect any LLM,
-    use 20+ built-in MCP tool servers, and orchestrate multi-agent delegation
-    for complex goals — from the terminal, a web UI, or your own code.
+    use 25+ built-in MCP servers, and orchestrate delegated multi-agent
+    workflows with proxy-backed tools, streaming, and worker registration
+    from the terminal, a web UI, or your own code.
   </p>
   <div class="cta-buttons">
     <a href="{{ '/getting-started' | relative_url }}" class="btn btn-primary">Get Started</a>
@@ -39,7 +40,7 @@ permalink: /
     <span class="label">LLM Providers</span>
   </div>
   <div class="number-item">
-    <span class="number">20+</span>
+    <span class="number">25+</span>
     <span class="label">MCP Servers</span>
   </div>
   <div class="number-item">
@@ -69,16 +70,20 @@ permalink: /
     <p>Dual-model architecture routes simple tasks to cheaper models automatically. Pay less, get the same results.</p>
   </div>
   <div class="feature-card">
-    <h3>20+ Tools, Zero Code</h3>
-    <p>Built-in MCP servers for time, finance, databases, web, email, Kubernetes, and more — ready to use.</p>
+    <h3>25+ MCP Servers, Ready to Run</h3>
+    <p>Time, finance, databases, web, email, Kubernetes, office docs, OpenAF helpers, and more ship as built-in MCP servers.</p>
   </div>
   <div class="feature-card">
     <h3>Multi-Agent Orchestration</h3>
-    <p>Enable delegation to split goals into subtasks and run them in parallel across child agents or remote workers.</p>
+    <p>Enable delegation to split goals into subtasks and run them across local child agents, remote workers, or self-registering worker pools.</p>
   </div>
   <div class="feature-card">
     <h3>40-60% Fewer Tokens</h3>
     <p>Automatic context optimization, conversation compaction, and smart summarization keep costs low.</p>
+  </div>
+  <div class="feature-card">
+    <h3>Proxy and Script-Friendly Tools</h3>
+    <p>Aggregate tools behind one `proxy-dispatch` interface or expose them through a localhost bridge for programmatic MCP calls from generated scripts.</p>
   </div>
   <div class="feature-card">
     <h3>Console. Web. Library. Docker.</h3>
@@ -86,7 +91,7 @@ permalink: /
   </div>
   <div class="feature-card">
     <h3>Secure by Default</h3>
-    <p>Shell access off by default, read-only mode, command allowlists, encrypted key storage.</p>
+    <p>Shell access off by default, prompt normalization, untrusted-input labeling, prompt-size limits, read-only mode, and encrypted key storage.</p>
   </div>
 </div>
 

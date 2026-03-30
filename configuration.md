@@ -4,7 +4,7 @@ title: Configuration
 permalink: /configuration/
 ---
 
-Complete reference for all mini-a parameters. Parameters are set via `-e` flag or environment variables.
+Complete reference for common mini-a parameters. Parameters are set as `param=value` arguments, by using the corresponding `OAF_*`/`MINI_A_*` environment variables where supported, or through saved model definitions.
 
 ```bash
 mini-a param=value
@@ -47,13 +47,14 @@ export MINI_A_PARAM=value
 | `goal` | - | The task/goal for the agent to accomplish |
 | `useshell` | `false` | Enable shell command execution |
 | `chatbotmode` | `false` | Pure chat mode without tools |
-| `maxsteps` | `50` | Maximum number of agent steps |
+| `maxsteps` | `15` | Maximum number of agent steps |
 | `format` | - | Output format (e.g., `json`, `yaml`, `markdown`) |
 | `youare` | - | Custom system persona/identity |
 | `rules` | - | Additional rules for the agent |
 | `knowledge` | - | Knowledge base content or file path |
 | `debug` | `false` | Enable debug logging |
 | `debugfile` | - | Write debug output as NDJSON to a file (implies `debug=true`) |
+| `debugvalch` | - | Dedicated debug channel for validation-model traffic when `llmcomplexity=true` |
 | `outfile` | - | Save final answer to file |
 | `outfileall` | - | Deep research only: save full cycle history/verdicts/learnings to file |
 | `extracommands` | - | Comma-separated extra directories for custom slash command templates |
@@ -92,11 +93,12 @@ export MINI_A_PARAM=value
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `useutils` | `true` | Enable Mini Utils Tool utilities (`init`, `filesystemQuery`, `filesystemModify`, `markdownFiles`) |
+| `useutils` | `false` | Enable Mini Utils Tool utilities (`init`, `filesystemQuery`, `filesystemModify`, `markdownFiles`) |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `utilsroot` | - | Root path used by Mini Utils file operations |
 | `mini-a-docs` | `false` | If `true` and `utilsroot` is not set, automatically uses the mini-a oPack docs path as `utilsroot` |
-| `usetools` | `true` | Enable tool usage |
+| `usetools` | `false` | Enable tool usage |
+| `usejsontool` | `false` | Register a compatibility `json` tool for models that sometimes emit `json` tool calls |
 | `libs` | - | Additional library paths to load |
 | `utilsallow` | - | Comma-separated allowlist of Mini Utils Tool names to expose when `useutils=true` |
 | `utilsdeny` | - | Comma-separated denylist of Mini Utils Tool names to hide when `useutils=true` (applied after `utilsallow`) |
@@ -166,7 +168,7 @@ export MINI_A_PARAM=value
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in the web UI |
 | `usediagrams` | `false` | Enable diagram generation |
 | `usecharts` | `false` | Enable chart generation |
-| `usestream` | `true` | Enable response streaming |
+| `usestream` | `false` | Enable response streaming |
 | `format` | - | Output format constraint |
 
 </div>
@@ -179,11 +181,16 @@ export MINI_A_PARAM=value
 |-----------|---------|-------------|
 | `usedelegation` | `false` | Enable agent delegation |
 | `workers` | - | Worker API URLs (comma-separated) |
-| `maxconcurrent` | `3` | Max concurrent delegated tasks |
+| `usea2a` | `false` | Use A2A HTTP+JSON/REST transport for remote delegation |
+| `maxconcurrent` | `4` | Max concurrent delegated tasks |
 | `workerreg` | - | Start worker registration HTTP server on this port |
 | `workerregtoken` | - | Optional token required by the worker registration endpoint |
-| `workerevictionttl` | - | Worker eviction TTL in milliseconds for stale worker entries |
-| `delegationmaxdepth` | - | Maximum recursive delegation depth |
+| `workerevictionttl` | `60000` | Worker eviction TTL in milliseconds for stale worker entries |
+| `workerregurl` | - | Parent registration URLs used by workers for self-registration |
+| `workerreginterval` | `30000` | Worker heartbeat interval in milliseconds |
+| `delegationmaxdepth` | `3` | Maximum recursive delegation depth |
+| `delegationtimeout` | `300000` | Default delegated subtask timeout in milliseconds |
+| `delegationmaxretries` | `2` | Retry count for failed delegated subtasks |
 
 </div>
 
@@ -208,6 +215,7 @@ export MINI_A_PARAM=value
 | `onport` | - | Port for web UI (enables web mode) |
 | `auth` | - | Basic auth credentials (`user:pass`) |
 | `cors` | `false` | Enable CORS headers |
+| `maxpromptchars` | `120000` | Maximum accepted prompt size for incoming web `/prompt` requests |
 
 </div>
 
@@ -283,12 +291,12 @@ export MINI_A_PARAM=value
 | `shell` | `useshell=true` |
 | `shellrw` | `useshell=true useutils=true readwrite=true shellallowpipes=true shellbatch=true showexecs=true mini-a-docs=true` |
 | `utils` | `useutils=true mini-a-docs=true usetools=true` |
-| `chatbot` | `chatbotmode=true` |
-| `internet` | Internet-focused MCP/tool preset with docs-aware utils from `mini-a-modes.yaml` |
+| `chatbot` | `chatbotmode=true usestream=true` |
+| `internet` | Internet-focused MCP/tool preset with docs-aware utils and proxy aggregation |
 | `news` | News-focused MCP preset (web + rss + time, proxy enabled) |
-| `poweruser` | Shell + utils + tools with proxy tuning (`mcpproxytoon=true`, low cache TTL, docs-aware defaults) |
-| `web` | Browser UI optimized preset with docs-aware utils |
-| `webfull` | Full web UI preset with docs-aware utils, planning/history/attachments, richer output modes, and math rendering guidance |
+| `poweruser` | Shell + utils + tools with proxy tuning, history retention, LC validation, and docs-aware defaults |
+| `web` | Browser UI preset with MCP tools enabled |
+| `webfull` | Full web UI preset with history/attachments, proxy tuning, charts/diagrams/maps, and richer rendering options |
 
 User custom presets can be defined in `~/.openaf-mini-a_modes.yaml`. They are merged with built-ins from `mini-a-modes.yaml`, and user definitions take precedence.
 
