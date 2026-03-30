@@ -290,6 +290,77 @@ mini-a readwrite=false useshell=true
 
 Set `readwrite=true` only when you explicitly want the agent to create or modify files.
 
+### OS Sandboxing
+
+mini-a includes built-in OS-level sandboxing via `usesandbox`. Use this when you want the agent's shell commands to run inside a restricted OS environment without setting up a container runtime. For custom runtimes (Docker, Podman, firejail, custom wrappers), use `shell=` instead.
+
+#### Built-in presets
+
+| Value | Behavior |
+|-------|----------|
+| `auto` | Detects host OS and applies the default preset for that platform. |
+| `linux` | Uses `bwrap` (bubblewrap). Host filesystem is read-only; private temp/home area; `readwrite=true` widens writes to the current working directory and temp paths only; `sandboxnonetwork=true` adds `--unshare-net`. |
+| `macos` | Uses `sandbox-exec`. If `sandboxprofile` is omitted, mini-a auto-generates a restrictive profile with read access to the host, private temp/home writes, optional current-directory writes via `readwrite=true`, and network blocked when `sandboxnonetwork=true`. |
+| `windows` | Best-effort PowerShell wrapper with `ConstrainedLanguage` mode, isolated temp/home paths, and a narrowed environment. `sandboxnonetwork=true` applies proxy/environment blocking. Does not provide Linux-equivalent filesystem or guaranteed network isolation — combine with WDAC/AppContainer for stronger policy. |
+
+If the selected backend is unavailable (e.g. `bwrap` or `sandbox-exec` is missing), mini-a warns and continues without sandboxing.
+
+#### macOS (sandbox-exec)
+
+- **Use the built-in restriction flags** when you only need to block specific binaries (combine `shellallow`, `shellbanextra`, `shellallowpipes`, `checkall=true`).
+- **Use `usesandbox=macos`** when you want mini-a to generate a restrictive host sandbox automatically.
+- **Use `shell=`** when you want a custom `.sb` profile or a stronger container boundary.
+- `readwrite=true` widens writes to the current working directory and temp paths only.
+- `sandboxnonetwork=true` removes network access from the generated profile.
+
+```bash
+mini-a goal="catalog ~/Projects" useshell=true usesandbox=macos
+```
+
+#### Linux (bubblewrap)
+
+- **Use `usesandbox=linux`** when `bwrap` is installed and you want read-only host access with a private temp/home area.
+- **Use `shell=`** when you need a containerized runtime, custom namespace/network policy, or a guaranteed writable environment beyond `readwrite=true`.
+- `readwrite=true` adds writes to the current working directory and temp paths only.
+- `sandboxnonetwork=true` adds `--unshare-net`.
+
+#### Windows (best-effort PowerShell)
+
+- **Use `usesandbox=windows`** for safer defaults around temp/home isolation without extra tooling.
+- **Use `shell=` or platform tooling** (WDAC, AppContainer, Windows Sandbox) when you need enforceable OS policy.
+- `sandboxnonetwork=true` is best-effort only via proxy/environment blocking.
+
+#### macOS Sequoia (container CLI)
+
+On macOS 15+, you can run mini-a inside an Apple `container`-managed environment via `shell=`:
+
+```bash
+container run --detach --name mini-a --image docker.io/library/ubuntu:24.04 sleep infinity
+mini-a goal="inspect /work" useshell=true shell="container exec mini-a"
+```
+
+#### Docker and Podman via `shell=`
+
+Run every shell command inside a long-lived container by setting `shell=` to the exec command:
+
+```bash
+# Docker
+docker run -d --rm --name mini-a-sandbox -v "$PWD":/work -w /work ubuntu:24.04 sleep infinity
+mini-a goal="summarize git status" useshell=true shell="docker exec mini-a-sandbox"
+
+# Podman (rootless)
+podman run -d --rm --name mini-a-sandbox -v "$PWD":/work -w /work docker.io/library/fedora:latest sleep infinity
+mini-a goal="list source files" useshell=true shell="podman exec mini-a-sandbox"
+```
+
+#### Hook alternatives (recommended for strict policy)
+
+- Use `before_shell` hooks to deny commands by path, arguments, time window, or user context.
+- Use `after_shell` hooks to audit output, redact sensitive data, and trigger alerts.
+- Combine hooks with `usesandbox` or `shell=` so both policy checks and OS-level sandboxing are active.
+
+> **Tip:** `shellallow`, `shellbanextra`, `shellallowpipes`, `checkall`, and `before_shell`/`after_shell` hooks are separate policy layers that remain active even when `usesandbox` or `shell=` is set.
+
 ---
 
 ## Library Integration
@@ -412,12 +483,76 @@ mini-a usedelegation=true
 
 The parent agent decomposes the goal, assigns sub-tasks to child agents, and aggregates their results.
 
+### Starting a Worker
+
+Start a headless worker that accepts delegated tasks over HTTP:
+
+```bash
+mini-a workermode=true onport=8080 apitoken=your-secret-token workername="research-east" workerdesc="US-East research worker"
+```
+
+The worker exposes a REST API. Key endpoints:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /info` | Server capabilities |
+| `POST /task` | Submit a new task |
+| `POST /status` | Poll task status |
+| `POST /result` | Retrieve final result |
+| `POST /cancel` | Cancel a running task |
+| `GET /healthz` | Health check |
+| `GET /metrics` | Task and delegation metrics |
+
+Submit a task directly via HTTP:
+
+```bash
+curl -X POST http://localhost:8080/task \
+  -H "Authorization: Bearer your-secret-token" \
+  -H "Content-Type: application/json" \
+  -d '{"goal": "Analyze data and produce summary", "args": {"maxsteps": 10}, "timeout": 300}'
+
+# Poll status
+curl -X POST http://localhost:8080/status \
+  -H "Authorization: Bearer your-secret-token" \
+  -H "Content-Type: application/json" \
+  -d '{"taskId": "..."}'
+
+# Get result
+curl -X POST http://localhost:8080/result \
+  -H "Authorization: Bearer your-secret-token" \
+  -H "Content-Type: application/json" \
+  -d '{"taskId": "..."}'
+```
+
+Workers also support the A2A HTTP+JSON/REST transport (`/message:send`, `/tasks`, `/tasks:cancel`, `/.well-known/agent.json`). Enable it on the parent with `usea2a=true`:
+
+```bash
+mini-a usedelegation=true usea2a=true workers="http://localhost:8080" apitoken=your-secret-token goal="Coordinate parallel subtasks"
+```
+
+### Dynamic Worker Registration
+
+Instead of a static `workers=` list, workers can self-register and send heartbeats to the parent:
+
+```bash
+# Parent: start registration server
+mini-a usedelegation=true usetools=true \
+  workerreg=12345 workerregtoken=secret workerevictionttl=90000
+
+# Worker: self-register and heartbeat
+mini-a workermode=true onport=8080 apitoken=secret \
+  workerregurl="http://main-host:12345" \
+  workerregtoken=secret workerreginterval=30000
+```
+
+Registration endpoints on the parent's `workerreg` port: `POST /worker-register`, `POST /worker-deregister`, `GET /worker-list`, `GET /healthz`. Workers that miss heartbeats are evicted after `workerevictionttl` milliseconds (default 60 000). This pattern also works with Kubernetes HPA: new pods register on startup and deregister on graceful shutdown.
+
 ### Remote Workers
 
 Connect to worker APIs running on other machines for distributed execution:
 
 ```bash
-mini-a usedelegation=true workers='http://worker1:8080,http://worker2:8080'
+mini-a usedelegation=true workers='http://worker1:8080,http://worker2:8080' apitoken=your-secret-token usetools=true goal="Coordinate parallel subtasks"
 ```
 
 Remote workers run their own mini-a instances and accept task assignments from the parent agent. This scales mini-a horizontally across multiple machines.
@@ -463,14 +598,6 @@ Protect the web interface with basic authentication:
 
 ```bash
 mini-a onport=8080 auth='user:password'
-```
-
-### CORS Configuration
-
-Enable CORS for cross-origin access from other web applications:
-
-```bash
-mini-a onport=8080 cors=true
 ```
 
 ### Reverse Proxy Setup
