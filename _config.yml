@@ -17,6 +17,7 @@ minima:
     - cheatsheet.md
     - advanced.md
     - configuration.md
+    - search.md
 
 plugins:
   - jekyll-feed

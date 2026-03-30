@@ -1,0 +1,19 @@
+---
+layout: null
+permalink: /search-data.json
+---
+[
+  {%- assign docs = site.pages | sort: "title" -%}
+  {%- assign first = true -%}
+  {%- for doc in docs -%}
+    {%- if doc.title and doc.path != "404.md" and doc.path != "search.md" and doc.path != "search-data.json" -%}
+      {%- unless first -%},{%- endunless -%}
+      {
+        "title": {{ doc.title | jsonify }},
+        "url": {{ doc.url | relative_url | jsonify }},
+        "content": {{ doc.content | markdownify | strip_html | normalize_whitespace | jsonify }}
+      }
+      {%- assign first = false -%}
+    {%- endif -%}
+  {%- endfor -%}
+]
