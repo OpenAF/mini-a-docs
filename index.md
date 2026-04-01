@@ -123,7 +123,8 @@ permalink: /
   <pre><code>&gt; list all JavaScript files in this project and count the lines of code in each
 </code></pre>
 
-<img src="{{ '/assets/images/screenshots/s3-quick-start.gif' | relative_url }}" alt="Terminal recording of 30-second quick start" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
+<div id="player-s3" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s3-quick-start.cast' | relative_url }}", document.getElementById('player-s3'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
