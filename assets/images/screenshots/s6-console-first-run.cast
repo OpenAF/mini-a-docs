@@ -1,4 +1,4 @@
-{"version":3,"term":{"cols":160,"rows":48,"type":"xterm","version":"iTerm2 3.5.14","theme":{"fg":"#c7c7c7","bg":"#000000","palette":"#000000:#b93019:#52c037:#c7c53e:#0c24c0:#ba3ec1:#53c3c6:#c7c7c7:#686868:#f0776d:#8df77a:#fffc7f:#6a71f7:#f17ff9:#8efafe:#ffffff"}},"timestamp":1774979418}
+{"version": 2, "width": 160, "height": 48, "timestamp": 1774979418, "theme": {"fg": "#c7c7c7", "bg": "#000000", "palette": "#000000:#b93019:#52c037:#c7c53e:#0c24c0:#ba3ec1:#53c3c6:#c7c7c7:#686868:#f0776d:#8df77a:#fffc7f:#6a71f7:#f17ff9:#8efafe:#ffffff"}}
 [0.000, "o", "/mini-a $ \u001b[6n"]
 [0.992, "o", "m"]
 [0.138, "o", "i"]

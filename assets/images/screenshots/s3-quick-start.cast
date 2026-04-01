@@ -1,4 +1,4 @@
-{"version":3,"term":{"cols":127,"rows":44,"type":"xterm","theme":{"fg":"#bdc3c7","bg":"#1a242f","palette":"#34495e:#e74c3c:#2ecc71:#f1c40f:#3498db:#9b59b6:#1abc9c:#ecf0f1:#2c3e50:#c0392b:#27ae60:#f39c12:#3c7dd1:#8e44ad:#2980b9:#bdc3c7"}},"timestamp":1774813847}
+{"version": 2, "width": 127, "height": 44, "timestamp": 1774813847, "theme": {"fg": "#bdc3c7", "bg": "#1a242f", "palette": "#34495e:#e74c3c:#2ecc71:#f1c40f:#3498db:#9b59b6:#1abc9c:#ecf0f1:#2c3e50:#c0392b:#27ae60:#f39c12:#3c7dd1:#8e44ad:#2980b9:#bdc3c7"}}
 [0.000, "o", "/mini-a $ \u001b[6n"]
 [1.000, "o", "export OAF_MODEL=\"(type: openai, model"]
 [0.000, "o", ": gpt-5"]
