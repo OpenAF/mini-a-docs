@@ -108,7 +108,7 @@ mini-a
 
 Once started, type your goal at the prompt and press Enter. mini-a will plan and execute steps to achieve it.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S6 — Console first-run]</div>
+<img src="{{ '/assets/images/screenshots/s6-console-first-run.gif' | relative_url }}" alt="Console first-run step-by-step" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);" width="800">
 
 ### Direct Goal
 
