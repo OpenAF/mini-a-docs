@@ -129,7 +129,7 @@ mini-a onport=8080
 
 Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S7 — Web UI first-run]</div>
+<img src="{{ '/assets/images/screenshots/s7-web-ui-first-run.png' | relative_url }}" alt="Web UI first-run with streaming" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
 
 ---
 
