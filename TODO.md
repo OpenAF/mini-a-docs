@@ -45,7 +45,7 @@ All screenshot placeholders in the documentation site. Replace `[SCREENSHOT-PLAC
 - [x] S2 — Console interactive goal
 - [x] S3 — Terminal quick start recording
 - [x] S4 — Architecture diagram
-- [ ] S5 — Model manager TUI
+- [x] S5 — Model manager TUI
 - [ ] S6 — Console first-run
 - [ ] S7 — Web UI first-run
 - [ ] S8 — Dual-model cost stats

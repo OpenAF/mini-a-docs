@@ -90,7 +90,7 @@ mini-a includes a built-in TUI (text user interface) for managing models interac
 mini-a modelman=true
 ```
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S5 — Model manager TUI]</div>
+<img src="{{ '/assets/images/screenshots/s5-model-manager-tui.png' | relative_url }}" alt="Model manager TUI screen" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
 
 ---
 
