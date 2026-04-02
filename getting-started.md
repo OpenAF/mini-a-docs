@@ -74,7 +74,10 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5-nano, key: '...')"
 export OAF_VAL_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 ```
 
-If you need the validation override only for one run or one oJob step, set `vmodel` directly instead of exporting `OAF_VAL_MODEL`.
+If you need the validation override only for one run or one oJob step, use:
+
+- `modelval=...` to override `OAF_VAL_MODEL` at runtime with the same SLON/JSON model syntax.
+- `vmodel=...` in deep-research jobs when you want the validation model override to stay local to that run or pipeline step.
 
 If you prefer not to keep raw model definitions in shell profile files, launch the interactive model manager:
 
@@ -129,6 +132,14 @@ mini-a onport=8080
 
 Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
+For live token-by-token updates in the browser, enable streaming:
+
+```bash
+mini-a onport=8080 usestream=true
+```
+
+`usestream=true` uses SSE to push output progressively to the page. If you need XML-tagged `<thinking>...</thinking>` blocks surfaced as thought logs, use `showthinking=true` instead of streaming for that run.
+
 <img src="{{ '/assets/images/screenshots/s7-web-ui-first-run.png' | relative_url }}" alt="Web UI first-run with streaming" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
 
 ---
@@ -152,7 +163,7 @@ When running in interactive console mode, the following commands are available:
 | Command | Description |
 |---------|-------------|
 | `/help` | Show available commands |
-| `/model` | Show current model |
+| `/model [target]` | Show current model, or inspect/change `model`, `modellc`, or `modelval` |
 | `/show [prefix]` | Show active parameters, optionally filtered by prefix |
 | `/skills [prefix]` | List discovered skills, optionally filtered by prefix |
 | `/compact [n]` | Compact older history while keeping up to the latest `n` exchanges (default 6) |

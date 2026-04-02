@@ -9,7 +9,8 @@ permalink: /
   <p class="hero-description">
     A minimalist autonomous agent framework built on OpenAF. Connect any LLM,
     use 25+ built-in MCP servers, and orchestrate delegated multi-agent
-    workflows with proxy-backed tools, streaming, and worker registration
+    workflows with proxy-backed tools, streaming, validation-model overrides,
+    and worker registration
     from the terminal, a web UI, or your own code.
   </p>
   <div class="cta-buttons">
@@ -70,6 +71,10 @@ permalink: /
     <p>Dual-model architecture routes simple tasks to cheaper models automatically. Pay less, get the same results.</p>
   </div>
   <div class="feature-card">
+    <h3>Separate Execution from Validation</h3>
+    <p>Use a dedicated validation model in deep-research flows, globally with <code>OAF_VAL_MODEL</code> or per run with <code>modelval=...</code>.</p>
+  </div>
+  <div class="feature-card">
     <h3>25+ MCP Servers, Ready to Run</h3>
     <p>Time, finance, databases, web, email, Kubernetes, office docs, OpenAF helpers, and more ship as built-in MCP servers.</p>
   </div>
@@ -88,6 +93,10 @@ permalink: /
   <div class="feature-card">
     <h3>Console. Web. Library. Docker.</h3>
     <p>Use it as a CLI tool, web app, JavaScript library, or Docker container — whatever fits your workflow.</p>
+  </div>
+  <div class="feature-card">
+    <h3>Inspectable Reasoning Output</h3>
+    <p>Use <code>showthinking=true</code> to surface XML-tagged thinking blocks as thought logs when your provider returns them.</p>
   </div>
   <div class="feature-card">
     <h3>Secure by Default</h3>

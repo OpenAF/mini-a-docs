@@ -134,6 +134,27 @@ Auto-generate API documentation from source code:
 mini-a useshell=true readwrite=true goal='Generate API documentation for all JavaScript files in src/'
 ```
 
+### Per-Run Validation Model Override
+
+Run deep research with a dedicated validation model without changing your shell profile:
+
+```bash
+mini-a deepresearch=true \
+  modelval="(type: openai, model: gpt-5-mini, key: '...')" \
+  valgoal='The answer must include sources, risks, and a final recommendation' \
+  goal='Compare the current deployment options for this project'
+```
+
+### Surface Tagged Thinking Blocks
+
+If your provider emits XML-tagged reasoning blocks, show them as thought logs:
+
+```bash
+mini-a showthinking=true goal='Explain how the current build pipeline works'
+```
+
+`showthinking=true` is useful for debugging prompt behavior, but it is not compatible with `usestream=true`.
+
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S13 — Before/after auto-generated docs]</div>
 
 ---
@@ -230,6 +251,11 @@ You can reuse the same structure for other automation tasks shown in upstream ex
 - **Documentation refresh (`document.yaml`)**: use `useshell=true`, `useutils=true`, and `readwrite=true` so mini-a can scan repo files and update markdown docs.
 - **Chat post-processing (`learn-from-chat.yaml`)**: validate inputs in `check.in`, pass templated paths (`{{chat}}`, `{{rules}}`), and set `templateArgs=true`.
 - **Folder summary reports (`summary.yaml`)**: generate `summary.md` with mini-a (`format: md`, `outfile: summary.md`) and convert to HTML in a follow-up oJob step.
+
+Two newer upstream examples are useful as starting points:
+
+- **Email report (`email-report.yaml`)**: generate a compact markdown report with mini-a, save it locally, then send it through SMTP as the email body.
+- **Specialized agent template (`agent-template.yaml`)**: bootstrap a reusable domain-specific mini-a agent by filling in `youare`, `knowledge`, `goal`, `rules`, and output settings.
 
 If you prefer OpenAF JavaScript style, you can still call `$mini_a(...)` directly inside `exec`, but `jobsInclude + (mini-a)` keeps YAML jobs concise and consistent.
 

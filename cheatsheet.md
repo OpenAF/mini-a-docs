@@ -79,6 +79,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `validationgoal` | - | Quality criteria for deep research |
 | `valgoal` | - | Alias for `validationgoal` |
 | `vmodel` | - | Optional dedicated validation model used in deep-research scoring |
+| `modelval` | - | Runtime override for the validation model (`OAF_VAL_MODEL` format) |
 | `maxcycles` | `3` | Max deep research cycles |
 | `validationthreshold` | `PASS` | Validation verdict/score required to stop |
 | `persistlearnings` | `true` | Carry learnings forward between cycles |
@@ -97,6 +98,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `shellmaxbytes` | `8000` | Cap shell output size and truncate with head/tail excerpt |
 | `shellallowpipes` | `false` | Allow pipes, redirection, and shell control operators |
 | `usestream` | `false` | Stream responses |
+| `showthinking` | `false` | Surface XML-tagged `<thinking>...</thinking>` blocks as thought logs |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
 | `usesvg` | `false` | Enable SVG generation for custom visuals and infographics |
 | `usediagrams` | `false` | Enable diagram generation |

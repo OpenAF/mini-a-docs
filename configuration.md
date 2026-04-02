@@ -26,6 +26,7 @@ export MINI_A_PARAM=value
 |-----------|---------|-------------|
 | `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5-mini, key: '...')`) |
 | `modellc` | - | Lighter model for simple tasks (dual-model); set via `OAF_LC_MODEL` env var |
+| `modelval` | - | Runtime override for the validation model configuration; same format as `OAF_VAL_MODEL` |
 | `modellock` | `auto` | Force model-tier selection: `main`, `lc`, or `auto` |
 | `lccontextlimit` | `0` | Escalate from low-cost model to main model when context tokens reach this threshold (`0` disables) |
 | `deescalate` | `3` | Consecutive successful steps required before switching back to the low-cost model after escalation |
@@ -142,6 +143,7 @@ export MINI_A_PARAM=value
 | `validationgoal` | - | Validation criteria for deep research output quality (inline text or file path) |
 | `valgoal` | - | Alias for `validationgoal` |
 | `vmodel` | - | Optional dedicated validation model used in deep-research scoring |
+| `modelval` | - | Per-run validation-model override using the same SLON/JSON definition accepted by `OAF_VAL_MODEL` |
 | `maxcycles` | `3` | Maximum number of deep-research cycles |
 | `validationthreshold` | `PASS` | Validation verdict or score rule required to stop iterating |
 | `persistlearnings` | `true` | Carry learnings from failed validation cycles into the next cycle |

@@ -49,6 +49,16 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"      # Light
 
 The framework automatically decides which model to use for each subtask, optimizing cost without sacrificing quality where it matters.
 
+You can also add a dedicated validation model for deep-research scoring when you want execution and validation separated:
+
+```bash
+export OAF_VAL_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
+
+# Or override only this run
+mini-a deepresearch=true modelval="(type: openai, model: gpt-5-mini, key: '...')" \
+  goal='Research the latest release notes and summarize breaking changes'
+```
+
 Recent updates added dynamic escalation controls and per-run cost tracking so you can tune and measure this behavior:
 
 - `lccontextlimit` escalates to the main model when low-cost context gets too large.
@@ -259,6 +269,7 @@ Dynamic worker registration is also available. Parents can open a registration p
 Recent releases added several runtime improvements that are useful in production setups:
 
 - `planner_stream` SSE events distinguish planning tokens from normal answer tokens when `usestream=true`.
+- `showthinking=true` surfaces XML-tagged `<thinking>...</thinking>` blocks as thought logs for providers that emit them.
 - `debugfile=<path>` writes debug output as NDJSON instead of flooding the console with raw blocks.
 - `debugvalch` routes validation-model debugging to its own channel when `llmcomplexity=true`.
 - `maxpromptchars` caps inbound web prompt size before any model call is made.
