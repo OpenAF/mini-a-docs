@@ -691,6 +691,17 @@ mini-a debug=true
 
 Debug output includes timestamps, model selection decisions, token counts, and the full request/response payloads for each LLM call.
 
+To capture debug traffic in a structured, queryable store instead of the console, use the channel parameters:
+
+```bash
+# Write main-model LLM payloads to an MVS file, LC payloads to a JSON file
+mini-a debugch="(type: mvs, file: debug.db, map: main)" \
+       debuglcch="(type: file, file: lc-debug.json)" \
+       goal='Summarize the project README'
+```
+
+See **[Channels]({{ '/channels' | relative_url }})** for full backend options and query examples.
+
 ### Usage Metrics
 
 Use the `/stats` command in interactive mode to view real-time usage statistics:

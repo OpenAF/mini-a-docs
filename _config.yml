@@ -17,6 +17,7 @@ minima:
     - cheatsheet.md
     - advanced.md
     - configuration.md
+    - channels.md
     - search.md
 
 plugins:

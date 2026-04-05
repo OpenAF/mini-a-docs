@@ -62,9 +62,9 @@ export MINI_A_PARAM=value
 | `showthinking` | `false` | Surface XML-tagged model thinking blocks as thought logs |
 | `debug` | `false` | Enable debug logging |
 | `debugfile` | - | Write debug output as NDJSON to a file (implies `debug=true`) |
-| `debugch` | - | Dedicated debug channel for main-model LLM traffic |
-| `debuglcch` | - | Dedicated debug channel for low-cost-model LLM traffic |
-| `debugvalch` | - | Dedicated debug channel for validation-model traffic when `llmcomplexity=true` |
+| `debugch` | - | SLON channel definition for main-model LLM traffic — see [Channels]({{ '/channels' | relative_url }}) |
+| `debuglcch` | - | SLON channel definition for low-cost-model LLM traffic — see [Channels]({{ '/channels' | relative_url }}) |
+| `debugvalch` | - | SLON channel definition for validation-model traffic when `llmcomplexity=true` — see [Channels]({{ '/channels' | relative_url }}) |
 | `outfile` | - | Save final answer to file |
 | `outfileall` | - | Deep research only: save full cycle history/verdicts/learnings to file |
 | `outputfile` | - | Alternate key for `outfile`, mainly used by plan conversion flows |
@@ -72,8 +72,8 @@ export MINI_A_PARAM=value
 | `extraskills` | - | Comma-separated extra directories for custom skills |
 | `extrahooks` | - | Comma-separated extra directories for hook definitions |
 | `secpass` | - | Password used to open OpenAF sBucket model secrets |
-| `auditch` | - | JSSLON channel definition for agent interaction audit logs |
-| `toollog` | - | JSSLON channel definition for dedicated MCP tool input/output logs |
+| `auditch` | - | SLON channel definition for agent interaction audit logs — see [Channels]({{ '/channels' | relative_url }}) for backend options and examples |
+| `toollog` | - | SLON channel definition for dedicated MCP tool input/output logs — see [Channels]({{ '/channels' | relative_url }}) for backend options and examples |
 
 </div>
 
