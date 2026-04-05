@@ -317,6 +317,28 @@ Delegation also works with remote workers — the main agent can send subtasks t
 
 Worker registration is also supported: set `workerreg` to a port to have mini-a start a worker registration HTTP server, optionally protected by `workerregtoken`. Use `workerevictionttl` to evict stale worker entries, and `delegationmaxdepth` to cap recursive delegation chains.
 
+### Worker Skills (A2A)
+
+Workers can advertise specific capabilities as A2A skills. The parent reads each worker's `/.well-known/agent.json` AgentCard and uses declared skills to route subtasks intelligently.
+
+```bash
+# Start a shell-capable worker (auto-emits the "shell" A2A skill)
+mini-a workermode=true onport=9091 shellworker=true
+
+# Start a worker with custom skills
+mini-a workermode=true onport=9092 \
+  workerskills="shell,time" \
+  workerspecialties="finance,data-analysis"
+```
+
+The `delegate-subtask` tool call can then request specific skills:
+
+```json
+{ "goal": "run the test suite", "skills": ["shell"] }
+```
+
+When dynamic worker registration is active (`workerreg=<port>`), the parent rebuilds the `delegate-subtask` tool description every 30 seconds (or immediately on profile change) to list available workers and their skills — so the LLM always routes to the right worker without guessing.
+
 ### Orchestration Pattern
 
 Use this pattern when you want mini-a to coordinate multiple agents for larger workloads:
@@ -331,6 +353,103 @@ mini-a useplanning=true planstyle=legacy usedelegation=true \
   workers='http://worker1:9090,http://worker2:9090' maxconcurrent=4 \
   goal='Analyze this monorepo, group findings by domain, and produce one prioritized action plan'
 ```
+
+---
+
+## Working Memory
+
+For long-running or multi-step goals, mini-a can maintain a **structured working memory** that persists key findings across tool calls and even across sessions.
+
+```bash
+mini-a usememory=true goal="Deep code analysis of auth module"
+```
+
+Memory is organized into 8 typed sections:
+
+| Section | What is stored |
+|---------|---------------|
+| `facts` | Confirmed facts discovered during the run |
+| `evidence` | Raw observations and tool outputs worth keeping |
+| `decisions` | Choices made and their rationale |
+| `risks` | Identified risks or blockers |
+| `openQuestions` | Unresolved questions to follow up on |
+| `hypotheses` | Unconfirmed theories to test |
+| `artifacts` | Generated files, configs, or summaries |
+| `summaries` | Compressed summaries of completed work |
+
+Entries are appended automatically at significant agent events (tool calls, plan critiques, validation results, final answers). Near-duplicate entries are suppressed by an 85% word-overlap fingerprint (`memorydedup`).
+
+### Persistence
+
+By default, memory is held in-process. Pass an OpenAF channel definition to persist it across runs:
+
+```bash
+# Persist to a local JSON file
+mini-a usememory=true \
+  memorych="(name: my_mem, type: file, options: (file: '/tmp/mini-a-mem.json'))" \
+  goal="Iterative research on cloud costs"
+```
+
+### Scope
+
+Use `memoryscope` to control which stores the agent reads/writes:
+
+```bash
+# Keep memory isolated to this session
+mini-a usememory=true memoryscope=session goal="One-shot task"
+
+# Share memory globally across all sessions
+mini-a usememory=true memoryscope=global \
+  memorych="(type: file, options: (file: '/tmp/mini-a-global.json'))"
+```
+
+### Tuning
+
+```bash
+# Larger limits for a heavy analysis run
+mini-a usememory=true memorymaxpersection=200 memorymaxentries=1000 \
+  goal="Analyze all TypeScript files"
+```
+
+See [Configuration → Working Memory]({{ '/configuration#10b-working-memory' | relative_url }}) for the full parameter reference.
+
+---
+
+## Adaptive Tool Routing
+
+mini-a includes an optional **rule-based routing layer** that selects how each action is dispatched — direct local tool, MCP direct call, MCP proxy, shell execution, utility wrapper, or delegated subtask.
+
+```bash
+mini-a adaptiverouting=true goal="Analyze logs and report"
+```
+
+When adaptive routing is on, each tool action goes through a lightweight router that scores candidate routes using intent hints:
+
+- read vs. write intent
+- payload size
+- latency sensitivity
+- determinism preference
+- risk level
+- structured output preference
+- historical route success/failure
+
+The router returns a selected route, rationale, and fallback chain. Failures are retried down the fallback chain (duplicate routes are skipped to prevent thrashing). Route decisions are appended to debug/audit output as `[ROUTE ...]` records when `debug=true`.
+
+### Controlling which routes are used
+
+```bash
+# Prefer MCP direct calls, fall back to proxy
+mini-a adaptiverouting=true \
+  routerorder="mcp_direct_call,mcp_proxy_path,utility_wrapper"
+
+# Restrict to non-shell routes only
+mini-a adaptiverouting=true routerdeny="shell_execution"
+
+# Only allow shell and utility routes
+mini-a adaptiverouting=true routerallow="shell_execution,utility_wrapper"
+```
+
+When `adaptiverouting=false` (default), mini-a preserves legacy tool dispatch behavior.
 
 ---
 

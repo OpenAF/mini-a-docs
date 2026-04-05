@@ -242,6 +242,11 @@ export MINI_A_PARAM=value
 | `delegationmaxdepth` | `3` | Maximum recursive delegation depth |
 | `delegationtimeout` | `300000` | Default delegated subtask timeout in milliseconds |
 | `delegationmaxretries` | `2` | Retry count for failed delegated subtasks |
+| `workermode` | `false` | Launch mini-a as a Worker API server |
+| `showdelegate` | `false` | Show delegation events in the console |
+| `workerskills` | - | Comma-separated list (or JSON/SLON array) of A2A skill IDs this worker advertises (e.g. `"shell,time"`) |
+| `shellworker` | `false` | Convenience shorthand: sets `useshell=true` and auto-emits the `shell` A2A skill |
+| `workerspecialties` | - | Comma-separated specialty tags injected into the `run-goal` A2A skill description |
 
 </div>
 
@@ -254,6 +259,48 @@ export MINI_A_PARAM=value
 | `historykeep` | `false` | Save console conversations to `~/.openaf-mini-a/history` for future resumption |
 | `historykeepperiod` | - | Delete kept conversation files older than this many minutes |
 | `historykeepcount` | - | Keep only the newest N kept conversation files |
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## 10b. Working Memory
+
+Enable a structured, scoped working memory subsystem that the agent maintains automatically across tool calls and runs.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `usememory` | `false` | Enable the working memory subsystem |
+| `memoryscope` | `both` | Scope of memory: `session` (current run only), `global` (shared across sessions), or `both` |
+| `memorych` | - | SLON/JSON channel definition for global memory persistence (e.g. file, Redis) |
+| `memorysessionch` | - | SLON/JSON channel definition for session memory (falls back to `memorych` if omitted) |
+| `memorysessionid` | agent ID | Key namespace used for session memory in the channel |
+| `memorymaxpersection` | `80` | Maximum entries per memory section before compaction |
+| `memorymaxentries` | `500` | Hard cap on total entries across all sections |
+| `memorycompactevery` | `8` | Number of appends between automatic compaction passes |
+| `memorydedup` | `true` | Suppress near-duplicate entries (85% word-overlap fingerprint) |
+
+Memory is organized into 8 sections: `facts`, `evidence`, `decisions`, `risks`, `openQuestions`, `hypotheses`, `artifacts`, `summaries`. The agent appends entries automatically at significant events (tool calls, plan critiques, validation results, final answers).
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## 10c. Adaptive Routing
+
+A rule-based routing layer that selects how each tool action is dispatched. When disabled, mini-a uses legacy behavior.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `adaptiverouting` | `false` | Enable rule-based adaptive tool routing |
+| `routerorder` | - | Preferred route execution order (comma-separated route types) |
+| `routerallow` | - | Allowlist of route types the router may select (comma-separated) |
+| `routerdeny` | - | Denylist of route types the router must never select (comma-separated) |
+| `routerproxythreshold` | - | Byte threshold to prefer the proxy route for large payloads (falls back to `mcpproxythreshold` when omitted) |
+
+**Route types**: `direct_local_tool`, `mcp_direct_call`, `mcp_proxy_path`, `shell_execution`, `utility_wrapper`, `delegated_subtask`.
+
+Route selection is based on intent hints (read/write, payload size, latency sensitivity, risk level, structured output preference) and historical route success. Fallback chains are attempted in order; each failed attempt is appended to an `errorTrail`. Route decisions are visible in debug/audit output as `[ROUTE ...]` records when `debug=true`.
 
 </div>
 
@@ -301,8 +348,11 @@ export MINI_A_PARAM=value
 |----------|---------|
 | `OAF_MODEL` | `model` |
 | `OAF_LC_MODEL` | `modellc` |
+| `OAF_VAL_MODEL` | `modelval` — dedicated validation model for deep research scoring |
 | `OAF_MINI_A_NOJSONPROMPT` | Force text prompt mode for main model; Gemini main models auto-enable this behavior when unset |
 | `OAF_MINI_A_LCNOJSONPROMPT` | Force text prompt mode for low-cost model (set explicitly for Gemini low-cost models) |
+| `OAF_MINI_A_CON_HIST_SIZE` | Maximum console history size (defaults to JLine's default) |
+| `OAF_MINI_A_LIBS` | Comma-separated library paths to load automatically at startup |
 | `MINI_A_GOAL` | `goal` |
 | `MINI_A_PORT` | `onport` |
 | `OAF_MODEL` / `OAF_LC_MODEL` `key` field | Provider API credential (recommended) |
