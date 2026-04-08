@@ -252,7 +252,79 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
-## 10a. Conversation History
+## 10a. Agent Files
+
+Load a preconfigured mini-a profile from a markdown file with YAML frontmatter.
+
+```bash
+mini-a agent=examples/my-agent.agent.md goal="..."
+mini-a agent="---\nname: quick\ncapabilities:\n  - useutils\n---" goal="..."
+mini-a --agent   # Print a starter template
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `agent` | - | Path to an agent markdown file, or inline markdown with YAML frontmatter |
+| `agentfile` | - | Backward-compatible alias for `agent` |
+
+**Supported frontmatter keys**:
+
+| Key | Type | Effect |
+|-----|------|--------|
+| `name` | string | Metadata label only |
+| `description` | string | Metadata label only |
+| `model` | string/object | Sets `model=` |
+| `capabilities` | array/string | Enables `useshell`, `readwrite`, `useutils`, `usetools` |
+| `tools` | array | Merged into `mcp` |
+| `constraints` | array/string | Appended to `rules` as a bullet list |
+| `rules` | array/string | Sets `rules=` when not already provided |
+| `knowledge` | array/string | Sets `knowledge=` |
+| `youare` | array/string | Sets `youare=` |
+| `mini-a` | map | Direct mini-a parameter overrides (applied after mode defaults; CLI flags still take precedence) |
+
+**`tools` entry types**:
+
+```yaml
+tools:
+  - type: ojob
+    options:
+      job: mcps/mcp-time.yaml
+  - type: stdio
+    cmd: npx -y @modelcontextprotocol/server-filesystem /tmp
+  - type: remote
+    url: http://localhost:9090/mcp
+  - type: sse
+    url: http://localhost:9090/mcp
+```
+
+Relative `cmd` paths in `type: stdio` entries and other file references are resolved from the directory containing the agent file.
+
+**Minimal template**:
+
+```markdown
+---
+name: my-agent
+description: What this agent does
+capabilities:
+  - useutils
+  - usetools
+mini-a:
+  useplanning: true
+  usestream: true
+constraints:
+  - Prefer tool-grounded answers.
+knowledge: |
+  Add domain context here.
+youare: |
+  You are a specialized AI agent for <domain>.
+---
+```
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## 10b. Conversation History
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|

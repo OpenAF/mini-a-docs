@@ -67,6 +67,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
+| `agent` | - | Agent profile (markdown file path or inline markdown) |
+| `agentfile` | - | Backward-compatible alias for `agent` |
 | `goal` | - | The task to accomplish |
 | `useshell` | `false` | Enable shell commands |
 | `readwrite` | `false` | Allow file writes |
@@ -121,6 +123,19 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `usedelegation` | `false` | Agent delegation |
 | `workers` | - | Remote worker URLs for delegation |
 | `onport` | - | Web UI port |
+
+## Agent Files
+
+Load a complete agent profile from a markdown file with YAML frontmatter:
+
+```bash
+mini-a agent=my-agent.agent.md goal="..."
+mini-a --agent   # Print a starter template
+```
+
+Supported frontmatter keys: `name`, `description`, `model`, `capabilities`, `tools`, `constraints`, `rules`, `knowledge`, `youare`, `mini-a` (parameter overrides).
+
+`agentfile=` is a backward-compatible alias for `agent=`.
 
 ## File Inclusion
 
