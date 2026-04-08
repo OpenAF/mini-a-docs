@@ -267,58 +267,7 @@ mini-a --agent   # Print a starter template
 | `agent` | - | Path to an agent markdown file, or inline markdown with YAML frontmatter |
 | `agentfile` | - | Backward-compatible alias for `agent` |
 
-**Supported frontmatter keys**:
-
-| Key | Type | Effect |
-|-----|------|--------|
-| `name` | string | Metadata label only |
-| `description` | string | Metadata label only |
-| `model` | string/object | Sets `model=` |
-| `capabilities` | array/string | Enables `useshell`, `readwrite`, `useutils`, `usetools` |
-| `tools` | array | Merged into `mcp` |
-| `constraints` | array/string | Appended to `rules` as a bullet list |
-| `rules` | array/string | Sets `rules=` when not already provided |
-| `knowledge` | array/string | Sets `knowledge=` |
-| `youare` | array/string | Sets `youare=` |
-| `mini-a` | map | Direct mini-a parameter overrides (applied after mode defaults; CLI flags still take precedence) |
-
-**`tools` entry types**:
-
-```yaml
-tools:
-  - type: ojob
-    options:
-      job: mcps/mcp-time.yaml
-  - type: stdio
-    cmd: npx -y @modelcontextprotocol/server-filesystem /tmp
-  - type: remote
-    url: http://localhost:9090/mcp
-  - type: sse
-    url: http://localhost:9090/mcp
-```
-
-Relative `cmd` paths in `type: stdio` entries and other file references are resolved from the directory containing the agent file.
-
-**Minimal template**:
-
-```markdown
----
-name: my-agent
-description: What this agent does
-capabilities:
-  - useutils
-  - usetools
-mini-a:
-  useplanning: true
-  usestream: true
-constraints:
-  - Prefer tool-grounded answers.
-knowledge: |
-  Add domain context here.
-youare: |
-  You are a specialized AI agent for <domain>.
----
-```
+See the [Agent Files]({{ '/agents' | relative_url }}) page for the complete reference: all frontmatter keys, tool entry types, `mini-a:` overrides, relative file resolution, precedence rules, and a full annotated example.
 
 </div>
 

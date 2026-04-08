@@ -458,75 +458,10 @@ When `adaptiverouting=false` (default), mini-a preserves legacy tool dispatch be
 mini-a lets you package an entire agent configuration — model, capabilities, tools, rules, knowledge, and persona — into a single **markdown file with YAML frontmatter**. Reuse and share agent profiles across your team or project without repeating command-line flags.
 
 ```bash
-# Load an agent profile
 mini-a agent=examples/changelog-gen.agent.md goal="generate changelog"
-
-# Inline markdown (no file needed)
-mini-a agent="---\nname: quick\ncapabilities:\n  - useutils\n---" goal="summarize"
-
-# Print a starter template
-mini-a --agent
 ```
 
-`agentfile=` is a backward-compatible alias for `agent=`.
-
-### Frontmatter Keys
-
-| Key | Effect |
-|-----|--------|
-| `model` | Set the model for this agent |
-| `capabilities` | Enable `useshell`, `readwrite`, `useutils`, `usetools` |
-| `tools` | MCP server entries merged into `mcp` |
-| `rules` | Behavioral rules (used when not already provided) |
-| `constraints` | Appended to `rules` as a bullet list |
-| `knowledge` | Domain knowledge to inject |
-| `youare` | Agent persona/identity |
-| `mini-a` | Direct mini-a parameter overrides |
-
-### Tool Entry Types
-
-The `tools` array supports four connection types:
-
-```yaml
-tools:
-  - type: ojob                         # OpenAF oJob MCP (built-in servers)
-    options:
-      job: mcps/mcp-time.yaml
-  - type: stdio                        # STDIO process (any MCP server)
-    cmd: npx -y @modelcontextprotocol/server-filesystem /tmp
-  - type: remote                       # HTTP/SSE remote server
-    url: http://localhost:9090/mcp
-  - type: sse
-    url: http://localhost:9090/mcp
-```
-
-Relative `cmd` paths in `type: stdio` entries are resolved from the agent file's own directory, so agent files are portable.
-
-### `mini-a:` Overrides
-
-Use the `mini-a:` key to set any mini-a parameter directly from the agent file. Values override mode defaults; explicit CLI flags still take precedence.
-
-```markdown
----
-name: research-agent
-capabilities:
-  - usetools
-mini-a:
-  useplanning: true
-  usestream: true
-  maxsteps: 30
----
-```
-
-### Goal in Agent Profile
-
-You can specify a default goal inside the frontmatter:
-
-```yaml
-goal: "Analyze the current repository and produce a structured summary"
-```
-
-A `goal=` CLI argument still overrides the profile's goal.
+See the [Agent Files]({{ '/agents' | relative_url }}) page for the complete reference: frontmatter keys, tool entry types, `mini-a:` overrides, relative file paths, precedence rules, and a full annotated example.
 
 ---
 

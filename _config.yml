@@ -13,6 +13,7 @@ minima:
   nav_pages:
     - getting-started.md
     - features.md
+    - agents.md
     - examples.md
     - cheatsheet.md
     - advanced.md
