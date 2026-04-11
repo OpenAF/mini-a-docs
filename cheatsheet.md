@@ -49,6 +49,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 |---------|--------|
 | `/help` | Show commands |
 | `/model` | Current model info |
+| `/models` | Show all configured model tiers (main, LC, validation) with provider and source |
 | `/show [prefix]` | Show active parameters |
 | `/skills [prefix]` | List discovered skills |
 | `/compact [n]` | Compact older history, keep up to latest `n` exchanges (default 6) |
@@ -119,7 +120,11 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `lccontextlimit` | `0` | Escalate to main model when low-cost model context gets too large |
 | `deescalate` | `3` | Successful steps before returning from main model to low-cost model |
 | `modellock` | `auto` | Force model tier: `main`, `lc`, or `auto` |
+| `modelstrategy` | `default` | Model orchestration profile: `default` or `advisor` (LC executes, main model consulted selectively) |
+| `advisormaxuses` | `2` | Max advisor consultations per run when `modelstrategy=advisor` |
+| `advisorcooldownsteps` | `2` | Min steps between advisor consultations |
 | `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
+| `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots |
 | `usedelegation` | `false` | Agent delegation |
 | `workers` | - | Remote worker URLs for delegation |
 | `onport` | - | Web UI port |

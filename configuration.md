@@ -33,6 +33,9 @@ export MINI_A_PARAM=value
 | `lcescalatedefer` | `true` | Defer LC-to-main escalation by one step when LC confidence remains high |
 | `lcbudget` | `0` | Maximum total LC token budget before permanently switching to the main model (`0` = unlimited) |
 | `llmcomplexity` | `false` | Use a quick LC validation call for medium-complexity routing heuristics |
+| `modelstrategy` | `default` | Model orchestration profile: `default` (LC-first with escalation) or `advisor` (LC executes, main model consulted selectively for difficult steps) |
+| `advisormaxuses` | `2` | Maximum advisor consultations per run when `modelstrategy=advisor` |
+| `advisorcooldownsteps` | `2` | Minimum step distance between advisor consultations when `modelstrategy=advisor` |
 | `maxtokens` | - | Maximum output tokens |
 | `rpm` | - | Requests per minute limit |
 | `tpm` | - | Tokens per minute limit |
@@ -74,6 +77,7 @@ export MINI_A_PARAM=value
 | `secpass` | - | Password used to open OpenAF sBucket model secrets |
 | `auditch` | - | SLON channel definition for agent interaction audit logs — see [Channels]({{ '/channels' | relative_url }}) for backend options and examples |
 | `toollog` | - | SLON channel definition for dedicated MCP tool input/output logs — see [Channels]({{ '/channels' | relative_url }}) for backend options and examples |
+| `metricsch` | - | SLON/JSON channel definition for recording periodic Mini-A metrics snapshots (e.g. `(name: 'mini-a-metrics', type: 'mvs', options: (file: '/tmp/mini-a-metrics.db'))`). Supports optional `period`, `some`, and `noDate` fields — see [Channels]({{ '/channels' | relative_url }}) |
 
 </div>
 
@@ -389,6 +393,7 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 |---------|-------------|
 | `/help` | Show available commands |
 | `/model` | Show current model info |
+| `/models` | Show all configured model tiers (main, LC, validation) with provider and source |
 | `/compact [n]` | Compact older history while keeping up to latest `n` exchanges (default 6) |
 | `/summarize [n]` | Summarize older history while keeping up to latest `n` exchanges (default 6) |
 | `/context [llm|analyze]` | Show estimated or model-analyzed context token breakdown |

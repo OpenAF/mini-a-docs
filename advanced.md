@@ -46,6 +46,24 @@ When the light model is not set, mini-a uses the main model for everything. Sett
 
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S14 — Debug output showing model escalation]</div>
 
+### Advisor Strategy Mode
+
+The default `modelstrategy=default` escalates the LC model to the main model when errors or complexity thresholds are hit. The `advisor` strategy is an alternative that keeps the LC model as the sole executor but selectively calls the main model as an internal consultant when the agent is stuck:
+
+```bash
+mini-a modelstrategy=advisor goal="refactor the auth module" useshell=true
+```
+
+When advisor mode is active and the agent encounters a difficult step, it sends a structured query to the main model and receives back a JSON assessment with `recommended_next_step`, `risk_flags`, `escalate_to_main`, and `confidence` fields. The LC model then proceeds with that guidance. If `escalate_to_main` is true, the main model takes over for that step only.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `modelstrategy` | `default` | `default` (LC-first with escalation) or `advisor` (LC executes, main model consulted selectively) |
+| `advisormaxuses` | `2` | Maximum advisor consultations per run |
+| `advisorcooldownsteps` | `2` | Minimum steps between consecutive consultations |
+
+This keeps most execution on the cheaper LC model while getting targeted guidance from the main model only when genuinely needed — useful when you want tighter cost control than full escalation but better reliability than pure LC execution.
+
 ---
 
 ## MCP Advanced
