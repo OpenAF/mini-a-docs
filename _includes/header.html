@@ -1,7 +1,9 @@
 <header class="site-header">
 
   <div class="wrapper">
-    <a class="site-title" rel="author" href="{{ '/' | relative_url }}">{{ site.title | escape }}</a>
+    <a class="site-title" rel="author" href="{{ '/' | relative_url }}">
+      <span class="brand-mini">mini</span><span class="brand-a">-a</span>
+    </a>
 
     {%- assign configured_paths = site.minima.nav_pages | default: site.header_pages -%}
     {%- assign page_titles = site.pages | map: 'title' | compact -%}

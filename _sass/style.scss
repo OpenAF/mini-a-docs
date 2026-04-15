@@ -151,6 +151,16 @@ pre.highlight:focus-within .code-copy-button {
 }
 
 // Site navigation
+.site-title {
+  .brand-mini {
+    color: #62bb47;
+  }
+
+  .brand-a {
+    color: #e594ac;
+  }
+}
+
 .site-nav {
   .nav-items {
     display: flex;
