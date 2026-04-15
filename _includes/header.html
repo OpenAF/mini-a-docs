@@ -27,6 +27,11 @@
               {%- endif -%}
             {%- endfor -%}
           {%- endif -%}
+          {%- if site.external_nav and site.external_nav != empty -%}
+            {%- for item in site.external_nav -%}
+              <a class="nav-item" href="{{ item.url }}">{{ item.title | escape }}</a>
+            {%- endfor -%}
+          {%- endif -%}
         </div>
       </nav>
     {%- endunless %}

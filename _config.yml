@@ -21,6 +21,10 @@ minima:
     - channels.md
     - search.md
 
+external_nav:
+  - title: Toolkit
+    url: "https://tk.mini-a.ai/"
+
 plugins:
   - jekyll-feed
   - jekyll-seo-tag
