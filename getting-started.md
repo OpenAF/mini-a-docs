@@ -255,11 +255,16 @@ Verify your API endpoint is reachable and your network connection is active. For
 
 ---
 
+## Cheatsheet
+
+Need a quick reference? The **[Cheatsheet]({{ '/cheatsheet' | relative_url }})** has everything on one page: installation, model setup, console commands, key parameters, mode presets, and common MCP servers. Bookmark it for daily use.
+
+---
+
 ## Next Steps
 
 Now that you have mini-a up and running, explore more of what it can do:
 
-- **[Features]({{ '/features' | relative_url }})** — Discover all of mini-a's capabilities
+- **[Features]({{ '/features' | relative_url }})** — Discover all of mini-a's capabilities, including agent files, multi-agent delegation, and working memory
 - **[Examples]({{ '/examples' | relative_url }})** — See real-world usage examples
-- **[Cheatsheet]({{ '/cheatsheet' | relative_url }})** — Quick reference for commands and parameters
-- **[Configuration]({{ '/configuration' | relative_url }})** — Fine-tune mini-a for your workflow
+- **[Configuration]({{ '/configuration' | relative_url }})** — Full parameter reference, channels, and advanced topics

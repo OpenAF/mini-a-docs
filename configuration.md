@@ -427,3 +427,30 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 User custom presets can be defined in `~/.openaf-mini-a_modes.yaml`. They are merged with built-ins from `mini-a-modes.yaml`, and user definitions take precedence.
 
 </div>
+
+<div class="config-category" markdown="1">
+
+## Channels
+
+mini-a uses **OpenAF channels** as the pluggable storage backend for audit logs, tool logs, and debug traffic. The channel-accepting parameters (`auditch`, `toollog`, `debugch`, `debuglcch`, `debugvalch`, `metricsch`) each accept a SLON definition that specifies the backend, channel name, and options.
+
+See the **[Channels]({{ '/channels' | relative_url }})** reference for the complete definition format, every supported backend (file, MVS, Redis, S3, and more), and ready-to-use query examples.
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## Advanced Topics
+
+For power-user configuration, deployment patterns, and provider-specific guides, see the **[Advanced]({{ '/advanced' | relative_url }})** page. Topics covered:
+
+- Dual-model setup and advisor strategy mode
+- MCP advanced options — proxy, dynamic discovery, lazy loading
+- Custom slash commands, skills, and hooks
+- Performance tuning and context management
+- Shell sandboxing — OS-level (`usesandbox`), Docker, Podman, Apple container CLI
+- Delegation and dynamic worker registration (including Kubernetes HPA patterns)
+- JavaScript and oJob library integration
+- Debugging techniques and provider-specific guides (AWS Bedrock, GitHub Models, Ollama)
+
+</div>
