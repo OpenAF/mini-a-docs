@@ -104,48 +104,46 @@ pre.highlight {
 
 .code-copy-button {
   position: absolute;
-  top: 0.7rem;
-  right: 0.7rem;
+  top: 0.5rem;
+  right: 0.5rem;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
   border: 0;
-  border-radius: 999px;
-  padding: 0.35rem 0.7rem;
-  font: inherit;
-  font-size: 0.82rem;
-  font-weight: 600;
-  line-height: 1;
-  color: #fff;
-  background: rgba(15, 23, 42, 0.78);
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+  border-radius: 6px;
+  padding: 0;
+  color: currentColor;
+  background: transparent;
   cursor: pointer;
   opacity: 0;
-  transform: translateY(-4px);
   pointer-events: none;
-  transition: opacity 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
+  transition: opacity 0.18s ease, color 0.18s ease;
 }
 
 .highlighter-rouge:hover .code-copy-button,
 .highlighter-rouge:focus-within .code-copy-button,
 pre.highlight:hover .code-copy-button,
 pre.highlight:focus-within .code-copy-button {
-  opacity: 1;
-  transform: translateY(0);
+  opacity: 0.35;
   pointer-events: auto;
 }
 
 .code-copy-button:hover,
 .code-copy-button:focus-visible {
-  background: rgba(15, 23, 42, 0.92);
+  opacity: 0.75;
 }
 
 .code-copy-button.is-copied {
-  background: #62bb47;
+  opacity: 1;
+  color: #62bb47;
 }
 
 @media (hover: none) {
   .code-copy-button {
-    opacity: 1;
-    transform: none;
+    opacity: 0.35;
     pointer-events: auto;
   }
 }
@@ -192,6 +190,7 @@ pre.highlight:focus-within .code-copy-button {
     position: absolute;
     top: 10px;
     right: calc(12px + env(safe-area-inset-right));
+    z-index: 100;
     background: transparent;
     border: 0;
     border-radius: 0;
