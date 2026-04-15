@@ -97,6 +97,59 @@
   }
 }
 
+.highlighter-rouge,
+pre.highlight {
+  position: relative;
+}
+
+.code-copy-button {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 2;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.78);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.16);
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease, background-color 0.18s ease;
+}
+
+.highlighter-rouge:hover .code-copy-button,
+.highlighter-rouge:focus-within .code-copy-button,
+pre.highlight:hover .code-copy-button,
+pre.highlight:focus-within .code-copy-button {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.code-copy-button:hover,
+.code-copy-button:focus-visible {
+  background: rgba(15, 23, 42, 0.92);
+}
+
+.code-copy-button.is-copied {
+  background: #62bb47;
+}
+
+@media (hover: none) {
+  .code-copy-button {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
 // Site navigation
 .site-nav {
   .nav-items {
