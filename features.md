@@ -411,6 +411,12 @@ mini-a usememory=true memorymaxpersection=200 memorymaxentries=1000 \
   goal="Analyze all TypeScript files"
 ```
 
+Use `memoryuser=true` as a shorthand that activates working memory with automatic file-backed persistence at `~/.openaf-mini-a/memory.json`, without needing to specify a channel:
+
+```bash
+mini-a memoryuser=true goal="deep code analysis"
+```
+
 See [Configuration → Working Memory]({{ '/configuration#10b-working-memory' | relative_url }}) for the full parameter reference.
 
 ---
@@ -541,10 +547,45 @@ mini-a extracommands=/path/to/team-commands,/path/to/project-commands
 
 ### Skills
 
-mini-a discovers skills from `~/.openaf-mini-a/skills/` in two formats:
+mini-a discovers skills from `~/.openaf-mini-a/skills/` in several formats. When a skill folder contains multiple formats, the first match in this precedence order is loaded:
 
-- Folder skill: `~/.openaf-mini-a/skills/<name>/SKILL.md`
-- Single-file skill: `~/.openaf-mini-a/skills/<name>.md`
+1. `SKILL.yaml` — self-contained YAML skill (recommended for portable/shared skills)
+2. `SKILL.yml`
+3. `SKILL.json`
+4. `SKILL.md` — classic markdown skill (folder layout)
+5. `skill.md`
+
+Single-file skills (`~/.openaf-mini-a/skills/<name>.md`) are also supported.
+
+#### YAML Skill Format
+
+The YAML format bundles the prompt body, metadata, and all referenced files into a single portable file — no folder of supporting files required:
+
+```yaml
+schema: mini-a.skill/v1
+name: my-skill
+summary: Short description shown by /skills
+
+body: |
+  You are a specialized assistant for {{arg1}}.
+  @context.md
+  {{args}}
+
+refs:
+  context.md: |
+    Add any context or constraints here.
+```
+
+Print a starter template with:
+
+```bash
+mini-a --skills
+# Redirect directly to a new file:
+mkdir -p ~/.openaf-mini-a/skills/my-skill
+mini-a --skills > ~/.openaf-mini-a/skills/my-skill/SKILL.yaml
+```
+
+The `refs` map embeds virtual reference files inline — `@context.md` in the body resolves from embedded refs first, then falls back to the filesystem. A `children` list models nested sub-folder structure for complex skill packs. See [docs/SKILLS-YAML-FORMAT.md](https://github.com/OpenAF/mini-a/blob/main/docs/SKILLS-YAML-FORMAT.md) for the full schema reference.
 
 Run skills with either `/<name> ...args...` or `$<name> ...args...`. Use `/skills` (or `/skills <prefix>`) to list discovered skills.
 
@@ -649,6 +690,8 @@ mini-a usestream=true
 
 Streaming is enabled by default in most configurations. It provides a more responsive experience, especially for long-form outputs.
 
+When `usestream=true` and the agent is in the planning phase, tokens are emitted as `planner_stream` events (distinct from regular `stream` events). In the console these render in a different color; in the web UI clients can handle the `planner_stream` SSE event type to display planner output in a separate pane.
+
 ---
 
 ## Conversation Management
@@ -726,6 +769,59 @@ mini-a useascii=true usevectors=true usecharts=true usemaps=true usemath=true
 ```
 
 These features instruct the LLM to include visual representations in its responses when appropriate, making outputs more informative and easier to understand at a glance. `usevectors=true` is the convenient bundle for vector-first output because it enables both SVG and diagram guidance together.
+
+---
+
+## Real-Time Progress Messages (`showMessage`)
+
+When `useutils=true`, the agent can call the `showMessage` utility to display progress updates, status messages, and notifications directly in the console **during** execution — before the final answer.
+
+Five display levels are supported, each with a distinct color and icon: `info` (cyan), `warn` (yellow ⚠️), `error` (red ❌), `success` (green ✅), `debug` (faint 🪳). An optional `title` field prints a bold header above the message.
+
+```bash
+mini-a goal="analyze project and report findings" useutils=true
+# Agent emits real-time status updates as it works
+```
+
+---
+
+## Prompt Safety and Untrusted Data Handling
+
+mini-a explicitly labels all untrusted content — user goals, tool outputs, attached files, and conversation history — with `BEGIN_UNTRUSTED_* … END_UNTRUSTED_*` markers in the system prompt. The LLM is instructed not to follow embedded instructions that conflict with developer rules.
+
+Additional safeguards:
+
+- **Policy-lane probe detection** — requests that attempt to extract the system prompt are detected and refused before reaching the LLM.
+- **Prompt normalization** — line endings are unified, stray control characters are stripped, and oversized inputs are rejected.
+- **Web API prompt size limit** (`maxpromptchars`, default 120,000) — configurable character cap on incoming web API payloads.
+
+```bash
+# Restrict accepted prompt size in the web server
+./mini-a-web.sh onport=8888 maxpromptchars=40000
+```
+
+---
+
+## Conversation Carryover Context
+
+When using conversation history (`conversation=<path>`, `usehistory=true`, or `resume=true`), mini-a automatically extracts up to two recent goal/answer pairs and injects them into the runtime context at the start of each new goal. This keeps multi-turn sessions coherent without manual context management — no configuration required.
+
+---
+
+## Agent Config Overrides
+
+The `mini-a:` section in an agent file can now override parameter values that were **not explicitly set** on the CLI, including defaults previously applied by mode presets. Explicit CLI flags always win; agent-file values only affect unset defaults.
+
+```yaml
+---
+name: my-agent
+mini-a:
+  maxsteps: 30        # overrides default of 15 unless user passed maxsteps= explicitly
+  useplanning: true   # enables planning unless user explicitly set useplanning=false
+---
+```
+
+This lets agent authors set sensible defaults for parameters like `maxsteps`, `useplanning`, or `planstyle` without risking a conflict with intentional CLI flags.
 
 ---
 

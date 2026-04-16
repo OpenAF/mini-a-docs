@@ -187,10 +187,33 @@ Parsed: ["src","--quick","security only"]
 
 ### Skills
 
-Supported skill layouts in `~/.openaf-mini-a/skills/`:
+Supported skill layouts in `~/.openaf-mini-a/skills/`. When a folder contains multiple formats, precedence is:
 
-- `~/.openaf-mini-a/skills/<name>/SKILL.md`
-- `~/.openaf-mini-a/skills/<name>.md`
+1. `SKILL.yaml` (self-contained, recommended for portable skills)
+2. `SKILL.yml`
+3. `SKILL.json`
+4. `SKILL.md`
+5. `skill.md`
+
+Single-file `~/.openaf-mini-a/skills/<name>.md` skills are also supported.
+
+The YAML format bundles body, metadata, and embedded reference files into one portable file:
+
+```yaml
+schema: mini-a.skill/v1
+name: my-skill
+summary: Short description
+
+body: |
+  You are a specialized assistant for {{arg1}}.
+  @context.md
+
+refs:
+  context.md: |
+    Add context here.
+```
+
+Print a starter template: `mini-a --skills`
 
 Skills can be invoked as `/<name> ...args...` or `$<name> ...args...`.
 
