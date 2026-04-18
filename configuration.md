@@ -296,6 +296,7 @@ Enable a structured, scoped working memory subsystem that the agent maintains au
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `usememory` | `false` | Enable the working memory subsystem |
+| `memoryuser` | `false` | Convenience preset that enables file-backed session + global memory under `~/.openaf-mini-a/`, auto-promotes `facts,decisions,summaries`, and enables a 30-day stale sweep |
 | `memoryscope` | `both` | Scope of memory: `session` (current run only), `global` (shared across sessions), or `both` |
 | `memorych` | - | SLON/JSON channel definition for global memory persistence (e.g. file, Redis) |
 | `memorysessionch` | - | SLON/JSON channel definition for session memory (falls back to `memorych` if omitted) |
@@ -304,8 +305,13 @@ Enable a structured, scoped working memory subsystem that the agent maintains au
 | `memorymaxentries` | `500` | Hard cap on total entries across all sections |
 | `memorycompactevery` | `8` | Number of appends between automatic compaction passes |
 | `memorydedup` | `true` | Suppress near-duplicate entries (85% word-overlap fingerprint) |
+| `memorypromote` | `""` | Comma-separated sections to auto-promote from session memory to global memory at session end |
+| `memorystaledays` | `0` | Days without re-confirmation before a global entry is marked `stale`; `memoryuser=true` sets this to `30` |
+| `memoryinject` | `summary` | `summary` injects only per-section counts and enables on-demand `memory_search`; `full` embeds the full compact memory snapshot in every step |
 
 Memory is organized into 8 sections: `facts`, `evidence`, `decisions`, `risks`, `openQuestions`, `hypotheses`, `artifacts`, `summaries`. The agent appends entries automatically at significant events (tool calls, plan critiques, validation results, final answers).
+
+When both `memorych` and `memorysessionch` are configured, writes under `memoryscope=both` default to the session store first. Auto-promotion then refreshes or appends selected knowledge into the global store at session end.
 
 </div>
 

@@ -411,11 +411,13 @@ mini-a usememory=true memorymaxpersection=200 memorymaxentries=1000 \
   goal="Analyze all TypeScript files"
 ```
 
-Use `memoryuser=true` as a shorthand that activates working memory with automatic file-backed persistence at `~/.openaf-mini-a/memory.json`, without needing to specify a channel:
+Use `memoryuser=true` as a shorthand that activates working memory with automatic file-backed persistence under `~/.openaf-mini-a/`, without needing to specify channels manually:
 
 ```bash
 mini-a memoryuser=true goal="deep code analysis"
 ```
+
+This preset configures separate session and global stores, defaults `memorypromote=facts,decisions,summaries`, and enables a 30-day stale sweep (`memorystaledays=30`) so long-lived memory stays fresh instead of growing without bounds.
 
 See [Configuration → Working Memory]({{ '/configuration#10b-working-memory' | relative_url }}) for the full parameter reference.
 

@@ -42,6 +42,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `mini-a onport=8080` | Web UI |
 | `mini-a chatbotmode=true` | Chatbot mode |
 | `mini-a modelman=true` | Model manager |
+| `mini-a --skills` | Starter self-contained `SKILL.yaml` template |
 
 ## Console Commands
 
@@ -58,7 +59,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/reset` | Reset conversation |
 | `/last [md]` | Reprint last final answer (`md` for raw markdown) |
 | `/save <path>` | Save last final answer to a file |
-| `/stats [mode] [out=file.json]` | Usage statistics (`summary`, `detailed`, `tools`) |
+| `/stats [mode] [out=file.json]` | Usage statistics (`summary`, `detailed`, `tools`, `memory`) |
 | `/history [n]` | Show recent user goals from conversation history |
 | `/exit` | Exit mini-a |
 | `/clear` | Reset conversation history and accumulated metrics |
@@ -123,6 +124,10 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `modelstrategy` | `default` | Model orchestration profile: `default` or `advisor` (LC executes, main model consulted selectively) |
 | `advisormaxuses` | `2` | Max advisor consultations per run when `modelstrategy=advisor` |
 | `advisorcooldownsteps` | `2` | Min steps between advisor consultations |
+| `memoryuser` | `false` | File-backed session + global working memory preset with auto-promotion and 30-day stale sweep |
+| `memorypromote` | `""` | Auto-promote selected sections from session to global memory at session end |
+| `memorystaledays` | `0` | Mark unconfirmed global memory entries as `stale` after N days |
+| `memoryinject` | `summary` | Inject memory as section counts (`summary`) or full compact entries (`full`) |
 | `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
 | `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots |
 | `usedelegation` | `false` | Agent delegation |
