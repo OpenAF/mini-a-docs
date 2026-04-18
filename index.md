@@ -13,6 +13,9 @@ permalink: /
     and worker registration
     from the terminal, a web UI, or your own code.
   </p>
+  <p class="hero-description">
+    Track recent releases, new capabilities, and migration notes in <a href="{{ '/whats-new' | relative_url }}">What's New</a>.
+  </p>
   <div class="cta-buttons">
     <a href="{{ '/getting-started' | relative_url }}" class="btn btn-primary">Get Started</a>
     <a href="https://github.com/OpenAF/mini-a" class="btn btn-secondary">GitHub</a>

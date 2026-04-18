@@ -215,6 +215,8 @@ refs:
 
 Print a starter template: `mini-a --skills`
 
+Folders ending in `.disabled` are ignored during skill discovery, which lets you keep a skill installed without exposing it.
+
 Skills can be invoked as `/<name> ...args...` or `$<name> ...args...`.
 
 Load additional skill directories:

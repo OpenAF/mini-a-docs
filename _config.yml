@@ -13,6 +13,7 @@ minima:
   nav_pages:
     - getting-started.md
     - features.md
+    - whats-new.md
     - examples.md
     - configuration.md
     - search.md
