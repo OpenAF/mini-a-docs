@@ -423,6 +423,61 @@ See [Configuration → Working Memory]({{ '/configuration#10b-working-memory' | 
 
 ---
 
+## Wiki Knowledge Base
+
+For long-lived, cross-session knowledge that multiple agents or users should share, mini-a supports a **persistent Markdown wiki** following the LLM Wiki pattern. Agents read from and write to structured pages stored on the filesystem or S3 — knowledge survives restarts and is readable by any agent pointing at the same root.
+
+```bash
+# Read-only wiki (agents can read; useful for shared team knowledge)
+mini-a usewiki=true wikiroot=/shared/wiki goal="..."
+
+# Read-write wiki (agent can distil findings into new pages)
+mini-a usewiki=true wikiaccess=rw wikiroot=/shared/wiki goal="..."
+```
+
+The agent uses the `wiki` action to interact with the knowledge base:
+
+```json
+{ "action": "wiki", "params": { "op": "search", "query": "authentication decision" } }
+```
+
+Supported operations:
+
+| Operation | Description |
+|-----------|-------------|
+| `list` | List all pages (optional prefix filter) |
+| `read` | Read a specific page |
+| `search` | Full-text search across all pages |
+| `lint` | Validate wiki health (broken links, orphans, stale pages, near-duplicates) |
+| `write` | Write or update a page (requires `wikiaccess=rw`) |
+
+When a brand-new wiki is opened with `wikiaccess=rw`, Mini-A auto-bootstraps `AGENTS.md` (ingestion workflow and contribution rules) and `index.md` (entrypoint and table of contents). `AGENTS.md` is protected and cannot be deleted.
+
+### Wiki Console Commands
+
+```
+/wiki list [prefix]    — list pages, optionally filtered
+/wiki read <page.md>   — print a page
+/wiki search <query>   — full-text search
+/wiki lint             — run health checks
+/stats wiki            — show per-operation stats for the session
+```
+
+### Choosing Between Wiki and Memory
+
+| | `usememory` | `usewiki` |
+|--|-------------|-----------|
+| Scope | Per-session or per-user global | Shared across all agents/users |
+| Format | Typed JSON sections | Human-readable Markdown pages |
+| Survives restart | With persistence channel | Always |
+| Best for | In-flight reasoning, decisions | Durable encyclopaedic knowledge |
+
+Use both together: the agent reasons with memory during a session, then distils durable findings into wiki pages for future sessions and other agents.
+
+See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the full parameter reference.
+
+---
+
 ## Adaptive Tool Routing
 
 mini-a includes an optional **rule-based routing layer** that selects how each action is dispatched — direct local tool, MCP direct call, MCP proxy, shell execution, utility wrapper, or delegated subtask.

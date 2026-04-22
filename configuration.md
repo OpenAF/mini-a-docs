@@ -317,7 +317,35 @@ When both `memorych` and `memorysessionch` are configured, writes under `memorys
 
 <div class="config-category" markdown="1">
 
-## 10c. Adaptive Routing
+## 10c. Wiki Knowledge Base
+
+A persistent, shared Markdown wiki that agents read from and write to across sessions. Any agent pointing at the same `wikiroot` (or `wikibucket`) sees the same pages.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `usewiki` | `false` | Enable the wiki knowledge base |
+| `wikiaccess` | `ro` | Access mode: `ro` (read-only) or `rw` (read-write) |
+| `wikibackend` | `fs` | Backend: `fs` (filesystem) or `s3` |
+| `wikiroot` | `.` | Root directory for the `fs` backend |
+| `wikibucket` | - | S3 bucket name (`s3` backend) |
+| `wikiprefix` | - | S3 key prefix (`s3` backend) |
+| `wikiurl` | - | S3-compatible endpoint URL (`s3` backend) |
+| `wikiaccesskey` | - | S3 access key (`s3` backend) |
+| `wikisecret` | - | S3 secret key (`s3` backend) |
+| `wikiregion` | - | S3 region (`s3` backend) |
+| `wikiuseversion1` | `false` | Use S3 path-style (v1) signing (`s3` backend) |
+| `wikiignorecertcheck` | `false` | Skip TLS certificate validation (`s3` backend) |
+| `wikilintstaleddays` | `90` | Days before a page without an `updated` field is marked stale in lint |
+
+When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps `AGENTS.md` (ingestion workflow and rules) and `index.md` (entrypoint). `AGENTS.md` is protected and cannot be deleted.
+
+Wiki operations available to the agent: `list`, `read`, `search`, `lint`, `write` (write requires `wikiaccess=rw`). Console commands: `/wiki list [prefix]`, `/wiki read <page.md>`, `/wiki search <query>`, `/wiki lint`. Use `/stats wiki` to see per-operation counters for the current session.
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## 10d. Adaptive Routing
 
 A rule-based routing layer that selects how each tool action is dispatched. When disabled, mini-a uses legacy behavior.
 

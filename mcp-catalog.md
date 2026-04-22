@@ -6,7 +6,7 @@ permalink: /mcp-catalog/
 
 **MCP (Model Context Protocol)** is an open standard that defines how LLMs discover and invoke external tools through a uniform interface. Instead of hard-coding integrations, mini-a connects to MCP servers that expose capabilities as callable tools. Each MCP server runs as a separate process (STDIO) or remote service (HTTP), and mini-a automatically discovers available tools at startup.
 
-mini-a ships with **26 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
+mini-a ships with **27 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
 
 ---
 
@@ -38,6 +38,7 @@ mini-a ships with **26 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-oafp` | OpenAF processor | STDIO | `process`, `transform` |
 | `mcp-office` | Office document processing | STDIO | `readExcel`, `readWord`, `readPDF` |
 | `mcp-ollama-web-search` | Web search via Ollama API | STDIO/HTTP | `web-search` |
+| `mcp-wiki` | Persistent Markdown wiki knowledge base | STDIO/HTTP | `list`, `read`, `search`, `lint`, `write` |
 
 ---
 
@@ -450,6 +451,41 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-ollama-web-search.yaml apiKey=YOUR_KEY')" goal=
 ```
 
 **Tools:** `web-search`
+
+---
+
+### mcp-wiki
+
+Persistent Markdown wiki knowledge base backed by the `MiniAWikiManager`. Exposes the wiki as an MCP server (STDIO or HTTP) so any MCP-compatible client can list, read, search, lint, and write wiki pages.
+
+**Configuration:**
+
+| Argument | Description |
+|----------|-------------|
+| `wikibackend` | Backend type: `fs` (filesystem) or `s3` (default: `fs`) |
+| `wikiaccess` | Access mode: `ro` (read-only) or `rw` (read-write, default: `ro`) |
+| `wikiroot` | Root directory for the `fs` backend (default: `.`) |
+| `wikibucket` | S3 bucket name (`s3` backend) |
+| `wikiprefix` | S3 key prefix (`s3` backend) |
+| `wikiurl` | S3-compatible endpoint URL (`s3` backend) |
+| `wikiaccesskey` | S3 access key (`s3` backend) |
+| `wikisecret` | S3 secret key (`s3` backend) |
+| `label` | Human-readable wiki label injected into tool descriptions |
+| `toolPrefix` | Optional prefix for tool names (e.g. `docs-` → `docs-list`, `docs-read`, …) |
+| `onport` | Start an HTTP MCP server on this port instead of STDIO |
+
+**Usage:**
+```bash
+# STDIO: share a filesystem wiki with another agent
+mini-a usetools=true \
+  mcp="(cmd: 'ojob mcps/mcp-wiki.yaml wikiroot=/shared/wiki wikiaccess=rw label=TeamWiki')" \
+  goal='Summarize what the wiki says about authentication'
+
+# HTTP: standalone wiki server accessible by multiple clients
+ojob mcps/mcp-wiki.yaml onport=8990 wikiroot=/shared/wiki wikiaccess=rw label=TeamWiki
+```
+
+**Tools:** `list`, `read`, `search`, `lint`, `write` (write requires `wikiaccess=rw`)
 
 ---
 
