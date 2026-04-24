@@ -64,6 +64,40 @@ When advisor mode is active and the agent encounters a difficult step, it sends 
 
 This keeps most execution on the cheaper LC model while getting targeted guidance from the main model only when genuinely needed — useful when you want tighter cost control than full escalation but better reliability than pure LC execution.
 
+### Low-Cost Tool Calling (`usetoolslc`)
+
+`usetoolslc=true` registers MCP tools natively on the low-cost model only, while the main model continues to use prompt/action-based tool guidance. Use this when you want the cheaper model to call tools directly during low-complexity steps without enabling native tool calling on the main model as well.
+
+```bash
+mini-a goal="scan docs and escalate if needed" \
+  modellc="(type: openai, model: gpt-5-mini, key: '...')" \
+  mcp="(cmd: 'ojob mcps/mcp-files.yaml')" \
+  usetoolslc=true
+```
+
+This is distinct from `usetools=true`, which enables tool calling on whichever model is currently active (main or LC). With `usetoolslc`, only the LC model gets the native tool interface.
+
+### System Prompt Profiles (`promptprofile`)
+
+Control how verbose the system prompt is. A shorter prompt reduces token cost on every LLM call:
+
+| Value | Description |
+|-------|-------------|
+| `minimal` | Shortest possible — drops examples and detailed guidance |
+| `balanced` | Default — balanced detail and token usage |
+| `verbose` | Full detail, auto-enabled when `debug=true` |
+
+```bash
+# Reduce per-call token overhead
+mini-a promptprofile=minimal goal="..."
+```
+
+Set `systempromptbudget=<n>` to cap the estimated system prompt tokens. When exceeded, Mini-A drops lower-priority sections to stay under the limit:
+
+```bash
+mini-a systempromptbudget=4000 goal="..."
+```
+
 ---
 
 ## MCP Advanced
@@ -130,7 +164,31 @@ This reduces startup time and memory usage, especially when specifying many MCP 
 
 ## Custom Commands, Skills, Hooks
 
-Based on upstream mini-a behavior, customization is file-based and loaded from your home profile.
+Based on upstream mini-a behavior, customization is file-based and loaded from your home profile. By default, Mini-A reads all configuration from `~/.openaf-mini-a`.
+
+#### Overriding the Config Home (`homedir`)
+
+Pass `homedir=<path>` to make Mini-A resolve its `.openaf-mini-a` folder relative to a different base directory. Every path that would normally expand from `~` uses the provided value instead — commands, skills, hooks, modes, agent profiles, history, and memory files all shift together.
+
+```bash
+# Use a shared team config directory
+mini-a homedir=/opt/shared/mini-a-config goal="..."
+
+# Per-project isolated config (checked into the repo)
+mini-a homedir=./my-project-config goal="..."
+
+# Container or CI environment where ~ is not writable
+mini-a homedir=/app/mini-a-config goal="summarize the build logs" useshell=true
+```
+
+`extracommands`, `extraskills`, and `extrahooks` still work as additional directories layered on top of whichever base is active:
+
+```bash
+# Shared base + project-specific extra skills
+mini-a homedir=/opt/shared/mini-a-config \
+       extraskills=./project-skills \
+       goal="..."
+```
 
 ### Slash Command Templates
 
@@ -218,6 +276,8 @@ Print a starter template: `mini-a --skills`
 Folders ending in `.disabled` are ignored during skill discovery, which lets you keep a skill installed without exposing it.
 
 Skills can be invoked as `/<name> ...args...` or `$<name> ...args...`.
+
+**Automatic activation**: Mini-A automatically preloads skills whose names or phrases appear in the goal or hook context. If your goal mentions `"run review"` and a `review` skill is installed, it is loaded and its context is injected before the first step — no explicit invocation needed.
 
 Load additional skill directories:
 
@@ -734,14 +794,52 @@ mini-a debug=true
 
 Debug output includes timestamps, model selection decisions, token counts, and the full request/response payloads for each LLM call.
 
-To capture debug traffic in a structured, queryable store instead of the console, use the channel parameters:
+#### Full Debug — Audit + LLM Payloads to Files
+
+To capture everything — agent activity audit trail, main-model LLM payloads, and low-cost model payloads — write each stream to a separate JSON file:
 
 ```bash
-# Write main-model LLM payloads to an MVS file, LC payloads to a JSON file
-mini-a debugch="(type: mvs, file: debug.db, map: main)" \
-       debuglcch="(type: file, file: lc-debug.json)" \
-       goal='Summarize the project README'
+mini-a goal="your goal here" \
+  auditch="(type: file, options: (file: audit.json))" \
+  debugch="(type: file, options: (file: debug.json))" \
+  debuglcch="(type: file, options: (file: debuglc.json))"
 ```
+
+| File | Contents |
+|------|----------|
+| `audit.json` | Structured agent activity log — every tool call, shell command, and goal event with arguments and results |
+| `debug.json` | Full request/response payloads for the main model (prompt + completion on every step) |
+| `debuglc.json` | Full request/response payloads for the low-cost model |
+
+All three files are written in NDJSON (one JSON object per line), so you can stream or filter them:
+
+```bash
+# Show only failed tool calls from the audit log
+ojob - code='$from(io.readFileNDJSON("audit.json")).equals("type","tool_call").equals("status","error").select()'
+
+# Show main-model prompts only
+ojob - code='$from(io.readFileNDJSON("debug.json")).equals("type","prompt").select(r => r.content)'
+```
+
+If you also have a validation model configured, add `debugvalch` to capture its payloads:
+
+```bash
+mini-a goal="deep research task" deepresearch=true \
+  auditch="(type: file, options: (file: audit.json))" \
+  debugch="(type: file, options: (file: debug.json))" \
+  debuglcch="(type: file, options: (file: debuglc.json))" \
+  debugvalch="(type: file, options: (file: debugval.json))"
+```
+
+#### Lightweight Alternative — `debugfile`
+
+To redirect only the noisy raw LLM blocks (prompts/responses) to a file while keeping normal agent events on screen:
+
+```bash
+mini-a goal="summarize README.md" debugfile=debug.log useshell=true
+```
+
+This implies `debug=true` and writes one JSON object per line to `debug.log`. Normal agent output still appears in the console.
 
 See **[Channels]({{ '/channels' | relative_url }})** for full backend options and query examples.
 

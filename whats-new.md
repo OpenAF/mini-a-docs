@@ -8,6 +8,98 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### `homedir` — Isolated Config Directory
+
+**Change**: Mini-A now accepts a `homedir` parameter that replaces the user home directory when resolving the `.openaf-mini-a` configuration folder.
+
+**What's New**:
+- All configuration paths (commands, skills, hooks, modes, agent profiles, history, memory) resolve relative to `homedir` instead of `~`.
+- `extracommands`, `extraskills`, and `extrahooks` still work as additional directories on top of the active base.
+
+**Usage**:
+```bash
+# Use a shared config directory instead of ~/.openaf-mini-a
+mini-a homedir=/opt/shared/mini-a-config goal="..."
+
+# Isolated per-project config (useful in CI or containers)
+mini-a homedir=./my-project-config goal="..."
+```
+
+**Impact**: Enables running multiple isolated Mini-A configurations on the same machine, and simplifies container deployments where the home directory may not be writable.
+
+---
+
+### Automatic Initial Skill Activation
+
+**Change**: Mini-A now automatically preloads skills whose names or phrases are mentioned in the goal or hook context, so the right skill is active from step one without requiring an explicit `/skill-name` invocation.
+
+**What's New**:
+- Before the first agent step, Mini-A scans the goal and hook context for matches against discovered skill names and front-matter phrases.
+- Matching skills are loaded and their context is injected into the initial runtime state.
+- Normalized key/phrase matching handles hyphens, underscores, and case differences, so `"run review"` activates a skill named `review`.
+- No configuration required — discovery uses the same skill paths as `/skills`.
+
+**Impact**: Agents that mention a skill by name in the goal now pick up that skill's context automatically, improving task-specific guidance without manual activation.
+
+---
+
+### Low-Cost Tool Calling and Prompt Profiles
+
+**Change**: Two new capabilities give finer control over how MCP tools are registered and how verbose the system prompt is.
+
+#### `usetoolslc` — Tools on the Low-Cost Model Only
+
+Register MCP tools natively on the low-cost model (`OAF_LC_MODEL`) while keeping the main model in prompt/action mode. Useful for cost-sensitive setups where you want native tool calling on the cheaper tier.
+
+```bash
+mini-a goal="scan docs, then escalate if needed" \
+  modellc="(type: openai, model: gpt-5-mini, key: '...')" \
+  mcp="(cmd: 'ojob mcps/mcp-files.yaml')" \
+  usetoolslc=true
+```
+
+Also available as a capability in agent files:
+```yaml
+capabilities:
+  - usetoolslc
+```
+
+#### `promptprofile` — System Prompt Verbosity
+
+Control how much guidance is embedded in the system prompt:
+
+| Value | Description |
+|-------|-------------|
+| `minimal` | Shortest possible system prompt — reduces tokens on every call |
+| `balanced` | Default — examples and tool guidance included |
+| `verbose` | Full detail, auto-enabled when `debug=true` |
+
+```bash
+# Reduce token cost on every LLM call
+mini-a promptprofile=minimal goal="..."
+
+# Force verbose for debugging
+mini-a promptprofile=verbose goal="..."
+```
+
+#### `systempromptbudget` — System Prompt Token Cap
+
+Set a maximum estimated token size for the system prompt. When exceeded, Mini-A drops lower-priority sections (examples, detailed tool guidance) to stay within budget.
+
+```bash
+mini-a systempromptbudget=4000 goal="..."
+```
+
+**New parameters**:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `usetoolslc` | `false` | Register MCP tools only on the low-cost model |
+| `promptprofile` | `balanced` | System prompt verbosity: `minimal`, `balanced`, or `verbose` |
+| `systempromptbudget` | — | Max estimated tokens for the system prompt |
+
+---
+
 ### Wiki Knowledge Base (`usewiki`)
 
 **Change**: Mini-A now supports a persistent, shared Markdown wiki following Andrej Karpathy's LLM Wiki pattern — agents distil knowledge into structured pages and retrieve it across sessions.

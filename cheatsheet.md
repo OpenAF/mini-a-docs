@@ -97,8 +97,12 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `usetools` | `false` | Enable tool use |
+| `usetoolslc` | `false` | Register MCP tools only on the low-cost model; main model stays in prompt/action mode |
 | `usejsontool` | `false` | Compatibility `json` tool for some tool-calling models |
 | `toollog` | - | JSSLON channel for MCP tool call logs (input/output) |
+| `auditch` | - | Channel for agent activity audit log (tool calls, shell commands, goal events) |
+| `debugch` | - | Channel for main-model LLM request/response payloads |
+| `debuglcch` | - | Channel for low-cost model LLM request/response payloads |
 | `debugfile` | - | Write debug output to a NDJSON file (implies `debug=true`) |
 | `debugvalch` | - | Separate debug channel for the validation model |
 | `outfileall` | - | Deep research only: save full cycle outputs (not only final answer) |
@@ -106,7 +110,12 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `shellmaxbytes` | `8000` | Cap shell output size and truncate with head/tail excerpt |
 | `shellallowpipes` | `false` | Allow pipes, redirection, and shell control operators |
 | `usestream` | `false` | Stream responses |
+| `showexecs` | `false` | Show shell/exec events as separate lines in the interaction stream |
+| `showseparator` | `true` | Show a separator line between interaction events (disable for compact view) |
 | `showthinking` | `false` | Surface XML-tagged `<thinking>...</thinking>` blocks as thought logs |
+| `promptprofile` | `balanced` | System prompt verbosity: `minimal`, `balanced`, or `verbose` (auto when `debug=true`) |
+| `systempromptbudget` | — | Max estimated tokens for the system prompt; drops lower-priority sections when exceeded |
+| `goalprefix` | — | Prefix automatically prepended to every goal before the agent sees it |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
 | `usesvg` | `false` | Enable SVG generation for custom visuals and infographics |
 | `usediagrams` | `false` | Enable diagram generation |
@@ -115,6 +124,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `usevectors` | `false` | Enable vector bundle (`usesvg=true` + `usediagrams=true`) |
 | `mcp` | - | MCP servers to load |
 | `mcpproxy` | `false` | MCP proxy mode |
+| `mcpproxythreshold` | `0` | Proxy auto-spill byte threshold (`0` disables); large results written to temp file |
 | `mcpproxytoon` | `false` | TOON serialization for spilled proxy results |
 | `mcpprogcall` | `false` | Enable localhost bridge for programmatic MCP tool calls |
 | `mcpprogcallport` | `0` | Programmatic MCP bridge port (`0` auto-selects) |
@@ -137,11 +147,16 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `memorypromote` | `""` | Auto-promote selected sections from session to global memory at session end |
 | `memorystaledays` | `0` | Mark unconfirmed global memory entries as `stale` after N days |
 | `memoryinject` | `summary` | Inject memory as section counts (`summary`) or full compact entries (`full`) |
+| `memorysessionheader` | — | HTTP request header name used to derive the memory session ID in web mode (e.g. `X-User-Id`) |
 | `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
 | `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots |
 | `usedelegation` | `false` | Agent delegation |
 | `workers` | - | Remote worker URLs for delegation |
+| `workertags` | — | Comma-separated tags appended to the default worker skill in the AgentCard |
+| `usea2a` | `false` | Use A2A HTTP+JSON endpoints for remote worker delegation |
+| `apitoken` | — | Bearer token for authenticating requests to the worker API server |
 | `onport` | - | Web UI port |
+| `homedir` | — | Override the home directory used to locate the `.openaf-mini-a` folder |
 
 ## Agent Files
 
@@ -174,6 +189,7 @@ mini-a useutils=true goal='@data.csv Analyze it'
 | Extra command dirs | `extracommands=/path/a,/path/b` |
 | Extra skill dirs | `extraskills=/path/a,/path/b` |
 | Extra hook dirs | `extrahooks=/path/a,/path/b` |
+| Alternate config base | `homedir=/opt/shared/mini-a-config` |
 | Run one template | `mini-a exec="/<name> arg1 arg2"` |
 | List skills | `/skills` |
 
@@ -219,6 +235,42 @@ export OAF_VAL_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 # Optional prompt-mode controls (Gemini main auto-enables when unset)
 export OAF_MINI_A_NOJSONPROMPT=true
 export OAF_MINI_A_LCNOJSONPROMPT=true
+```
+
+## Full Debug
+
+Capture everything — agent activity, main-model payloads, and low-cost model payloads — to separate JSON files:
+
+```bash
+mini-a goal="your goal" \
+  auditch="(type: file, options: (file: audit.json))" \
+  debugch="(type: file, options: (file: debug.json))" \
+  debuglcch="(type: file, options: (file: debuglc.json))"
+```
+
+Add `debugvalch` when using a validation model (`deepresearch=true`):
+
+```bash
+mini-a goal="research task" deepresearch=true \
+  auditch="(type: file, options: (file: audit.json))" \
+  debugch="(type: file, options: (file: debug.json))" \
+  debuglcch="(type: file, options: (file: debuglc.json))" \
+  debugvalch="(type: file, options: (file: debugval.json))"
+```
+
+## Config Home (`homedir`)
+
+By default Mini-A reads `~/.openaf-mini-a`. Override with `homedir=`:
+
+```bash
+# Shared team config
+mini-a homedir=/opt/shared/mini-a-config goal="..."
+
+# Per-project isolated config
+mini-a homedir=./my-project-config goal="..."
+
+# Shared base + extra project skills
+mini-a homedir=/opt/shared/mini-a-config extraskills=./project-skills goal="..."
 ```
 
 ## Docker
