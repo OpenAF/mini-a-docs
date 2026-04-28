@@ -155,6 +155,14 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `workertags` | — | Comma-separated tags appended to the default worker skill in the AgentCard |
 | `usea2a` | `false` | Use A2A HTTP+JSON endpoints for remote worker delegation |
 | `apitoken` | — | Bearer token for authenticating requests to the worker API server |
+| `autodelegation` | `false` | Auto-delegate noisy/oversized tool results to a summarization sub-agent (requires `usedelegation=true`) |
+| `autodelegationthreshold` | `8192` | Byte size threshold that triggers auto-delegation |
+| `autodelegationmaxperstep` | `2` | Max auto-delegations per agent step |
+| `noisytools` | `""` | Comma-separated tool names always auto-delegated regardless of result size |
+| `subtasks` | `""` | Pipe-separated startup scout goals submitted before the main loop |
+| `subtasksfile` | `""` | Path to YAML/JSON file of `{goal, fork, args, timeout}` startup task objects |
+| `subtaskssequential` | `false` | Run startup scouts (and all subtasks) one at a time instead of in parallel |
+| `forkstatemaxbytes` | `65536` | Max bytes of serialized fork state transmitted to a remote worker |
 | `onport` | - | Web UI port |
 | `homedir` | — | Override the home directory used to locate the `.openaf-mini-a` folder |
 

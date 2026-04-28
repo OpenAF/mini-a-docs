@@ -669,6 +669,120 @@ mini-a usedelegation=true maxconcurrent=5
 
 Workers can also register themselves dynamically with the parent agent, enabling elastic scaling.
 
+### Forked Sub-agents
+
+A forked sub-agent inherits a snapshot of the parent's context instead of starting with a clean slate. This avoids re-doing research or re-establishing facts the parent has already gathered.
+
+Use `fork=true` on the `delegate-subtask` tool call, or `/delegate fork <goal>` in the console:
+
+```bash
+# Via console
+/delegate fork Write a summary of everything we have found so far
+
+# Via tool call (LLM-driven)
+# { "goal": "Summarize findings", "fork": true, "forkscope": ["memory", "context"] }
+```
+
+**`forkscope`** controls what is inherited:
+
+| Value | What is passed to the child |
+|-------|-----------------------------|
+| `"memory"` (default) | Working memory snapshot (facts, decisions, evidence, etc.) |
+| `"context"` | Last 50 conversation history entries |
+
+Both can be combined: `forkscope: ["memory", "context"]`.
+
+For remote workers the fork state is transmitted as JSON; `forkstatemaxbytes` (default 64 KB) caps the payload, dropping oldest history entries first if oversized.
+
+```bash
+# CLI startup task with fork
+mini-a usedelegation=true subtasksfile=scouts.yaml goal="Security audit"
+# scouts.yaml: [{goal: "Check for issues using existing findings", fork: true}]
+```
+
+### Auto-delegation (Noisy Tools)
+
+Auto-delegation automatically intercepts tool results that are too large or verbose for the parent's context window, replacing the raw observation with a focused summary produced by a sub-agent.
+
+Enable with `autodelegation=true` (also requires `usedelegation=true`):
+
+```bash
+# Summarize shell output larger than 8 KB automatically
+mini-a usedelegation=true usetools=true useshell=true \
+  autodelegation=true \
+  goal="Run diagnostics on this server and report issues"
+
+# Always summarize specific tools regardless of size
+mini-a usedelegation=true usetools=true useshell=true \
+  autodelegation=true noisytools=shell,web-search \
+  goal="Research and report on cloud pricing"
+
+# Lower threshold and raise per-step cap
+mini-a usedelegation=true usetools=true \
+  autodelegation=true autodelegationthreshold=2048 autodelegationmaxperstep=4 \
+  goal="Process multiple large API responses"
+```
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `autodelegation` | `false` | Master toggle (also requires `usedelegation=true`) |
+| `autodelegationthreshold` | `8192` | Byte length that triggers auto-delegation |
+| `autodelegationmaxperstep` | `2` | Cap on auto-delegations per agent step |
+| `noisytools` | `""` | Comma-separated tool names always delegated regardless of size |
+
+The summarization sub-agent is automatically forked (inherits working memory) when `usememory=true` and working memory is non-empty; otherwise it runs with a clean slate. Auto-delegation cannot cascade — child agents never trigger it.
+
+### Pre-specified Startup Scouts
+
+Register sub-agent goals at startup so they run in parallel with (or before) the main loop. Results are harvested into working memory as `artifacts`.
+
+**Inline tasks** (pipe-separated):
+```bash
+mini-a usedelegation=true usetools=true useshell=true \
+  subtasks="List all TODO comments in src/|Count lines of code|Find all test files" \
+  goal="Give me a project health overview"
+```
+
+**Tasks from file** (`subtasksfile=`):
+```yaml
+# scouts.yaml
+- goal: "Count open GitHub issues"
+  timeout: 60
+- goal: "Summarize recent git commits"
+  fork: true
+- goal: "Check if CI is passing"
+  args:
+    maxsteps: 3
+```
+```bash
+mini-a usedelegation=true usetools=true \
+  subtasksfile=scouts.yaml \
+  goal="Give project status report"
+```
+
+**Sequential execution** (run scouts one at a time before the main loop):
+```bash
+mini-a usedelegation=true usetools=true \
+  subtaskssequential=true \
+  subtasks="Step 1: gather raw data|Step 2: validate data|Step 3: transform data" \
+  goal="Run the ETL pipeline and report results"
+```
+
+### Console Commands
+
+When delegation is enabled, these commands are available in the interactive console:
+
+```bash
+/delegate <goal>          # Delegate a sub-goal (fresh context)
+/delegate fork <goal>     # Delegate a forked sub-goal (inherits parent memory + history)
+/subtasks                 # List all subtasks (forked subtasks show a [fork] badge)
+/subtask <id>             # Show subtask details
+/subtask result <id>      # Show subtask result
+/subtask cancel <id>      # Cancel a running subtask
+/rewind                   # Undo last exchange and cancel any active subtasks
+/rewind 3                 # Undo last 3 exchanges and cancel active subtasks
+```
+
 ---
 
 ## Model Manager
