@@ -140,7 +140,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `advisorcooldownsteps` | `2` | Min steps between advisor consultations |
 | `usewiki` | `false` | Enable wiki knowledge base |
 | `wikiaccess` | `ro` | Wiki access: `ro` (read-only) or `rw` (read-write) |
-| `wikibackend` | `fs` | Wiki backend: `fs` (filesystem) or `s3` |
+| `wikibackend` | `fs` | Wiki backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |
 | `wikiroot` | `.` | Root directory for the `fs` backend |
 | `wikibucket` | - | S3 bucket name (`s3` backend) |
 | `memoryuser` | `false` | File-backed session + global working memory preset with auto-promotion and 30-day stale sweep |

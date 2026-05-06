@@ -244,7 +244,9 @@ export MINI_A_PARAM=value
 | `workerregurl` | - | Parent registration URLs used by workers for self-registration |
 | `workerreginterval` | `30000` | Worker heartbeat interval in milliseconds |
 | `delegationmaxdepth` | `3` | Maximum recursive delegation depth |
-| `delegationtimeout` | `300000` | Default delegated subtask timeout in milliseconds |
+| `delegationtimeout` | `300000` | Default foreground wait/delegation budget in milliseconds |
+| `delegationstalltimeout` | `300000` | Idle time before a running delegated subtask is considered stalled; active tasks keep running |
+| `delegationhardtimeout` | - | Optional absolute delegated subtask timeout regardless of activity (ms) |
 | `delegationmaxretries` | `2` | Retry count for failed delegated subtasks |
 | `workermode` | `false` | Launch mini-a as a Worker API server |
 | `showdelegate` | `false` | Show delegation events in the console |
@@ -325,16 +327,16 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 |-----------|---------|-------------|
 | `usewiki` | `false` | Enable the wiki knowledge base |
 | `wikiaccess` | `ro` | Access mode: `ro` (read-only) or `rw` (read-write) |
-| `wikibackend` | `fs` | Backend: `fs` (filesystem) or `s3` |
+| `wikibackend` | `fs` | Backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |
 | `wikiroot` | `.` | Root directory for the `fs` backend |
-| `wikibucket` | - | S3 bucket name (`s3` backend) |
-| `wikiprefix` | - | S3 key prefix (`s3` backend) |
-| `wikiurl` | - | S3-compatible endpoint URL (`s3` backend) |
-| `wikiaccesskey` | - | S3 access key (`s3` backend) |
-| `wikisecret` | - | S3 secret key (`s3` backend) |
-| `wikiregion` | - | S3 region (`s3` backend) |
-| `wikiuseversion1` | `false` | Use S3 path-style (v1) signing (`s3` backend) |
-| `wikiignorecertcheck` | `false` | Skip TLS certificate validation (`s3` backend) |
+| `wikibucket` | - | S3 bucket name (`s3`/`s3fs` backend) |
+| `wikiprefix` | - | S3 key prefix (`s3`/`s3fs`); Elasticsearch index name for `es` (defaults to `mini_a_wiki`) |
+| `wikiurl` | - | S3-compatible endpoint URL (`s3`/`s3fs`); Elasticsearch/OpenSearch base URL for `es` |
+| `wikiaccesskey` | - | S3 access key (`s3`/`s3fs`); Elasticsearch username for `es` |
+| `wikisecret` | - | S3 secret key (`s3`/`s3fs`); Elasticsearch password for `es` |
+| `wikiregion` | - | S3 region (`s3`/`s3fs` backend) |
+| `wikiuseversion1` | `false` | Use S3 path-style (v1) signing (`s3`/`s3fs` backend) |
+| `wikiignorecertcheck` | `false` | Skip TLS certificate validation (`s3`/`s3fs` backend) |
 | `wikilintstaleddays` | `90` | Days before a page without an `updated` field is marked stale in lint |
 
 When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps `AGENTS.md` (ingestion workflow and rules) and `index.md` (entrypoint). `AGENTS.md` is protected and cannot be deleted.

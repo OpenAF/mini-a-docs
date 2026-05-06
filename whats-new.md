@@ -8,6 +8,66 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Wiki Elasticsearch/OpenSearch Backend
+
+**Change**: The wiki knowledge base now supports Elasticsearch and OpenSearch as storage backends alongside the existing `fs`, `s3`, and `s3fs` options.
+
+Set `wikibackend=es` and point `wikiurl` at your cluster to store and retrieve wiki pages via the Elasticsearch REST API. Basic authentication is optional via `wikiaccesskey` / `wikisecret`. The index name defaults to `mini_a_wiki` and is overridden with `wikiprefix`.
+
+```bash
+# Read-write wiki on a local Elasticsearch node
+mini-a usewiki=true wikiaccess=rw wikibackend=es \
+  wikiurl=http://localhost:9200 \
+  goal="Search the team wiki and add new findings"
+
+# With authentication and a custom index
+mini-a usewiki=true wikiaccess=rw wikibackend=es \
+  wikiurl=https://search.example.com \
+  wikiprefix=project_wiki \
+  wikiaccesskey=elastic wikisecret=changeme \
+  goal="Update team knowledge base"
+```
+
+**New `es` backend parameter mapping:**
+
+| `mini-a` parameter | Meaning for `es` backend |
+|--------------------|--------------------------|
+| `wikiurl` | Elasticsearch/OpenSearch base URL |
+| `wikiprefix` | Index name (default: `mini_a_wiki`) |
+| `wikiaccesskey` | Optional basic-auth username |
+| `wikisecret` | Optional basic-auth password |
+
+All wiki operations (`list`, `read`, `search`, `lint`, `write`) work identically across all backends.
+
+**Impact**: Enables Elasticsearch/OpenSearch as a scalable, search-optimized wiki backend for teams already running these clusters.
+
+---
+
+### Delegation Stall and Hard Timeouts
+
+**Change**: Two new timeout parameters give finer control over how long the parent agent waits for delegated subtasks.
+
+Previously, `delegationtimeout` served as both the idle-stall threshold and an absolute deadline, which caused active subtasks to be killed prematurely when the parent's wait budget expired. The new parameters separate these concerns:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `delegationstalltimeout` | `300000` | Idle time (ms) before a running subtask with no new activity is considered stalled |
+| `delegationhardtimeout` | - | Optional absolute deadline (ms) for a delegated subtask regardless of activity |
+
+When a subtask continues reporting progress, `waitForActive` now returns `pending` instead of killing it — the task keeps running and the parent can re-poll. Only subtasks that go truly idle for `delegationstalltimeout` milliseconds (or exceed `delegationhardtimeout` if set) are stopped.
+
+```bash
+# Raise the stall window to 10 minutes; add a 1-hour hard cap
+mini-a usedelegation=true workers=http://worker:8080 \
+  delegationstalltimeout=600000 \
+  delegationhardtimeout=3600000 \
+  goal="Run long-running analysis tasks"
+```
+
+**Also in this update**: Wiki link resolution now correctly handles external URLs and absolute paths (excluded from broken-link linting), and resolves relative links in subdirectory pages correctly.
+
+---
+
 ### `/rewind` — Undo Last Exchanges
 
 **Change**: New `/rewind [n]` slash command that removes the last `n` user+assistant exchanges from the conversation history (default n=1), mirroring the same feature in Claude Code.

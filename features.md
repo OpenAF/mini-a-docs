@@ -425,14 +425,18 @@ See [Configuration → Working Memory]({{ '/configuration#10b-working-memory' | 
 
 ## Wiki Knowledge Base
 
-For long-lived, cross-session knowledge that multiple agents or users should share, mini-a supports a **persistent Markdown wiki** following the LLM Wiki pattern. Agents read from and write to structured pages stored on the filesystem or S3 — knowledge survives restarts and is readable by any agent pointing at the same root.
+For long-lived, cross-session knowledge that multiple agents or users should share, mini-a supports a **persistent Markdown wiki** following the LLM Wiki pattern. Agents read from and write to structured pages stored on the filesystem, S3, or Elasticsearch/OpenSearch — knowledge survives restarts and is readable by any agent pointing at the same root.
 
 ```bash
-# Read-only wiki (agents can read; useful for shared team knowledge)
+# Read-only wiki on the filesystem
 mini-a usewiki=true wikiroot=/shared/wiki goal="..."
 
-# Read-write wiki (agent can distil findings into new pages)
+# Read-write wiki on the filesystem
 mini-a usewiki=true wikiaccess=rw wikiroot=/shared/wiki goal="..."
+
+# Read-write wiki on Elasticsearch/OpenSearch
+mini-a usewiki=true wikiaccess=rw wikibackend=es \
+  wikiurl=http://localhost:9200 goal="..."
 ```
 
 The agent uses the `wiki` action to interact with the knowledge base:
