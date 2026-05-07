@@ -182,6 +182,24 @@ export MINI_A_PARAM=value
 
 <div class="config-category" markdown="1">
 
+## 7a. Outer Loop Autonomous Coding
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `outerloop` | `false` | Enable autonomous multi-cycle coding loop with durable per-session state |
+| `outerloopinstructions` | - | Path to persistent outer loop instructions Markdown file |
+| `taskfile` | - | Alias for `outerloopinstructions` |
+| `specfile` | - | Alias for `outerloopinstructions` |
+| `outerloopsessionid` | auto-generated | Session ID used as the directory name under `~/.openaf-mini-a/sessions/`; pass the same ID to resume an interrupted run |
+| `outerloopmaxcycles` | `5` | Maximum number of outer loop cycles |
+| `outerloopmaxtime` | `0` | Maximum outer loop runtime in seconds (`0` disables) |
+| `outerloopstoponrepeat` | `false` | Stop when the same validation failure repeats |
+| `outerloopmaxnochange` | `2` | Stop after N cycles without meaningful change |
+
+</div>
+
+<div class="config-category" markdown="1">
+
 ## 8. Shell Access
 
 | Parameter | Default | Description |

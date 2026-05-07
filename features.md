@@ -356,6 +356,44 @@ mini-a useplanning=true planstyle=legacy usedelegation=true \
 
 ---
 
+## Outer Loop Autonomous Coding
+
+For tasks that require multiple revision cycles, mini-a supports an **autonomous outer loop** that runs the agent repeatedly until the goal is validated or safety limits are reached. Each cycle starts with fresh context while persisting state under `~/.openaf-mini-a/sessions/<session-id>/`.
+
+```bash
+mini-a "Implement the feature described in ./TASKS.md" \
+  outerloop=true \
+  useplanning=true \
+  outerloopinstructions=./TASKS.md \
+  valgoal="All implementation tasks complete and tests pass" \
+  outerloopmaxcycles=8
+```
+
+The loop stops automatically when:
+- Completion and validation succeed
+- The maximum cycle count (`outerloopmaxcycles`, default 5) is reached
+- The runtime limit (`outerloopmaxtime`) expires
+- The same validation failure repeats (`outerloopstoponrepeat=true`)
+- No meaningful change occurs for N consecutive cycles (`outerloopmaxnochange`, default 2)
+
+### Session Persistence
+
+Each cycle saves artifacts to the session directory: `instructions.md`, `state.json`, `plan.md`, `last-validation.txt`, `last-error.txt`, `cycle-000N-summary.md`, and `changed-files.json`.
+
+To resume an interrupted outer loop run, pass the session ID that was printed at startup:
+
+```bash
+mini-a "Refactor the parser and keep iterating until validation passes" \
+  outerloop=true \
+  outerloopsessionid=session-20240601-120000-abc123 \
+  valgoal="Parser tests pass and no regression is introduced" \
+  outerloopmaxcycles=6
+```
+
+See [Configuration → Outer Loop]({{ '/configuration#7a-outer-loop-autonomous-coding' | relative_url }}) for the full parameter reference.
+
+---
+
 ## Working Memory
 
 For long-running or multi-step goals, mini-a can maintain a **structured working memory** that persists key findings across tool calls and even across sessions.

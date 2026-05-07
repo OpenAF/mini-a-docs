@@ -8,6 +8,47 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Outer Loop Autonomous Coding (`outerloop=true`)
+
+**Change**: Mini-A now supports a durable autonomous multi-cycle coding loop. Each cycle runs with fresh context while persisting session state under `~/.openaf-mini-a/sessions/<session-id>/`.
+
+The loop stops when completion and validation succeed, or when safety limits are reached (max cycles, max time, repeated failures, or no meaningful change detected).
+
+```bash
+# Iterate on a feature implementation until tests pass
+mini-a "Implement the feature described in ./TASKS.md" \
+  outerloop=true \
+  useplanning=true \
+  outerloopinstructions=./TASKS.md \
+  valgoal="All implementation tasks complete and tests pass" \
+  outerloopmaxcycles=8
+
+# Resume an interrupted session
+mini-a "Refactor the parser and keep iterating until validation passes" \
+  outerloop=true \
+  outerloopsessionid=session-20240601-120000-abc123 \
+  valgoal="Parser tests pass and no regression is introduced" \
+  outerloopmaxcycles=6
+```
+
+**New parameters**:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `outerloop` | `false` | Enable autonomous multi-cycle coding loop |
+| `outerloopinstructions` | - | Durable instructions file (aliases: `taskfile`, `specfile`) |
+| `outerloopsessionid` | auto-generated | Session ID; pass the same value to resume an interrupted run |
+| `outerloopmaxcycles` | `5` | Maximum number of loop cycles |
+| `outerloopmaxtime` | `0` | Maximum runtime in seconds (`0` disables) |
+| `outerloopstoponrepeat` | `false` | Stop when the same validation failure repeats |
+| `outerloopmaxnochange` | `2` | Stop after N cycles without meaningful change |
+
+**Per-cycle artifacts** persisted in `~/.openaf-mini-a/sessions/<session-id>/`: `instructions.md`, `state.json`, `plan.md`, `last-validation.txt`, `last-error.txt`, `cycle-000N-summary.md`, `changed-files.json`.
+
+**Impact**: Enables fully autonomous, multi-iteration coding workflows — Mini-A keeps refining the solution cycle by cycle until it passes validation.
+
+---
+
 ### Wiki Elasticsearch/OpenSearch Backend
 
 **Change**: The wiki knowledge base now supports Elasticsearch and OpenSearch as storage backends alongside the existing `fs`, `s3`, and `s3fs` options.
