@@ -57,7 +57,7 @@ export MINI_A_PARAM=value
 | `format` | - | Output format (e.g., `json`, `yaml`, `markdown`) |
 | `youare` | - | Custom system persona/identity |
 | `chatyouare` | - | Chatbot-mode persona override when `chatbotmode=true` |
-| `rules` | - | Additional rules for the agent |
+| `rules` | - | Additional rules or instructions for the agent (plain text, bullet list, or JSON/SLON array of strings) |
 | `knowledge` | - | Knowledge base content or file path |
 | `conversation` | - | Conversation history file to preload at startup |
 | `state` | - | Structured initial state data (JSON/SLON) provided to the agent |
@@ -119,6 +119,7 @@ export MINI_A_PARAM=value
 | `usejsontool` | `false` | Register a compatibility `json` tool for models that sometimes emit `json` tool calls |
 | `libs` | - | Additional library paths to load |
 | `toolcachettl` | `600000` | Default cache TTL in milliseconds for MCP tool results |
+| `toolfallback` | `false` | Fall back to action mode when the model emits malformed pseudo tool calls |
 | `utilsallow` | - | Comma-separated allowlist of Mini Utils Tool names to expose when `useutils=true` |
 | `utilsdeny` | - | Comma-separated denylist of Mini Utils Tool names to hide when `useutils=true` (applied after `utilsallow`) |
 
@@ -365,6 +366,23 @@ Wiki operations available to the agent: `list`, `read`, `search`, `lint`, `write
 
 <div class="config-category" markdown="1">
 
+## 10c-1. Dreams (Sleep Pass)
+
+An LLM-powered off-line consolidation pass over persistent memory and/or the wiki. Run after a session to merge duplicates, surface insights, and produce a lint-clean wiki.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `dream` | `false` | Run in standalone dream-pass mode instead of a regular agent session |
+| `dryrun` | `false` | Preview what would change without writing anything back |
+| `maxauditrecords` | `200` | Maximum audit log entries included in the memory consolidation prompt |
+| `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
+
+The `memorych`, `memorysessionch`, `memorysessionid`, `auditch`, `usewiki`, and `model` parameters are shared with the memory and wiki subsystems. See the [Advanced — Dreams]({{ '/advanced/' | relative_url }}#dreams-sleep-pass) page for full documentation and examples.
+
+</div>
+
+<div class="config-category" markdown="1">
+
 ## 10d. Adaptive Routing
 
 A rule-based routing layer that selects how each tool action is dispatched. When disabled, mini-a uses legacy behavior.
@@ -504,6 +522,7 @@ For power-user configuration, deployment patterns, and provider-specific guides,
 - Performance tuning and context management
 - Shell sandboxing — OS-level (`usesandbox`), Docker, Podman, Apple container CLI
 - Delegation and dynamic worker registration (including Kubernetes HPA patterns)
+- Dreams (sleep pass) — LLM-powered memory and wiki consolidation
 - JavaScript and oJob library integration
 - Debugging techniques and provider-specific guides (AWS Bedrock, GitHub Models, Ollama)
 

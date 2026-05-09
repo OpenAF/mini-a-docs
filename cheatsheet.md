@@ -64,6 +64,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/wiki read <page.md>` | Print a wiki page |
 | `/wiki search <query>` | Full-text search across wiki pages |
 | `/wiki lint` | Run wiki health checks (broken links, orphans, stale pages) |
+| `/dream [memory\|wiki] [dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
 | `/history [n]` | Show recent user goals from conversation history |
 | `/exit` | Exit mini-a |
 | `/clear` | Reset conversation history and accumulated metrics |
@@ -113,7 +114,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `showexecs` | `false` | Show shell/exec events as separate lines in the interaction stream |
 | `showseparator` | `true` | Show a separator line between interaction events (disable for compact view) |
 | `showthinking` | `false` | Surface XML-tagged `<thinking>...</thinking>` blocks as thought logs |
-| `promptprofile` | `balanced` | System prompt verbosity: `minimal`, `balanced`, or `verbose` (auto when `debug=true`) |
+| `promptprofile` | context-dependent | System prompt verbosity: `minimal`, `balanced`, or `verbose` (`minimal` in chatbot mode; `verbose` with `debug=true`; otherwise `balanced`) |
 | `systempromptbudget` | — | Max estimated tokens for the system prompt; drops lower-priority sections when exceeded |
 | `goalprefix` | — | Prefix automatically prepended to every goal before the agent sees it |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
@@ -163,6 +164,11 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `subtasksfile` | `""` | Path to YAML/JSON file of `{goal, fork, args, timeout}` startup task objects |
 | `subtaskssequential` | `false` | Run startup scouts (and all subtasks) one at a time instead of in parallel |
 | `forkstatemaxbytes` | `65536` | Max bytes of serialized fork state transmitted to a remote worker |
+| `toolfallback` | `false` | Fall back to action mode when malformed pseudo tool calls are emitted by the model |
+| `dream` | `false` | Run in standalone dream-pass mode (memory/wiki consolidation) instead of a regular session |
+| `dryrun` | `false` | Preview dream-pass changes without writing anything back |
+| `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
+| `maxauditrecords` | `200` | Maximum audit log entries included in the memory dream consolidation prompt |
 | `onport` | - | Web UI port |
 | `homedir` | — | Override the home directory used to locate the `.openaf-mini-a` folder |
 

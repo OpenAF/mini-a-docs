@@ -520,6 +520,35 @@ See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledg
 
 ---
 
+## Dreams (Sleep Pass)
+
+The **dream pass** is an LLM-powered off-line consolidation step — think of it as REM sleep for your agent. After a long session, the pass reorganises what the agent learned: merging near-duplicate memory entries, marking superseded entries stale, surfacing new cross-cutting insights into the `summaries` section, and producing a lint-clean wiki.
+
+```bash
+# Consolidate memory after a session
+mini-a dream=true \
+  memorych='(name: mini_a_global_mem, type: file, options: (file: ~/.openaf-mini-a/memory-global.json))' \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Or from the interactive console (when memory or wiki is configured)
+mini-a ➤ /dream
+mini-a ➤ /dream memory dryrun   # preview without writing
+mini-a ➤ /dream wiki
+```
+
+Two dream modes can run independently or together:
+
+| Mode | Requirement | Effect |
+|------|------------|--------|
+| **Memory dream** | `memorych` set | Merges, marks stale, and surfaces insights across memory channels |
+| **Wiki dream** | `usewiki=true` | Spawns an agent with `wikiaccess=rw` to merge pages, fix links, and clean up front-matter |
+
+Use `dryrun=true` to preview what would change without writing anything back. The pre-dream state is always backed up to a sibling namespace before any write.
+
+See [Advanced → Dreams]({{ '/advanced/#dreams-sleep-pass' | relative_url }}) for full documentation and the programmatic API.
+
+---
+
 ## Adaptive Tool Routing
 
 mini-a includes an optional **rule-based routing layer** that selects how each action is dispatched — direct local tool, MCP direct call, MCP proxy, shell execution, utility wrapper, or delegated subtask.

@@ -83,9 +83,9 @@ Control how verbose the system prompt is. A shorter prompt reduces token cost on
 
 | Value | Description |
 |-------|-------------|
-| `minimal` | Shortest possible — drops examples and detailed guidance |
-| `balanced` | Default — balanced detail and token usage |
-| `verbose` | Full detail, auto-enabled when `debug=true` |
+| `minimal` | Shortest possible — drops examples and detailed guidance. Default in chatbot mode. |
+| `balanced` | Balanced detail and token usage. Default for most sessions. |
+| `verbose` | Full detail. Auto-enabled when `debug=true` outside chatbot mode. |
 
 ```bash
 # Reduce per-call token overhead
@@ -781,6 +781,157 @@ When delegation is enabled, these commands are available in the interactive cons
 /subtask cancel <id>      # Cancel a running subtask
 /rewind                   # Undo last exchange and cancel any active subtasks
 /rewind 3                 # Undo last 3 exchanges and cancel active subtasks
+```
+
+---
+
+## Dreams (Sleep Pass)
+
+The dream pass is an LLM-powered off-line consolidation step. Given the same memory channels and wiki settings used during a regular session, it reorganises what the agent learned: merging duplicates, marking superseded entries stale, surfacing new cross-cutting insights, and producing a lint-clean wiki — all without touching the live agent loop.
+
+Think of it as REM sleep for your agent: the active session ends, then the dream pass reorganises what was retained.
+
+### When to run a dream pass
+
+- After a long or iterative session where the agent appended many memory entries — the pass compacts redundancy without losing information.
+- When the wiki has accumulated near-duplicate pages, broken links, or missing front-matter.
+- On a nightly cron schedule to keep a shared team wiki clean.
+
+### Dream pass modes
+
+| Mode | Triggered by | What happens |
+|------|-------------|--------------|
+| Memory dream | `memorych` arg is set | Loads global (and optionally session) memory, calls the LLM to consolidate, writes back |
+| Wiki dream | `usewiki=true` | Spawns a full MiniA agent with `wikiaccess=rw` that lints and fixes the wiki |
+| Combined | Both args set | Both modes run in sequence |
+
+### Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `dream` | `false` | Run in standalone dream-pass mode |
+| `dryrun` | `false` | Preview what would change without writing anything back |
+| `memorych` | - | SLON/JSON global memory channel definition (required for memory dream) |
+| `memorysessionch` | - | SLON/JSON session memory channel |
+| `memorysessionid` | - | Session namespace string — use the same value as `conversation=` during the goal |
+| `auditch` | - | SLON/JSON audit channel — recent events are included as context |
+| `maxauditrecords` | `200` | Maximum audit log entries included in the memory consolidation prompt |
+| `usewiki` | `false` | Enable the wiki dream (requires `wikiroot`, `wikibucket`, or equivalent) |
+| `model` | - | SLON/JSON model config used for the memory consolidation LLM call |
+| `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
+| `libs` | - | Extra comma-separated libraries to load |
+
+### Memory dream internals
+
+1. Channels are opened using the provided SLON/JSON definitions.
+2. Global memory (and optionally session memory) is loaded via `MiniAMemoryManager.loadFromChannel`.
+3. If `auditch` is provided, the most recent `maxauditrecords` audit entries are loaded.
+4. The LLM receives a system prompt describing the consolidation rules, the full memory snapshot, and the audit events.
+5. Consolidation rules:
+   - **MERGE** near-duplicate entries in the same section (keep the most informative value; preserve the earlier `createdAt`).
+   - **MARK** superseded entries with `stale=true` and `supersededBy=<id-of-replacement>`.
+   - **DROP** entries that are both `stale=true` and have a `supersededBy` that exists in the output.
+   - **SURFACE** new cross-cutting insights as new `summaries` entries.
+   - **PRESERVE** all IDs of retained entries unchanged; assign new 16-char hex IDs to new entries.
+6. The consolidated snapshot is validated against the `MiniAMemoryManager` schema.
+7. Unless `dryrun=true`, the pre-dream state is backed up to a sibling namespace (`<ns>::predream-<ISO-timestamp>`), then the consolidated snapshot is written back.
+
+### Wiki dream internals
+
+1. `usewiki=true` is required; `wikiaccess` is forced to `rw`.
+2. A `MiniAWikiManager` runs `lint()` to establish a baseline issue list.
+3. A full `MiniA` agent is spawned (default `maxsteps=60`, controlled by `dreammaxsteps`) with a goal to merge near-duplicate pages, fix broken links, add missing front-matter, correct heading hierarchy, link orphan pages, and confirm zero errors and warnings remain.
+
+### Standalone usage (`mini-a dream=true`)
+
+```bash
+# Memory dream — dry-run preview (no writes)
+mini-a dream=true dryrun=true \
+  memorych='(name: mini_a_global_mem, type: file, options: (file: /tmp/mini-a-memory.json))' \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Full memory dream (writes back)
+mini-a dream=true \
+  memorych='(name: mini_a_global_mem, type: file, options: (file: /tmp/mini-a-memory.json))' \
+  auditch='(name: mini_a_audit, type: file, options: (file: /tmp/mini-a-audit.log))' \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Session memory dream
+mini-a dream=true \
+  memorych='(name: mini_a_global_mem, type: file, options: (file: /tmp/mini-a-memory.json))' \
+  memorysessionch='(name: mini_a_session_mem, type: file, options: (file: /tmp/mini-a-session.json))' \
+  memorysessionid='research-2026' \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Wiki dream
+mini-a dream=true \
+  usewiki=true wikiroot=/shared/wiki \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Combined memory + wiki dream
+mini-a dream=true \
+  memorych='(name: mini_a_global_mem, type: file, options: (file: /tmp/mini-a-memory.json))' \
+  usewiki=true wikiroot=/shared/wiki \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+```
+
+### Console command (`/dream`)
+
+The `/dream` slash command is available in interactive console sessions when at least one of `memorych` or `usewiki=true` was set at startup. It is shown in `/help` whenever memory or wiki is configured.
+
+| Command | Description |
+|---------|-------------|
+| `/dream` | Run memory dream + wiki dream (whichever are configured) |
+| `/dream memory` | Run memory dream only |
+| `/dream wiki` | Run wiki dream only |
+| `/dream dryrun` | Dry-run both (no writes) |
+| `/dream memory dryrun` | Dry-run memory dream only |
+| `/dream wiki dryrun` | Dry-run wiki dream (runs lint, prints issues — no writes) |
+
+Sub-commands and `dryrun` complete with Tab.
+
+### Combining with regular sessions
+
+```bash
+# 1. Start a session with persistent memory and a shared wiki
+mini-a usememory=true memoryuser=true usewiki=true wikiaccess=rw wikiroot=/shared/wiki
+
+# 2. Work on goals interactively...
+
+# 3. When done, consolidate from the console
+mini-a ➤ /dream
+
+# Or consolidate in a separate invocation (e.g. a nightly cron)
+mini-a dream=true \
+  memorych='(name: mini_a_global_mem, type: file, options: (file: ~/.openaf-mini-a/memory-global.json))' \
+  usewiki=true wikiroot=/shared/wiki \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+```
+
+### Programmatic API
+
+```javascript
+loadLib("mini-a-dreams.js")
+
+var runner = new MiniADreams({
+  memorych: '{"name":"my_memory","type":"file","options":{"file":"/tmp/memory.json"}}',
+  model:    '{"type":"anthropic","model":"claude-sonnet-4-6"}'
+}, log)
+
+// Run memory dream only
+var result = runner.dreamMemory()
+// result: { ok: true, results: { global: { ok, before, after, staleMarked } } }
+
+// Run wiki dream only
+var wikiResult = runner.dreamWiki()
+// wikiResult: { ok: true, result: "<final-answer-excerpt>" }
+
+// Run both
+var overall = runner.run()
+// overall: { ok: true, memory: {...}, wiki: {...} }
+
+// Inject a stub LLM for testing
+runner._setLlm(myStubLlm)
 ```
 
 ---

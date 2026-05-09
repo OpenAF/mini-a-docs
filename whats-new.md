@@ -8,6 +8,59 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Dreams (Sleep Pass) — LLM-powered memory and wiki consolidation
+
+**Change**: New `mini-a-dreams.js` module and `/dream` console command that run an off-line consolidation pass over persistent memory and/or a wiki — without touching the live agent loop.
+
+Think of it as REM sleep for your agent: the active session ends, then the dream pass reorganises what was retained.
+
+**Memory dream** (`memorych` required):
+- Loads global and (optionally) session memory from the configured channels.
+- Reads recent audit records for extra context (`auditch=`).
+- Calls the LLM to merge near-duplicate entries, mark superseded ones stale, drop dropped-and-superseded entries, and surface new insights as `summaries` entries.
+- Backs up the pre-dream state to a sibling namespace before writing.
+
+**Wiki dream** (`usewiki=true` required):
+- Spawns a full MiniA agent with `wikiaccess=rw` and a fixed consolidation goal.
+- Agent merges near-duplicate pages, fixes broken links and missing front-matter, corrects heading hierarchy, links orphan pages, then re-runs lint and confirms zero errors/warnings remain.
+
+**`dryrun=true`**: both modes support a dry-run that reports what would change without writing anything.
+
+```bash
+# Memory dream — dry-run preview (no writes)
+mini-a dream=true dryrun=true \
+  memorych='(name: mini_a_global_mem, type: file, options: (file: /tmp/mini-a-memory.json))' \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Full memory + wiki dream
+mini-a dream=true \
+  memorych='(name: mini_a_global_mem, type: file, options: (file: /tmp/mini-a-memory.json))' \
+  usewiki=true wikiroot=/shared/wiki \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# From an interactive session
+mini-a ➤ /dream
+mini-a ➤ /dream memory dryrun
+mini-a ➤ /dream wiki
+```
+
+**Dream parameters**:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `dream` | `false` | Run in standalone dream-pass mode instead of a regular agent session |
+| `dryrun` | `false` | Preview what would change without writing anything back |
+| `memorych` | - | SLON/JSON global memory channel definition (required for memory dream) |
+| `memorysessionch` | - | SLON/JSON session memory channel |
+| `memorysessionid` | - | Session namespace string — use the same value as `conversation=` during the goal |
+| `auditch` | - | SLON/JSON audit channel — recent events are included as context |
+| `maxauditrecords` | `200` | Maximum audit log entries included in the consolidation prompt |
+| `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
+
+See the [Advanced]({{ '/advanced/' | relative_url }}#dreams-sleep-pass) page for full documentation.
+
+---
+
 ### Outer Loop Autonomous Coding (`outerloop=true`)
 
 **Change**: Mini-A now supports a durable autonomous multi-cycle coding loop. Each cycle runs with fresh context while persisting session state under `~/.openaf-mini-a/sessions/<session-id>/`.
@@ -279,7 +332,7 @@ mini-a systempromptbudget=4000 goal="..."
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `usetoolslc` | `false` | Register MCP tools only on the low-cost model |
-| `promptprofile` | `balanced` | System prompt verbosity: `minimal`, `balanced`, or `verbose` |
+| `promptprofile` | context-dependent | System prompt verbosity: `minimal`, `balanced`, or `verbose` (`minimal` in chatbot mode; `verbose` with `debug=true` outside chatbot mode; otherwise `balanced`) |
 | `systempromptbudget` | — | Max estimated tokens for the system prompt |
 
 ---
