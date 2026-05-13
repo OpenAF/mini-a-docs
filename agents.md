@@ -97,6 +97,7 @@ Enables built-in capability bundles. Values can be a YAML list or a single strin
 |------------|--------|
 | `useutils` | File operations, math, time, and user-input tools (`mini-a-utils.js`) |
 | `usetools` | Activates MCP tool registration (required for the `tools` section) |
+| `usetoolslc` | Registers MCP tools only on the low-cost model tier |
 | `useshell` | Allows the agent to execute POSIX shell commands — **disabled by default for security** |
 | `readwrite` | Grants file read/write access when `useshell=true` |
 
@@ -104,6 +105,7 @@ Enables built-in capability bundles. Values can be a YAML list or a single strin
 capabilities:
   - useutils
   - usetools
+  # - usetoolslc  # uncomment to register MCP tools only on the LC model
   # - useshell    # uncomment to allow shell execution
   # - readwrite   # uncomment to allow file read/write via shell
 ```
@@ -218,6 +220,12 @@ Load from a file (path resolved relative to the agent file):
 knowledge: "@docs/project-context.md"
 ```
 
+`youare` can also load from a file:
+
+```yaml
+youare: "@docs/persona.md"
+```
+
 ---
 
 ### `youare`
@@ -253,7 +261,7 @@ Common `mini-a:` overrides:
 | `usestream` | `true` | Stream tokens as they arrive |
 | `maxsteps` | `30` | Hard limit on agent steps |
 | `maxcycles` | `5` | Hard limit on total cycles |
-| `format` | `json` | Output format: `text`, `json`, `yaml` |
+| `format` | `json` | Output format: `md`, `json`, `yaml`, `slon`, or `toon` |
 | `outfile` | `result.json` | Write final answer to a file |
 | `valgoal` | `"Must be valid JSON"` | Post-run assertion |
 | `lcbudget` | `100000` | Token budget for the low-cost model |
@@ -295,6 +303,8 @@ mini-a agent=changelog-gen.agent.md goal="Generate a structured changelog..."
 
 A `goal=` argument on the command line always takes precedence over the body.
 
+If `agent=` is a bare filename (for example `agent=reviewer.md`), mini-a also resolves it from `~/.openaf-mini-a/agents/`.
+
 ---
 
 ## Relative File References
@@ -318,7 +328,7 @@ When the same parameter is set in multiple places, the order of precedence is:
 CLI flags  >  agent file (mini-a: overrides)  >  mode defaults
 ```
 
-For example, if the agent file sets `useplanning: true` under `mini-a:`, passing `useplanning=false` on the command line overrides it. Capabilities (`useshell`, `readwrite`, `useutils`, `usetools`) and `model` follow the same rule: the CLI value wins.
+For example, if the agent file sets `useplanning: true` under `mini-a:`, passing `useplanning=false` on the command line overrides it. Capabilities (`useshell`, `readwrite`, `useutils`, `usetools`, `usetoolslc`) and `model` follow the same rule: the CLI value wins.
 
 ---
 
