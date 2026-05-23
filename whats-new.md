@@ -8,6 +8,64 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Wiki Reindex Command and MCP Reindex Operation
+
+**Change**: Wiki reindexing is now exposed in both interactive console mode and MCP maintenance mode.
+
+**What's New**:
+- New console command: `/wiki reindex` (only when `wikiaccess=rw`).
+- `/help` and wiki subcommand completion now include `reindex`.
+- `mcp-wiki-ops` now includes a `reindex` tool operation.
+- `mcp-wiki-ops` added `wikiaccess` and `wikiopsreadonly` arguments so reindex/write-like operations can be explicitly controlled.
+
+**Examples**:
+```bash
+# Reindex from the console (interactive)
+mini-a usewiki=true wikiaccess=rw wikiroot=/shared/wiki
+mini-a ➤ /wiki reindex
+
+# Reindex via MCP maintenance server
+mini-a usetools=true \
+  mcp="(cmd: 'ojob mcps/mcp-wiki-ops.yaml wikiroot=/shared/wiki wikiaccess=rw')" \
+  goal="Trigger a wiki reindex"
+```
+
+**Impact**: Search index refresh is now first-class and scriptable, reducing stale-search issues after bulk wiki updates or migrations.
+
+---
+
+### Interactive Model Slot Picker and Definition Editing
+
+**Change**: `/model` now supports an interactive slot picker and model definitions can be edited in-place from model manager.
+
+**What's New**:
+- `/model` with no argument now opens a slot picker (`main`, `lc`, `val`) showing the current model for each slot.
+- `/model` target arguments were simplified to `main`, `lc`, or `val`.
+- Model Manager now supports editing existing definitions (not only create/rename/delete/import/export).
+- `ghcopilot` provider support was added to model definition flows.
+
+**Impact**: Switching and maintaining multi-model setups is faster and less error-prone, especially for dual-model and deep-research runs.
+
+---
+
+### LLM Cache Token Metrics and Prompt Caching Defaults
+
+**Change**: Metrics now track cache-token usage and prompt caching defaults are auto-enabled for compatible providers.
+
+**What's New**:
+- New metrics counters:
+  - `llm_cache_creation_tokens`
+  - `llm_cache_read_tokens`
+  - `llm_cached_tokens`
+- Token summaries now include cache token details when present.
+- Prompt caching defaults are automatically enabled for:
+  - Bedrock model definitions (`options.promptCaching=true` unless explicitly set)
+  - Anthropic Claude models (`promptCaching=true` unless explicitly set)
+
+**Impact**: Better visibility into real prompt-cache savings and improved default cost/latency behavior without extra configuration.
+
+---
+
 ### Dreams (Sleep Pass) — LLM-powered memory and wiki consolidation
 
 **Change**: New `mini-a-dreams.js` module and `/dream` console command that run an off-line consolidation pass over persistent memory and/or a wiki — without touching the live agent loop.

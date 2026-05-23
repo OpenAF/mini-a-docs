@@ -6,7 +6,7 @@ permalink: /mcp-catalog/
 
 **MCP (Model Context Protocol)** is an open standard that defines how LLMs discover and invoke external tools through a uniform interface. Instead of hard-coding integrations, mini-a connects to MCP servers that expose capabilities as callable tools. Each MCP server runs as a separate process (STDIO) or remote service (HTTP), and mini-a automatically discovers available tools at startup.
 
-mini-a ships with **27 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
+mini-a ships with **29 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
 
 ---
 
@@ -39,6 +39,7 @@ mini-a ships with **27 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-office` | Office document processing | STDIO | `readExcel`, `readWord`, `readPDF` |
 | `mcp-ollama-web-search` | Web search via Ollama API | STDIO/HTTP | `web-search` |
 | `mcp-wiki` | Persistent Markdown wiki knowledge base | STDIO/HTTP | `list`, `read`, `search`, `lint`, `write` |
+| `mcp-wiki-ops` | Wiki maintenance and editing operations | STDIO/HTTP | `edit`, `maintain`, `reindex` |
 
 ---
 
@@ -486,6 +487,40 @@ ojob mcps/mcp-wiki.yaml onport=8990 wikiroot=/shared/wiki wikiaccess=rw label=Te
 ```
 
 **Tools:** `list`, `read`, `search`, `lint`, `write` (write requires `wikiaccess=rw`)
+
+---
+
+### mcp-wiki-ops
+
+Maintenance MCP for wiki lifecycle operations such as targeted edits, maintenance jobs, and full reindexing.
+
+**Configuration:**
+
+| Argument | Description |
+|----------|-------------|
+| `wikibackend` | Backend type: `fs`, `s3`, `s3fs`, or `es` |
+| `wikiaccess` | Access mode: `ro` or `rw` (`reindex` requires `rw`) |
+| `wikiopsreadonly` | If `true`, disables mutating ops on this MCP server |
+| `wikiroot` | Root directory for filesystem backend |
+| `wikibucket` | S3 bucket name (`s3`/`s3fs`) |
+| `wikiprefix` | S3 key prefix or Elasticsearch index name |
+| `wikiurl` | Backend endpoint (`s3`/`s3fs`/`es`) |
+| `label` | Human-readable label used in tool descriptions |
+| `toolPrefix` | Optional prefix for tool names |
+| `onport` | Start in HTTP mode on this port instead of STDIO |
+
+**Usage:**
+```bash
+# STDIO wiki maintenance server
+mini-a usetools=true \
+  mcp="(cmd: 'ojob mcps/mcp-wiki-ops.yaml wikiroot=/shared/wiki wikiaccess=rw label=TeamWikiOps')" \
+  goal='Run wiki maintenance and trigger a reindex'
+
+# HTTP standalone wiki maintenance server
+ojob mcps/mcp-wiki-ops.yaml onport=8991 wikiroot=/shared/wiki wikiaccess=rw label=TeamWikiOps
+```
+
+**Tools:** `lint`, `edit`, `maintain`, `reindex` (`reindex` requires `wikiaccess=rw` and `wikiopsreadonly=false`)
 
 ---
 

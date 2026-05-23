@@ -49,7 +49,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | Command | Action |
 |---------|--------|
 | `/help` | Show commands |
-| `/model` | Current model info |
+| `/model [main\|lc\|val]` | Choose a model definition for a slot (`/model` opens an interactive slot picker) |
 | `/models` | Show all configured model tiers (main, LC, validation) with provider and source |
 | `/show [prefix]` | Show active parameters |
 | `/skills [prefix]` | List discovered skills |
@@ -64,6 +64,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/wiki read <page.md>` | Print a wiki page |
 | `/wiki search <query>` | Full-text search across wiki pages |
 | `/wiki lint` | Run wiki health checks (broken links, orphans, stale pages) |
+| `/wiki reindex` | Rebuild wiki search index (requires `wikiaccess=rw`) |
 | `/dream [memory\|wiki] [dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
 | `/history [n]` | Show recent user goals from conversation history |
 | `/exit` | Exit mini-a |

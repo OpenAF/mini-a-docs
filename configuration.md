@@ -360,7 +360,10 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 
 When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps `AGENTS.md` (ingestion workflow and rules) and `index.md` (entrypoint). `AGENTS.md` is protected and cannot be deleted.
 
-Wiki operations available to the agent: `list`, `read`, `search`, `lint`, `write` (write requires `wikiaccess=rw`). Console commands: `/wiki list [prefix]`, `/wiki read <page.md>`, `/wiki search <query>`, `/wiki lint`. Use `/stats wiki` to see per-operation counters for the current session.
+Wiki operations available to the agent: `list`, `tree`, `browse`, `read`, `search`, `backlinks`, `lint`, `write`, `move`, `init`, `reindex`.
+Operations that require `wikiaccess=rw`: `write`, `move`, `init`, `reindex`.
+Console commands: `/wiki list [prefix]`, `/wiki tree [prefix]`, `/wiki browse [prefix]`, `/wiki read <page.md>`, `/wiki search <query>`, `/wiki backlinks <page.md>`, `/wiki lint`, `/wiki reindex`.
+Use `/stats wiki` to see per-operation counters for the current session.
 
 </div>
 

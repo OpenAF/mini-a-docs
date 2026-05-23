@@ -499,9 +499,13 @@ When a brand-new wiki is opened with `wikiaccess=rw`, Mini-A auto-bootstraps `AG
 
 ```
 /wiki list [prefix]    — list pages, optionally filtered
+/wiki tree [prefix]    — list pages as a hierarchy
+/wiki browse [prefix]  — interactive wiki page browser
 /wiki read <page.md>   — print a page
 /wiki search <query>   — full-text search
+/wiki backlinks <page> — list pages linking to a target page
 /wiki lint             — run health checks
+/wiki reindex          — rebuild search index (requires wikiaccess=rw)
 /stats wiki            — show per-operation stats for the session
 ```
 
