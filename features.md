@@ -540,14 +540,17 @@ mini-a ➤ /dream memory dryrun   # preview without writing
 mini-a ➤ /dream wiki
 ```
 
-Two dream modes can run independently or together:
+Three dream execution modes (`plan`, `apply`, `reorg`) and safety write gates are available to control exactly how changes are applied:
 
-| Mode | Requirement | Effect |
-|------|------------|--------|
-| **Memory dream** | `memorych` set | Merges, marks stale, and surfaces insights across memory channels |
-| **Wiki dream** | `usewiki=true` | Spawns an agent with `wikiaccess=rw` to merge pages, fix links, and clean up front-matter |
+| Mode / Option | Setting | Description |
+|---|---|---|
+| **Explicit Modes** | `dreamwikimode` / `dreammemorymode` | Choose consolidation depth: `plan`, `apply`, or `reorg` |
+| **Write Gates** | `dreamwikiapply=true` | Required gate to allow writes during wiki `apply` and `reorg` |
+| **Structural Reorg** | `dreamwikireorg=true` | Allow structural directory and file moves |
+| **Reorg Approval** | **`dreamwikiapproval`** | Control structural approval flow (`auto`, `ask`, `never`) |
+| **JSON Reporting** | `dreamreport` | Optional path to write a JSON run report |
 
-Use `dryrun=true` to preview what would change without writing anything back. The pre-dream state is always backed up to a sibling namespace before any write.
+Use `dryrun=true` or the `plan` mode to preview what would change without writing anything back. The pre-dream state is always backed up to a sibling namespace before any write.
 
 See [Advanced → Dreams]({{ '/advanced/#dreams-sleep-pass' | relative_url }}) for full documentation and the programmatic API.
 

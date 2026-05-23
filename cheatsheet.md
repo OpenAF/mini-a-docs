@@ -65,7 +65,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/wiki search <query>` | Full-text search across wiki pages |
 | `/wiki lint` | Run wiki health checks (broken links, orphans, stale pages) |
 | `/wiki reindex` | Rebuild wiki search index (requires `wikiaccess=rw`) |
-| `/dream [memory\|wiki] [dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
+| `/dream [memory\|wiki] [plan\|apply\|reorg\|dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
 | `/history [n]` | Show recent user goals from conversation history |
 | `/exit` | Exit mini-a |
 | `/clear` | Reset conversation history and accumulated metrics |
@@ -168,6 +168,12 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `toolfallback` | `false` | Fall back to action mode when malformed pseudo tool calls are emitted by the model |
 | `dream` | `false` | Run in standalone dream-pass mode (memory/wiki consolidation) instead of a regular session |
 | `dryrun` | `false` | Preview dream-pass changes without writing anything back |
+| `dreamwikimode` | `apply` | Wiki dream mode: `lint`, `plan`, `apply`, `reorg` |
+| `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
+| `dreamwikiapply` | `false` | Required write gate for wiki apply/reorg |
+| `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
+| `dreamwikireorg` | `false` | Allow structural wiki reorg |
+| `dreamreport` | — | Optional JSON output report path |
 | `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
 | `maxauditrecords` | `200` | Maximum audit log entries included in the memory dream consolidation prompt |
 | `onport` | - | Web UI port |

@@ -377,6 +377,12 @@ An LLM-powered off-line consolidation pass over persistent memory and/or the wik
 |-----------|---------|-------------|
 | `dream` | `false` | Run in standalone dream-pass mode instead of a regular agent session |
 | `dryrun` | `false` | Preview what would change without writing anything back |
+| `dreamwikimode` | `apply` | Wiki dream mode: `lint`, `plan`, `apply`, `reorg` |
+| `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
+| `dreamwikiapply` | `false` | Required write gate for wiki `apply` or `reorg` modes |
+| `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
+| `dreamwikireorg` | `false` | Allow structural reorg operations during wiki dream |
+| `dreamreport` | - | Optional file path to write JSON run report |
 | `maxauditrecords` | `200` | Maximum audit log entries included in the memory consolidation prompt |
 | `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
 

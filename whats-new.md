@@ -8,6 +8,46 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Dreams (Sleep Pass) Modes and Safety Gates
+
+**Change**: Introduce explicit plan, apply, and reorg modes for memory and wiki consolidation, write gates, and JSON output reporting.
+
+**What's New**:
+- **Explicit Modes**:
+  - `dreamwikimode`: Choose wiki dream behavior (`lint`, `plan`, `apply`, `reorg`).
+  - `dreammemorymode`: Choose memory dream behavior (`plan`, `apply`).
+- **Write Gates**:
+  - `dreamwikiapply=true`: Required write gate for wiki `apply` and `reorg` modes.
+  - `dreamwikireorg=true`: Allow structural wiki reorg.
+  - `dreamwikiapproval`: Choose reorg approval mode (`auto`, `ask`, `never`).
+- **Structured Reporting**:
+  - `dreamreport`: Path to write the optional JSON output report (captures new tree structure, moves, indexes, and lint results).
+- **Console Commands**:
+  - Interactive console commands under `/dream` are expanded to allow targeting specific modes: `/dream wiki plan`, `/dream wiki apply`, and `/dream wiki reorg`.
+
+**Examples**:
+```bash
+# Non-interactive nightly wiki proposal + report (no writes)
+mini-a dream=true \
+  usewiki=true wikiroot=/shared/wiki \
+  dreamwikimode=plan \
+  dreamreport=/var/log/mini-a/dream-wiki-plan.json \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Safe apply with explicit write gate
+mini-a dream=true \
+  usewiki=true wikiroot=/shared/wiki \
+  dreamwikimode=apply dreamwikiapply=true \
+  dreamreport=/var/log/mini-a/dream-wiki-apply.json
+
+# Interactive safe apply from the console
+mini-a ➤ /dream wiki apply
+```
+
+**Impact**: Provides safer, highly-controlled execution paths, explicit staging, automated reporting, and precise structural editing control for automated consolidation runs.
+
+---
+
 ### Wiki Reindex Command and MCP Reindex Operation
 
 **Change**: Wiki reindexing is now exposed in both interactive console mode and MCP maintenance mode.

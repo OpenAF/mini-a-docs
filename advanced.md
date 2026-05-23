@@ -811,6 +811,12 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 |-----------|---------|-------------|
 | `dream` | `false` | Run in standalone dream-pass mode |
 | `dryrun` | `false` | Preview what would change without writing anything back |
+| `dreamwikimode` | `apply` | Wiki mode: `lint`, `plan`, `apply`, `reorg` |
+| `dreammemorymode` | `apply` | Memory mode: `plan` or `apply` |
+| `dreamwikiapply` | `false` | Required write gate for wiki apply/reorg |
+| `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
+| `dreamwikireorg` | `false` | Allow structural wiki reorg |
+| `dreamreport` | - | Optional JSON output report path |
 | `memorych` | - | SLON/JSON global memory channel definition (required for memory dream) |
 | `memorysessionch` | - | SLON/JSON session memory channel |
 | `memorysessionid` | - | Session namespace string — use the same value as `conversation=` during the goal |
@@ -839,8 +845,20 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 ### Wiki dream internals
 
 1. `usewiki=true` is required; `wikiaccess` is forced to `rw`.
-2. A `MiniAWikiManager` runs `lint()` to establish a baseline issue list.
-3. A full `MiniA` agent is spawned (default `maxsteps=60`, controlled by `dreammaxsteps`) with a goal to merge near-duplicate pages, fix broken links, add missing front-matter, correct heading hierarchy, link orphan pages, and confirm zero errors and warnings remain.
+2. `dreamwikimode=plan` and `dryrun=true` currently run the same no-write proposal path.
+3. Use `dreamwikimode=plan` for explicit mode selection; use `dryrun=true` when you want the generic safety flag (it also affects memory dreams).
+4. Proposal output includes `new_tree`, `move_table`, `indexes_to_create`, `indexes_to_update`, and lint before/after summaries.
+5. `dreamwikimode=apply` only performs safe non-structural index work and requires `dreamwikiapply=true`.
+6. `dreamwikimode=reorg` is structural, requires `dreamwikireorg=true`, `dreamwikiapply=true`, and `dreamwikiapproval=auto`.
+7. A `MiniAWikiManager` exposes hierarchy-aware `tree`, `browse`, `backlinks`, `move`, and `lint()` operations.
+8. A full `MiniA` agent is spawned (default `maxsteps=60`, controlled by `dreammaxsteps`) with the following goal:
+   - Discover the hierarchy with `tree`/`browse`, search related content, inspect backlinks, and list lint issues.
+   - Apply only high-confidence category moves with `move`; skip uncertain relocations.
+   - Create missing section indexes and fix index links for local pages and child sections.
+   - For each heading hierarchy violation: fix heading levels.
+   - For orphan pages (excluding `index.md` and `AGENTS.md`): add a link from `AGENTS.md` or the most related existing page.
+   - Re-run lint and confirm zero errors and warnings remain.
+9. The agent's final answer summarises `pages_moved`, `pages_changed`, `pages_deleted`, `indexes_created`, `issues_fixed`, and `skipped_uncertain_moves`.
 
 ### Standalone usage (`mini-a dream=true`)
 
@@ -868,10 +886,26 @@ mini-a dream=true \
   usewiki=true wikiroot=/shared/wiki \
   model='(type: anthropic, model: claude-sonnet-4-6)'
 
-# Combined memory + wiki dream
+# Non-interactive nightly proposal (no writes) + JSON report
 mini-a dream=true \
-  memorych='(name: mini_a_global_mem, type: file, options: (file: /tmp/mini-a-memory.json))' \
   usewiki=true wikiroot=/shared/wiki \
+  dreamwikimode=plan \
+  dreamreport=/var/log/mini-a/dream-wiki-plan.json \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Non-interactive safe apply + JSON report
+mini-a dream=true \
+  usewiki=true wikiroot=/shared/wiki \
+  dreamwikimode=apply dreamwikiapply=true \
+  dreamreport=/var/log/mini-a/dream-wiki-apply.json \
+  model='(type: anthropic, model: claude-sonnet-4-6)'
+
+# Non-interactive structural reorg (explicit gates required)
+mini-a dream=true \
+  usewiki=true wikiroot=/shared/wiki \
+  dreamwikimode=reorg dreamwikireorg=true \
+  dreamwikiapply=true dreamwikiapproval=auto \
+  dreamreport=/var/log/mini-a/dream-wiki-reorg.json \
   model='(type: anthropic, model: claude-sonnet-4-6)'
 ```
 
@@ -886,7 +920,10 @@ The `/dream` slash command is available in interactive console sessions when at 
 | `/dream wiki` | Run wiki dream only |
 | `/dream dryrun` | Dry-run both (no writes) |
 | `/dream memory dryrun` | Dry-run memory dream only |
-| `/dream wiki dryrun` | Dry-run wiki dream (runs lint, prints issues — no writes) |
+| `/dream wiki dryrun` | Dry-run wiki dream (proposal package, no writes) |
+| `/dream wiki plan` | Explicit wiki proposal mode (same execution path as `dryrun` today) |
+| `/dream wiki apply` | Safe wiki apply mode (enables write gate) |
+| `/dream wiki reorg` | Structural wiki reorg mode (enables gates + auto approval in console) |
 
 Sub-commands and `dryrun` complete with Tab.
 
