@@ -8,6 +8,30 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### `delegate` Model Strategy
+
+**Change**: A new `delegate` value for `modelstrategy` lets the LC model execute all steps, including step 0 — ideal for batch and throughput workloads.
+
+**What's New**:
+- `modelstrategy=delegate` — LC model runs every step including the first step of complex goals, which `default` mode hands to the main model. Automatic escalation to main is still active when error or stall thresholds are hit.
+- Updated documentation for all three strategy modes (`default`, `advisor`, `delegate`) with a quick decision guide.
+- Console warnings are now shown when `readwrite=true` or `wikiaccess=rw` are active.
+
+**Examples**:
+```bash
+# delegate — LC handles all steps, lowest cost for well-understood batch tasks
+mini-a goal="process log files and extract errors" \
+  modelstrategy=delegate useshell=true
+
+# delegate — cap total LC spend with lcbudget
+mini-a goal="generate summaries for 50 documents" \
+  modelstrategy=delegate lcbudget=100000
+```
+
+**Impact**: Three clearly differentiated strategy modes now cover the full cost/quality spectrum — `default` for general use, `advisor` for high-stakes tasks, and `delegate` for bulk/throughput scenarios.
+
+---
+
 ### Dreams (Sleep Pass) Modes and Safety Gates
 
 **Change**: Introduce explicit plan, apply, and reorg modes for memory and wiki consolidation, write gates, and JSON output reporting.

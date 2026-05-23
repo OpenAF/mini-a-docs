@@ -46,23 +46,50 @@ When the light model is not set, mini-a uses the main model for everything. Sett
 
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S14 — Debug output showing model escalation]</div>
 
-### Advisor Strategy Mode
+### Model Strategy Modes
 
-The default `modelstrategy=default` escalates the LC model to the main model when errors or complexity thresholds are hit. The `advisor` strategy is an alternative that keeps the LC model as the sole executor but selectively calls the main model as an internal consultant when the agent is stuck:
+`modelstrategy` controls how Mini-A allocates work between the main model and the LC (low-cost) model when both `OAF_MODEL` and `OAF_LC_MODEL` are configured. All three modes require a dual-model setup; with only one model configured they behave identically.
 
-```bash
-mini-a modelstrategy=advisor goal="refactor the auth module" useshell=true
-```
+| Mode | When to use |
+|------|-------------|
+| `default` | General-purpose work. Mini-A starts on the main model for the first step of complex goals, then switches to LC. Automatically escalates back to main when errors or stalled reasoning are detected. Best baseline — start here unless you have a specific reason to deviate. |
+| `advisor` | Long or risky tasks where LC cost savings matter but you still want main-model judgment on hard calls. LC executes every step; the main model is consulted (not executed) only on risk signals, ambiguity, or hard-decision checkpoints. Use when you want to cap spend but cannot afford a wrong decision mid-task. |
+| `delegate` | Batch / throughput scenarios where speed and cost matter more than best-first-step quality. LC executes all steps including step 0 (skips the `default` behavior of using main for the first step on complex goals). Escalation to main is still active when error/stall thresholds are hit. Use for repetitive, well-understood tasks. |
 
-When advisor mode is active and the agent encounters a difficult step, it sends a structured query to the main model and receives back a JSON assessment with `recommended_next_step`, `risk_flags`, `escalate_to_main`, and `confidence` fields. The LC model then proceeds with that guidance. If `escalate_to_main` is true, the main model takes over for that step only.
+**Quick decision guide:**
+- Single goal, unknown complexity → `default`
+- High-stakes or irreversible actions, dual-model setup → `advisor` (add `harddecision=require` for critical deployments)
+- Bulk/batch processing, cost is the primary concern → `delegate`
+- Only one model configured → mode has no effect; `modellock` is the relevant knob instead
+
+When `advisor` mode is active and the agent encounters a difficult step, it sends a structured query to the main model and receives back a JSON assessment with `recommended_next_step`, `risk_flags`, `escalate_to_main`, and `confidence` fields. The LC model then proceeds with that guidance. If `escalate_to_main` is true, the main model takes over for that step only.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `modelstrategy` | `default` | `default` (LC-first with escalation) or `advisor` (LC executes, main model consulted selectively) |
+| `modelstrategy` | `default` | Model orchestration profile: `default` (adaptive LC-first with escalation), `advisor` (LC executor + main model as selective advisor), or `delegate` (LC executes all steps including step 0, escalation still active) |
 | `advisormaxuses` | `2` | Maximum advisor consultations per run |
 | `advisorcooldownsteps` | `2` | Minimum steps between consecutive consultations |
 
-This keeps most execution on the cheaper LC model while getting targeted guidance from the main model only when genuinely needed — useful when you want tighter cost control than full escalation but better reliability than pure LC execution.
+```bash
+# default — adaptive escalation, good general-purpose starting point
+mini-a goal="summarize this repository" useshell=true
+
+# advisor — LC executes every step, main model consulted on hard decisions
+mini-a goal="refactor the auth module" \
+  modelstrategy=advisor useshell=true
+
+# advisor — block execution until main model approves risky actions
+mini-a goal="deploy to production" \
+  modelstrategy=advisor harddecision=require useshell=true
+
+# delegate — LC handles all steps (including step 0), use for batch / throughput
+mini-a goal="process log files and extract errors" \
+  modelstrategy=delegate useshell=true
+
+# delegate — combine with lcbudget to cap total LC spend
+mini-a goal="generate summaries for 50 documents" \
+  modelstrategy=delegate lcbudget=100000
+```
 
 ### Low-Cost Tool Calling (`usetoolslc`)
 

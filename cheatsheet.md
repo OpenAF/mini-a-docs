@@ -137,7 +137,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `lccontextlimit` | `0` | Escalate to main model when low-cost model context gets too large |
 | `deescalate` | `3` | Successful steps before returning from main model to low-cost model |
 | `modellock` | `auto` | Force model tier: `main`, `lc`, or `auto` |
-| `modelstrategy` | `default` | Model orchestration profile: `default` or `advisor` (LC executes, main model consulted selectively) |
+| `modelstrategy` | `default` | Model orchestration profile: `default` (adaptive LC-first), `advisor` (LC executor + main as selective advisor), or `delegate` (LC runs all steps including step 0) |
 | `advisormaxuses` | `2` | Max advisor consultations per run when `modelstrategy=advisor` |
 | `advisorcooldownsteps` | `2` | Min steps between advisor consultations |
 | `usewiki` | `false` | Enable wiki knowledge base |
