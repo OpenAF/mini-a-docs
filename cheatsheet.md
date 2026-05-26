@@ -98,6 +98,9 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `mini-a-docs` | `false` | Docs-aware Mini Utils root (`markdownFiles`) when `utilsroot` is unset |
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
+| `skillmaxautoload` | `1` | Maximum number of high-confidence matching skills to auto-load into bounded runtime context |
+| `skillcontextchars` | `8000` | Maximum characters read from each auto-loaded SKILL.md for runtime context |
+| `skillmanifestchars` | `1536` | Approximate character budget for skill descriptions in the system prompt manifest |
 | `usetools` | `false` | Enable tool use |
 | `usetoolslc` | `false` | Register MCP tools only on the low-cost model; main model stays in prompt/action mode |
 | `usejsontool` | `false` | Compatibility `json` tool for some tool-calling models |
@@ -114,10 +117,14 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `usestream` | `false` | Stream responses |
 | `showexecs` | `false` | Show shell/exec events as separate lines in the interaction stream |
 | `showseparator` | `true` | Show a separator line between interaction events (disable for compact view) |
+| `browsercontext` | - | Browser context configuration or `true` to auto-enable browser control for supported tools |
 | `showthinking` | `false` | Surface XML-tagged `<thinking>...</thinking>` blocks as thought logs |
 | `promptprofile` | context-dependent | System prompt verbosity: `minimal`, `balanced`, or `verbose` (`minimal` in chatbot mode; `verbose` with `debug=true`; otherwise `balanced`) |
 | `systempromptbudget` | — | Max estimated tokens for the system prompt; drops lower-priority sections when exceeded |
 | `goalprefix` | — | Prefix automatically prepended to every goal before the agent sees it |
+| `compressgoal` | `false` | Enable automatic compression of oversized goal text before execution |
+| `compressgoaltokens` | `250` | Estimated token threshold before goal compression is considered |
+| `compressgoalchars` | `1000` | Character threshold before goal compression is considered |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in web UI |
 | `usesvg` | `false` | Enable SVG generation for custom visuals and infographics |
 | `usediagrams` | `false` | Enable diagram generation |
@@ -128,6 +135,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `mcpproxy` | `false` | MCP proxy mode |
 | `mcpproxythreshold` | `0` | Proxy auto-spill byte threshold (`0` disables); large results written to temp file |
 | `mcpproxytoon` | `false` | TOON serialization for spilled proxy results |
+| `mcpproxyallow` | - | Comma-separated allowlist of downstream tool names exposed through proxy-dispatch |
+| `mcpproxydeny` | - | Comma-separated denylist of downstream tool names hidden from proxy-dispatch (applied after `mcpproxyallow`) |
 | `mcpprogcall` | `false` | Enable localhost bridge for programmatic MCP tool calls |
 | `mcpprogcallport` | `0` | Programmatic MCP bridge port (`0` auto-selects) |
 | `mcpprogcallmaxbytes` | `4096` | Max inline bridge response size before spill |
@@ -138,8 +147,17 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `deescalate` | `3` | Successful steps before returning from main model to low-cost model |
 | `modellock` | `auto` | Force model tier: `main`, `lc`, or `auto` |
 | `modelstrategy` | `default` | Model orchestration profile: `default` (adaptive LC-first), `advisor` (LC executor + main as selective advisor), or `delegate` (LC runs all steps including step 0) |
+| `advisorenable` | `true` | Enable advisor consultations when `modelstrategy=advisor` |
 | `advisormaxuses` | `2` | Max advisor consultations per run when `modelstrategy=advisor` |
+| `advisoronrisk` | `true` | Allow advisor consults on risk signals |
+| `advisoronambiguity` | `true` | Allow advisor consults on ambiguity signals |
+| `advisoronharddecision` | `true` | Allow advisor consults for hard-decision checkpoints |
 | `advisorcooldownsteps` | `2` | Min steps between advisor consultations |
+| `advisorbudgetratio` | `0.20` | Fraction of session token budget advisor calls may consume |
+| `emergencyreserve` | `0.10` | Portion of advisor budget reserved for high-risk/high-value consults |
+| `harddecision` | `warn` | Hard-decision checkpoint mode: `require`, `warn`, or `off` |
+| `evidencegate` | `false` | Enable lightweight evidence gating for non-trivial actions |
+| `evidencegatestrictness` | `medium` | Tuning level for evidence gate heuristics: `low`, `medium`, or `high` |
 | `usewiki` | `false` | Enable wiki knowledge base |
 | `wikiaccess` | `ro` | Wiki access: `ro` (read-only) or `rw` (read-write) |
 | `wikibackend` | `fs` | Wiki backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |
@@ -187,6 +205,24 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
 | `maxauditrecords` | `200` | Maximum audit log entries included in the memory dream consolidation prompt |
 | `onport` | - | Web UI port |
+| `maxpromptchars` | `120000` | Max accepted prompt size for incoming web prompts |
+| `ssequeuetimeout` | `120` | Web SSE stream queue timeout in seconds |
+| `logpromptheaders` | - | Comma-separated HTTP request header names to log alongside incoming web prompts |
+| `usehistory` | `false` | Enable conversation history persistence in web mode |
+| `useattach` | `false` | Enable file attachment support in web mode |
+| `historykeep` | `false` | Keep finished web conversation history files instead of discarding them |
+| `historypath` | - | Directory path used to store web conversation history files |
+| `historyretention` | `600` | Web history retention window in seconds |
+| `historykeepperiod` | - | Delete kept conversation files older than this many minutes |
+| `historykeepcount` | - | Keep only the newest N kept conversation files |
+| `historys3bucket` | - | S3 bucket used to mirror history files |
+| `historys3prefix` | - | S3 key prefix for mirrored history files |
+| `historys3url` | - | S3 endpoint URL for history mirroring |
+| `historys3accesskey` | - | S3 access key for history mirroring |
+| `historys3secret` | - | S3 secret key for history mirroring |
+| `historys3region` | - | S3 region for history mirroring |
+| `historys3useversion1` | `false` | Use S3 path-style (v1) signing for history mirroring |
+| `historys3ignorecertcheck` | `false` | Disable TLS certificate checks for history S3 access |
 | `homedir` | — | Override the home directory used to locate the `.openaf-mini-a` folder |
 
 ## Agent Files

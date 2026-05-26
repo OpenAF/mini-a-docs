@@ -33,9 +33,18 @@ export MINI_A_PARAM=value
 | `lcescalatedefer` | `true` | Defer LC-to-main escalation by one step when LC confidence remains high |
 | `lcbudget` | `0` | Maximum total LC token budget before permanently switching to the main model (`0` = unlimited) |
 | `llmcomplexity` | `false` | Use a quick LC validation call for medium-complexity routing heuristics |
-| `modelstrategy` | `default` | Model orchestration profile: `default` (LC-first with escalation) or `advisor` (LC executes, main model consulted selectively for difficult steps) |
+| `modelstrategy` | `default` | Model orchestration profile: `default` (LC-first with escalation), `advisor` (LC executes, main model consulted selectively for difficult steps), or `delegate` (LC executes all steps including step 0) |
+| `advisorenable` | `true` | Enable main-model advisor consultations when `modelstrategy=advisor` |
 | `advisormaxuses` | `2` | Maximum advisor consultations per run when `modelstrategy=advisor` |
+| `advisoronrisk` | `true` | Allow advisor consultations on risk signals |
+| `advisoronambiguity` | `true` | Allow advisor consultations on ambiguity signals |
+| `advisoronharddecision` | `true` | Allow advisor consultations on hard-decision checkpoints |
 | `advisorcooldownsteps` | `2` | Minimum step distance between advisor consultations when `modelstrategy=advisor` |
+| `advisorbudgetratio` | `0.20` | Fraction of session token budget advisor calls may consume before low-value consultations are declined |
+| `emergencyreserve` | `0.10` | Portion of advisor budget reserved for high-risk/high-value consultations |
+| `harddecision` | `warn` | Hard-decision checkpoint mode: `require` (block actions until advisor succeeds), `warn`, or `off` |
+| `evidencegate` | `false` | Enable lightweight evidence gating for non-trivial actions and final claims |
+| `evidencegatestrictness` | `medium` | Strictness level for evidence gate heuristics: `low`, `medium`, or `high` |
 | `maxtokens` | - | Maximum output tokens |
 | `rpm` | - | Requests per minute limit |
 | `tpm` | - | Tokens per minute limit |
@@ -78,6 +87,11 @@ export MINI_A_PARAM=value
 | `auditch` | - | SLON channel definition for agent interaction audit logs — see [Channels]({{ '/channels' | relative_url }}) for backend options and examples |
 | `toollog` | - | SLON channel definition for dedicated MCP tool input/output logs — see [Channels]({{ '/channels' | relative_url }}) for backend options and examples |
 | `metricsch` | - | SLON/JSON channel definition for recording periodic Mini-A metrics snapshots (e.g. `(name: 'mini-a-metrics', type: 'mvs', options: (file: '/tmp/mini-a-metrics.db'))`). Supports optional `period`, `some`, and `noDate` fields — see [Channels]({{ '/channels' | relative_url }}) |
+| `goalprefix` | - | Prefix automatically prepended to every goal before the agent sees it |
+| `homedir` | - | Override the home directory used to locate the `.openaf-mini-a` folder |
+| `compressgoal` | `false` | Enable automatic compression of oversized goal text before execution |
+| `compressgoaltokens` | `250` | Estimated token threshold above which goal compression is considered |
+| `compressgoalchars` | `1000` | Character threshold above which goal compression is considered |
 
 </div>
 
@@ -91,6 +105,8 @@ export MINI_A_PARAM=value
 | `mcpproxy` | `false` | Enable MCP proxy mode |
 | `mcpproxythreshold` | `0` | Byte threshold to spill large proxy results to temp files (`0` disables spilling) |
 | `mcpproxytoon` | `false` | Serialize spilled proxy object/array payloads as TOON text when proxy spilling is enabled |
+| `mcpproxyallow` | - | Comma-separated allowlist of downstream tool names exposed through proxy-dispatch |
+| `mcpproxydeny` | - | Comma-separated denylist of downstream tool names hidden from proxy-dispatch (applied after `mcpproxyallow`) |
 | `mcpprogcall` | `false` | Start localhost programmatic MCP tool-call bridge for scripts |
 | `mcpprogcallport` | `0` | Programmatic MCP bridge port (`0` auto-selects) |
 | `mcpprogcallmaxbytes` | `4096` | Max inline JSON response size before returning a stored `resultId` |
@@ -112,6 +128,9 @@ export MINI_A_PARAM=value
 |-----------|---------|-------------|
 | `useutils` | `false` | Enable Mini Utils Tool utilities (`init`, `filesystemQuery`, `filesystemModify`, `markdownFiles`) |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
+| `skillmaxautoload` | `1` | Maximum number of high-confidence matching skills to auto-load into bounded runtime context |
+| `skillcontextchars` | `8000` | Maximum characters read from each auto-loaded SKILL.md for runtime context |
+| `skillmanifestchars` | `1536` | Approximate character budget for skill descriptions in the system prompt manifest |
 | `utilsroot` | - | Root path used by Mini Utils file operations |
 | `mini-a-docs` | `false` | If `true` and `utilsroot` is not set, automatically uses the mini-a oPack docs path as `utilsroot` |
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
@@ -242,7 +261,10 @@ export MINI_A_PARAM=value
 | `usemermaid` | `false` | Alias for `usediagrams` |
 | `usecharts` | `false` | Enable chart generation |
 | `usevectors` | `false` | Enable the vector bundle (`usesvg=true` + `usediagrams=true`), preferring Mermaid for structural diagrams and SVG for infographics/custom visuals |
+| `browsercontext` | - | Browser context configuration (SLON/JSON) or `true` to auto-enable browser control for supported MCP tools |
 | `usestream` | `false` | Enable response streaming |
+| `showexecs` | `false` | Show shell/exec events as separate lines in the interaction stream |
+| `showseparator` | `true` | Show a separator line between interaction events |
 | `format` | - | Output format constraint |
 
 </div>
@@ -268,10 +290,20 @@ export MINI_A_PARAM=value
 | `delegationhardtimeout` | - | Optional absolute delegated subtask timeout regardless of activity (ms) |
 | `delegationmaxretries` | `2` | Retry count for failed delegated subtasks |
 | `workermode` | `false` | Launch mini-a as a Worker API server |
-| `showdelegate` | `false` | Show delegation events in the console |
+| `showdelegate` | `false` | Show delegate/subtask events as separate console lines |
 | `workerskills` | - | Comma-separated list (or JSON/SLON array) of A2A skill IDs this worker advertises (e.g. `"shell,time"`) |
-| `shellworker` | `false` | Convenience shorthand: sets `useshell=true` and auto-emits the `shell` A2A skill |
 | `workerspecialties` | - | Comma-separated specialty tags injected into the `run-goal` A2A skill description |
+| `workertags` | - | Comma-separated tags appended to the default worker skill in the AgentCard |
+| `shellworker` | `false` | Convenience shorthand: sets `useshell=true` and auto-emits the `shell` A2A skill |
+| `apitoken` | - | Bearer token required to authenticate requests to the worker API server |
+| `subtasks` | - | Inline startup scout subtasks (pipe-separated goals) executed before the main loop |
+| `subtasksfile` | - | Path to a JSON/YAML file containing startup scout task definitions |
+| `subtaskssequential` | `false` | Run startup subtasks sequentially instead of in parallel |
+| `forkstatemaxbytes` | `65536` | Maximum bytes of parent context snapshot transmitted to a forked sub-agent |
+| `autodelegation` | `false` | Enable automatic delegation of oversized tool results to a summary sub-agent |
+| `autodelegationthreshold` | `8192` | Byte size threshold of tool results that triggers auto-delegation |
+| `autodelegationmaxperstep` | `2` | Maximum number of auto-delegations allowed per agent step |
+| `noisytools` | - | Comma-separated list of tool names that always trigger auto-delegation regardless of size |
 
 </div>
 
@@ -458,6 +490,23 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 |-----------|---------|-------------|
 | `onport` | - | Port for web UI (enables web mode) |
 | `maxpromptchars` | `120000` | Maximum accepted prompt size for incoming web `/prompt` requests |
+| `ssequeuetimeout` | `120` | Web SSE stream queue timeout in seconds |
+| `logpromptheaders` | - | Comma-separated HTTP request header names to log alongside incoming web prompts (e.g. `X-User-Id`) |
+| `usehistory` | `false` | Enable conversation history persistence in web mode |
+| `historykeep` | `false` | Keep finished web conversation history files instead of discarding them |
+| `historypath` | - | Directory path used to store web conversation history files |
+| `historyretention` | `600` | Web history retention window in seconds |
+| `historykeepperiod` | - | Delete kept conversation history files older than this many minutes |
+| `historykeepcount` | - | Keep only the newest N kept conversation history files |
+| `historys3bucket` | - | S3 bucket used to mirror history files |
+| `historys3prefix` | - | S3 key prefix for mirrored history files |
+| `historys3url` | - | S3 endpoint URL for history mirroring |
+| `historys3accesskey` | - | S3 access key for history mirroring |
+| `historys3secret` | - | S3 secret key for history mirroring |
+| `historys3region` | - | S3 region for history mirroring |
+| `historys3useversion1` | `false` | Use S3 path-style (v1) signing for history mirroring |
+| `historys3ignorecertcheck` | `false` | Disable TLS certificate checks for history S3 access |
+| `useattach` | `false` | Enable file attachment support in web mode |
 
 </div>
 
