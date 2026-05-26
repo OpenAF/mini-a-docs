@@ -396,66 +396,176 @@ See [Configuration → Outer Loop]({{ '/configuration#7a-outer-loop-autonomous-c
 
 ## Working Memory
 
-For long-running or multi-step goals, mini-a can maintain a **structured working memory** that persists key findings across tool calls and even across sessions.
+For long-running or multi-step goals, Mini-A can maintain a **structured working memory** that persists key findings, decisions, and evidence across tool calls and even across sessions. Working memory drastically increases reasoning coherence on long tasks while saving context window costs.
 
 ```bash
-mini-a usememory=true goal="Deep code analysis of auth module"
+mini-a goal="Deep code analysis of auth module" usememory=true
 ```
 
 Memory is organized into 8 typed sections:
 
 | Section | What is stored |
 |---------|---------------|
-| `facts` | Confirmed facts discovered during the run |
-| `evidence` | Raw observations and tool outputs worth keeping |
-| `decisions` | Choices made and their rationale |
-| `risks` | Identified risks or blockers |
-| `openQuestions` | Unresolved questions to follow up on |
-| `hypotheses` | Unconfirmed theories to test |
-| `artifacts` | Generated files, configs, or summaries |
-| `summaries` | Compressed summaries of completed work |
+| `facts` | Confirmed facts and verified findings discovered during the run |
+| `evidence` | Direct observations, benchmarks, and tool outputs worth keeping |
+| `decisions` | Design/workflow choices made and their underlying rationale |
+| `risks` | Identified risks, sub-agent errors, or validation blockers |
+| `openQuestions` | Unresolved questions to follow up on or clarify |
+| `hypotheses` | Candidate approaches or theories under consideration |
+| `artifacts` | Excerpts of generated files, configurations, or schemas |
+| `summaries` | Condensed narrative summaries of completed milestones |
 
-Entries are appended automatically at significant agent events (tool calls, plan critiques, validation results, final answers). Near-duplicate entries are suppressed by an 85% word-overlap fingerprint (`memorydedup`).
+### Core Mechanics: Compaction & Deduplication
 
-### Persistence
+* **Fingerprint Deduplication (`memorydedup=true`)**: Near-duplicate entries in the same section are automatically suppressed based on an 85% word-overlap similarity fingerprint, keeping the store clean.
+* **Automatic Compaction (`memorycompactevery=8`)**: Every 8 appends, Mini-A runs a compaction pass. It keeps section sizes under `memorymaxpersection` (default: `80`) and the total store size under `memorymaxentries` (default: `500`).
+* **Priority Eviction**: If compaction needs to prune entries to fit limits, it prioritizes keeping higher-value sections. The eviction order (least important to prune first) is: 
+  `decisions` > `evidence` > `risks` > `facts` > `summaries` > `hypotheses` > `openQuestions` > `artifacts`.
 
-By default, memory is held in-process. Pass an OpenAF channel definition to persist it across runs:
+---
 
-```bash
-# Persist to a local JSON file
-mini-a usememory=true \
-  memorych="(name: my_mem, type: file, options: (file: '/tmp/mini-a-mem.json'))" \
-  goal="Iterative research on cloud costs"
-```
+### Scope & Persistence
 
-### Scope
+Working memory operates across two independent scopes:
+1. **Session Scope**: Scoped strictly to the current conversation ID or namespace.
+2. **Global Scope**: A shared store accessible by any agent session pointing at the same channel.
 
-Use `memoryscope` to control which stores the agent reads/writes:
-
-```bash
-# Keep memory isolated to this session
-mini-a usememory=true memoryscope=session goal="One-shot task"
-
-# Share memory globally across all sessions
-mini-a usememory=true memoryscope=global \
-  memorych="(type: file, options: (file: '/tmp/mini-a-global.json'))"
-```
-
-### Tuning
+#### OpenAF Channel Definitions
+By default, memory is held in-process (RAM-only). You can persist it across runs by passing standard OpenAF channel definitions to `memorych` (global store) and `memorysessionch` (session store):
 
 ```bash
-# Larger limits for a heavy analysis run
-mini-a usememory=true memorymaxpersection=200 memorymaxentries=1000 \
-  goal="Analyze all TypeScript files"
+# Persist global memory to a local JSON file channel
+mini-a goal="Analyze AWS server configurations" \
+  usememory=true \
+  memorych="(name: my_mem, type: file, options: (file: '/tmp/mini-a-global.json'))"
+
+# Persist global memory to a shared Redis channel
+mini-a goal="Distil system requirements" \
+  usememory=true \
+  memorych="(name: redis_mem, type: redis, options: (host: 'redis.internal', port: 6379, key: 'mini-a-global-memory'))"
 ```
 
-Use `memoryuser=true` as a shorthand that activates working memory with automatic file-backed persistence under `~/.openaf-mini-a/`, without needing to specify channels manually:
+#### Scope Routing (`memoryscope`)
+Use `memoryscope` to control how stores are accessed:
+* `session`: Current run/session only (reads and writes isolated).
+* `global`: Shared store only.
+* `both` (Default): Reads from both global and session memory. Writes default to session first, then auto-promote to global at session end.
+
+---
+
+### Convenience Presets
+
+To avoid manually writing channel definitions, Mini-A provides two local-development shortcuts:
+
+#### 1. Developer Workspace Preset (`memoryuser=true`)
+Activates working memory, creates `~/.openaf-mini-a/` automatically, and sets up separate file-backed global and session channels. It also:
+* Defaults `memorypromote="facts,decisions,summaries"` to automatically carry facts, decisions, and summaries over to the global store at the end of the session.
+* Defaults `memorystaledays=30` to run a staleness sweep, marking entries older than 30 days as stale (which are pruned first during compaction).
 
 ```bash
-mini-a memoryuser=true goal="deep code analysis"
+mini-a goal="audit code security" memoryuser=true
 ```
 
-This preset configures separate session and global stores, defaults `memorypromote=facts,decisions,summaries`, and enables a 30-day stale sweep (`memorystaledays=30`) so long-lived memory stays fresh instead of growing without bounds.
+#### 2. Isolated Local Preset (`memoryusersession=true`)
+Activates working memory, creates `~/.openaf-mini-a/`, registers a local file channel for the session store, but forces `memoryscope=session`. This lets you keep local history of your session without promoting any facts or decisions to your shared global store.
+
+```bash
+mini-a goal="sandbox testing" memoryusersession=true
+```
+
+---
+
+### Context Injection & Dynamic Search
+
+How is memory presented to the LLM? Controlled by `memoryinject`:
+
+#### Full Context Mode (`memoryinject=full`)
+Embeds the entire, compact snapshot of all working memory entries directly in the system prompt on every step. While useful for short tasks, it can bloat context windows on long-running tasks.
+
+#### Dynamic Search Mode (`memoryinject=summary` - Default)
+Only injects per-section entry counts into the prompt (e.g., `workingMemory: { facts: 12, decisions: 3 }`), saving ~95% of context token overhead. 
+
+The agent is equipped with a built-in `memory_search` action. When it needs to recall past facts or decisions, it calls `memory_search` programmatically:
+
+```json
+{
+  "thought": "I need to review our past database indexing decisions before refactoring",
+  "action": "memory_search",
+  "params": {
+    "query": "indexing",
+    "section": "decisions",
+    "limit": 5
+  }
+}
+```
+
+* **`query`** (string, required): Keyword string to match against entry content.
+* **`section`** (string, optional): Filter results to a specific section (e.g., `facts`, `decisions`).
+* **`limit`** (number, optional, default: `10`): Maximum results to return.
+
+---
+
+### Interactive Memory Manager TUI (`memoryman=true`)
+
+Mini-A includes an interactive Terminal User Interface (TUI) to inspect, manage, search, and prune memory stores manually.
+
+```bash
+# Open the memory manager using the default user-local channels
+mini-a memoryman=true usememory=true memoryuser=true
+
+# Open the memory manager targeting custom channels and a session namespace
+mini-a memoryman=true usememory=true \
+  memorych="(name: g, type: file, options: (file: '/tmp/global.json'))" \
+  memorysessionch="(name: s, type: file, options: (file: '/tmp/session.json'))" \
+  memorysessionid="demo-session"
+```
+
+#### TUI Features:
+* **📊 Summary**: Displays per-section entry counts, unresolved open questions, and stale counters.
+* **📃 List entries**: Browses all entries in a specific section, with options to filter by stale or unresolved status.
+* **🔎 Inspect entry**: Displays full payload details, including creation timestamps, confirmation counts, and tags.
+* **🧽 Delete by ID**: Manually deletes a single memory entry.
+* **⏳ Delete older than**: Batch prunes memory by relative age (e.g., `30d`, `12h`, `90m`) or specific dates.
+* **🔍 Search entries**: Keyword searches across entry values, IDs, and tags.
+* **🧰 Maintenance**: Manually triggers compaction, sweeps stale global entries, or clears the store.
+* **💾 Export snapshot**: Exports a clean JSON backup of the active memory store.
+
+---
+
+### Programmatic Embedding API
+
+If you are embedding the Mini-A SDK inside your own Javascript/OpenAF applications, you can manage the working memory subsystem programmatically:
+
+```javascript
+var agent = new MiniA();
+
+// Start the agent with memory enabled
+agent.start({ 
+  goal: "Refactor legacy parser", 
+  usememory: true,
+  memoryuser: true
+});
+
+// 1. Manually promote specific session entries to the global store
+agent.promoteSessionMemory("decisions", ["entry-id-1", "entry-id-2"]);
+
+// 2. Clear session memory for a given session
+agent.clearSessionMemory("my-session-id");
+
+// 3. Trigger auto-promotion & staleness sweeps programmatically
+// (Done automatically at the end of the session when 'memorypromote' is configured)
+agent._autoPromoteSessionToGlobal();
+
+// 4. Find near-duplicate entries in global memory
+var match = agent._globalMemoryManager.findNearDuplicate("facts", "Authentication is handled by Keycloak");
+if (match) {
+  // Clear the stale status by refreshing confirmation count
+  agent._globalMemoryManager.refresh("facts", match.id);
+}
+
+// 5. Sweep stale global entries older than N days
+var markedCount = agent._globalMemoryManager.sweepStale(30);
+```
 
 See [Configuration → Working Memory]({{ '/configuration#10b-working-memory' | relative_url }}) for the full parameter reference.
 

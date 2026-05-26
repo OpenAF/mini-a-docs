@@ -145,10 +145,20 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `wikibackend` | `fs` | Wiki backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |
 | `wikiroot` | `.` | Root directory for the `fs` backend |
 | `wikibucket` | - | S3 bucket name (`s3` backend) |
-| `memoryuser` | `false` | File-backed session + global working memory preset with auto-promotion and 30-day stale sweep |
+| `usememory` | `false` | Enable the working memory subsystem |
+| `memoryuser` | `false` | Convenience preset: file-backed global + session memory at `~/.openaf-mini-a/`, auto-promote `facts,decisions,summaries`, 30-day stale sweep |
+| `memoryusersession` | `false` | Convenience preset: enables `usememory`, session-only file-backed channel under `~/.openaf-mini-a/` |
+| `memoryscope` | `both` | Which store the agent reads from/writes to: `session`, `global`, or `both` |
+| `memorych` | - | SLON/JSON definition of an OpenAF channel to persist the global memory store |
+| `memorysessionch` | - | SLON/JSON definition of a channel for session memory persistence (falls back to `memorych`) |
+| `memorysessionid` | `<agent-id>` | Session key used to namespace session memory in the channel |
+| `memorymaxpersection` | `80` | Maximum entries kept per section before compaction drops stale/old ones |
+| `memorymaxentries` | `500` | Hard cap on total entries across all sections |
+| `memorycompactevery` | `8` | How many appends trigger an automatic compaction pass |
+| `memorydedup` | `true` | Suppress near-duplicate entries (85% word-overlap fingerprint) |
 | `memorypromote` | `""` | Auto-promote selected sections from session to global memory at session end |
 | `memorystaledays` | `0` | Mark unconfirmed global memory entries as `stale` after N days |
-| `memoryinject` | `summary` | Inject memory as section counts (`summary`) or full compact entries (`full`) |
+| `memoryinject` | `summary` | Inject memory as section counts (`summary` with dynamic search) or full compact entries (`full`) |
 | `memorysessionheader` | — | HTTP request header name used to derive the memory session ID in web mode (e.g. `X-User-Id`) |
 | `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
 | `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots |

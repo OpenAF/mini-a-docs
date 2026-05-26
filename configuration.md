@@ -312,27 +312,67 @@ See the [Agent Files]({{ '/agents' | relative_url }}) page for the complete refe
 
 ## 10b. Working Memory
 
-Enable a structured, scoped working memory subsystem that the agent maintains automatically across tool calls and runs.
+Enable a structured, scoped working memory subsystem that the agent maintains automatically across tool calls, runs, and sessions. Working memory prevents context window bloat while preserving key learnings, decisions, and evidence.
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `usememory` | `false` | Enable the working memory subsystem |
-| `memoryuser` | `false` | Convenience preset that enables file-backed session + global memory under `~/.openaf-mini-a/`, auto-promotes `facts,decisions,summaries`, and enables a 30-day stale sweep |
-| `memoryscope` | `both` | Scope of memory: `session` (current run only), `global` (shared across sessions), or `both` |
-| `memorych` | - | SLON/JSON channel definition for global memory persistence (e.g. file, Redis) |
-| `memorysessionch` | - | SLON/JSON channel definition for session memory (falls back to `memorych` if omitted) |
-| `memorysessionid` | agent ID | Key namespace used for session memory in the channel |
-| `memorymaxpersection` | `80` | Maximum entries per memory section before compaction |
-| `memorymaxentries` | `500` | Hard cap on total entries across all sections |
-| `memorycompactevery` | `8` | Number of appends between automatic compaction passes |
-| `memorydedup` | `true` | Suppress near-duplicate entries (85% word-overlap fingerprint) |
-| `memorypromote` | `""` | Comma-separated sections to auto-promote from session memory to global memory at session end |
-| `memorystaledays` | `0` | Days without re-confirmation before a global entry is marked `stale`; `memoryuser=true` sets this to `30` |
-| `memoryinject` | `summary` | `summary` injects only per-section counts and enables on-demand `memory_search`; `full` embeds the full compact memory snapshot in every step |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `usememory` | boolean | `false` | Enable the working memory subsystem. Set `false` to disable all memory tracking. |
+| `memoryuser` | boolean | `false` | Convenience preset: enables `usememory`, creates `~/.openaf-mini-a/`, registers file-backed global + session channels, auto-promotes `facts,decisions,summaries`, and sets `memorystaledays=30`. |
+| `memoryusersession` | boolean | `false` | Convenience preset: enables `usememory`, creates `~/.openaf-mini-a/`, sets `memoryscope=session`, and registers a file-backed session channel. |
+| `memoryscope` | string | `both` | Which store the agent reads from and defaults writes to: `session` (current run), `global` (across sessions), or `both`. |
+| `memorych` | string | - | SLON/JSON definition of an OpenAF channel to persist global memory (e.g. file, Redis, jdbc). |
+| `memorysessionch` | string | - | SLON/JSON definition of a channel for session memory persistence (falls back to `memorych` if omitted). |
+| `memorysessionid` | string | `<agent-id>` | Session key namespace in the channel (defaults to `conversation` argument, otherwise falls back to internal agent ID). |
+| `memorymaxpersection` | number | `80` | Maximum entries kept per section before compaction prunes stale or old entries. |
+| `memorymaxentries` | number | `500` | Hard cap on total entries across all sections. |
+| `memorycompactevery` | number | `8` | Number of append operations that trigger an automatic memory compaction pass. |
+| `memorydedup` | boolean | `true` | Suppress near-duplicate entries using an 85% word-overlap fingerprint. |
+| `memorypromote` | string | `""` | Comma-separated list of sections to auto-promote from session to global memory at session end. |
+| `memorystaledays` | number | `0` | Days without confirmation before a global entry is marked `stale` (cleared during compaction if section overflows). |
+| `memoryinject` | string | `summary` | Context injection style: `summary` injects only per-section counts and enables dynamic `memory_search`; `full` embeds the entire memory snapshot in every step's context. |
+| `memorysessionheader` | string | - | HTTP header name used to derive `memorysessionid` in Web/Server UI mode (e.g., `X-User-Id`). |
 
-Memory is organized into 8 sections: `facts`, `evidence`, `decisions`, `risks`, `openQuestions`, `hypotheses`, `artifacts`, `summaries`. The agent appends entries automatically at significant events (tool calls, plan critiques, validation results, final answers).
+### Memory Sections
+Memory is categorized into 8 independent, typed sections that the agent manages automatically:
+* **`facts`**: Confirmed facts and truths discovered or verified during the run.
+* **`evidence`**: Direct observations, statistics, and tool outputs worth remembering.
+* **`decisions`**: Architecture or workflow choices made along with their rationale.
+* **`risks`**: Tool failures, sub-agent issues, validation warnings, or blockers.
+* **`openQuestions`**: Pending questions, gaps in specifications, or follow-up items.
+* **`hypotheses`**: Unconfirmed assumptions or candidate approaches being explored.
+* **`artifacts`**: Excerpts of generated configs, code blocks, or structured outputs.
+* **`summaries`**: Higher-level narrative overviews of completed milestones or phases.
 
-When both `memorych` and `memorysessionch` are configured, writes under `memoryscope=both` default to the session store first. Auto-promotion then refreshes or appends selected knowledge into the global store at session end.
+### Convenience Presets
+
+To avoid configuring channels manually, use one of the two convenience presets:
+1. **`memoryuser=true`**: Ideal for persistent local development. Automatically stores memory databases under `~/.openaf-mini-a/memory-global.json` and `~/.openaf-mini-a/memory-session.json`. At the end of a session, facts, decisions, and summaries are promoted to global memory, and any entry not verified in 30 days is swept.
+2. **`memoryusersession=true`**: Ideal for isolated, session-scoped runs where you still want local persistent history on the disk (saved under `~/.openaf-mini-a/memory-session.json`), but no information should leak into the shared global namespace.
+
+### Dynamic Context Injection (`memoryinject=summary`)
+
+> [!TIP]
+> **Use the default `memoryinject=summary`** for complex or long-running tasks. Instead of injecting all memory entries into every step's prompt (which wastes thousands of tokens and causes model distraction), Mini-A only injects the counts (e.g., `workingMemory: { facts: 12, decisions: 3 }`). 
+> The agent is equipped with a `memory_search` action to retrieve specific facts or decisions *on demand* using keyword queries, saving up to 95% of context memory overhead.
+
+### Configuration Examples
+
+```yaml
+# Inside an agent file frontmatter (my-agent.agent.md)
+mini-a:
+  usememory: true
+  memoryuser: true
+  memoryinject: summary
+```
+
+```bash
+# Running with separate session/global file channels and a custom session namespace
+mini-a goal="audit security modules" \
+  usememory=true \
+  memorych="(name: sec_global, type: file, options: (file: '/var/data/global-sec.json'))" \
+  memorysessionch="(name: sec_session, type: file, options: (file: '/var/data/session-sec.json'))" \
+  memorysessionid="audit-q2-2026"
+```
 
 </div>
 
