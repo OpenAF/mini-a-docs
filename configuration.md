@@ -364,6 +364,19 @@ Enable a structured, scoped working memory subsystem that the agent maintains au
 | `memoryinject` | string | `summary` | Context injection style: `summary` injects only per-section counts and enables dynamic `memory_search`; `full` embeds the entire memory snapshot in every step's context. |
 | `memorysessionheader` | string | - | HTTP header name used to derive `memorysessionid` in Web/Server UI mode (e.g., `X-User-Id`). |
 
+### Memory Classification (Taxonomy)
+
+Mini-A exposes one structured working-memory system. The common memory types are implemented by combining that system with different scopes and persistence settings:
+
+| Memory type | What it means in Mini-A | Main parameters |
+|-------------|--------------------------|-----------------|
+| **Working memory** | The live structured store the agent reads and writes during a run | `usememory`, `memoryinject`, `memorymaxpersection`, `memorymaxentries`, `memorycompactevery`, `memorydedup` |
+| **Episodic memory** | Session-scoped state for a specific conversation or run | `memorysessionid`, `memoryscope=session\|both`, `memorysessionch` |
+| **Semantic memory** | Durable knowledge the agent can reuse across runs | `memorych`, `memoryscope=global\|both`, `memorypromote`, `memorystaledays` |
+| **Procedural memory** | Instructions and workflow rules that tell Mini-A how to behave | `agent`, `mode`, skills, `AGENTS.md`, prompts (not a dedicated memory store) |
+
+`memoryuser=true` is the convenience preset for both global and session working memory. `memoryusersession=true` is the session-only version.
+
 ### Memory Sections
 Memory is categorized into 8 independent, typed sections that the agent manages automatically:
 * **`facts`**: Confirmed facts and truths discovered or verified during the run.
