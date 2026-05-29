@@ -179,7 +179,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `memoryinject` | `summary` | Inject memory as section counts (`summary` with dynamic search) or full compact entries (`full`) |
 | `memorysessionheader` | — | HTTP request header name used to derive the memory session ID in web mode (e.g. `X-User-Id`) |
 | `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
-| `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots |
+| `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots — see [Channels]({{ '/channels' | relative_url }}) (note: backend options nest under `options:`, e.g. `(name: 'mini-a-metrics', type: 'mvs', options: (file: 'metrics.db'), period: 5000)`) |
 | `usedelegation` | `false` | Agent delegation |
 | `workers` | - | Remote worker URLs for delegation |
 | `workertags` | — | Comma-separated tags appended to the default worker skill in the AgentCard |

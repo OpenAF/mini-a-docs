@@ -256,6 +256,161 @@ mini-a debugch="(type: mvs, file: debug.db, map: main)" \
 
 ---
 
+## Metrics Channel (`metricsch`)
+
+`metricsch` records periodic snapshots of mini-a's runtime metrics into an OpenAF channel. It is the persistent counterpart to the in-session `/stats` command — `/stats` shows the current counters for the live session, while `metricsch` writes a snapshot every `period` milliseconds to any channel backend, accumulating a time-series that survives the session.
+
+Under the hood, mini-a calls `ow.metrics.startCollecting(name, period, some, noDate)`, which registers a background thread that writes one entry per interval to the channel.
+
+---
+
+### Definition format
+
+Unlike the other channel parameters (`auditch`, `toollog`, `debugch`), the `metricsch` value is **not a flat channel definition**. It is a wrapper map that carries both the channel identity and collection options, with the backend definition nested under `options`:
+
+```
+metricsch="(name: 'mini-a-metrics', type: 'mvs', options: (file: 'metrics.db'))"
+```
+
+Copying the flat `auditch`/`toollog` pattern produces a broken definition — all backend fields (`file`, `map`, etc.) must be inside `options:`.
+
+**Definition fields:**
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `name` | `_mini_a_metrics_channel` | OpenAF channel name; shared across MiniA instances using the same name |
+| `type` | `simple` | Channel backend type (`simple`, `mvs`, `file`, `db`, …) |
+| `options` | `{}` | Backend-specific options passed to `$ch(name).create(type, options)` |
+| `period` | `1000` | Snapshot interval in milliseconds |
+| `some` | `["mini-a"]` | Metric namespaces to collect per snapshot |
+| `noDate` | `false` | Omit the `d` (Date) field from each entry key/value |
+
+**Tip:** The default `simple` type is in-memory and lost when mini-a exits. Use `mvs`, `file`, or `db` to persist snapshots across runs.
+
+**Tip:** At the default 1000 ms interval a long session generates ~3600 entries/hour. Raise `period` to `5000` or `10000` for sustained runs to keep the store size manageable.
+
+---
+
+### Quick start
+
+```bash
+mini-a \
+  metricsch="(name: 'mini-a-metrics', type: 'mvs', options: (file: 'metrics.db'), period: 5000)" \
+  goal='Summarize the README'
+```
+
+After the session, `metrics.db` contains one snapshot every 5 seconds. Use the same `type` and `options` to read the data back.
+
+---
+
+### What gets recorded
+
+Each snapshot is one channel entry:
+
+| Entry part | Shape | Notes |
+|------------|-------|-------|
+| Key | `{ t: <epochMs>, d: <Date> }` | `d` omitted when `noDate: true` |
+| Value | `{ t, d, "mini-a": { … } }` | All metric counters nested under `"mini-a"` |
+
+The `"mini-a"` object mirrors the counters shown by `/stats`, grouped into 19 sections:
+
+| Section | Description | Representative counters |
+|---------|-------------|------------------------|
+| `llm_calls` | Model invocations by tier | `normal`, `low_cost`, `validation`, `total`, `fallback_to_main` |
+| `goals` | Goal completion state | `achieved`, `failed`, `stopped` |
+| `actions` | Agent action execution | `thoughts_made`, `mcp_actions_executed`, `mcp_actions_failed`, `shell_commands_executed` |
+| `planning` | Planning phase activity | `plans_generated`, `plans_validated`, `plans_replanned` |
+| `performance` | Step timing and token usage | `steps_taken`, `total_session_time_ms`, `avg_step_time_ms`, `llm_actual_tokens`, `llm_cache_read_tokens` |
+| `behavior_patterns` | Error detection and loop tracking | `escalations`, `consecutive_errors`, `json_parse_failures`, `action_loops_detected` |
+| `advisor` | Advisor model usage | `calls`, `tokens`, `helpful_escalations`, `declined_under_budget` |
+| `guardrails` | Safety gate decisions | `hard_decision_checkpoints`, `evidence_gate_rejections` |
+| `user_interaction` | Request lifecycle | `requests`, `completed`, `failed` |
+| `summarization` | Context compaction activity | `summaries_made`, `summaries_skipped`, `summaries_tokens_reduced` |
+| `memory` | Working memory operations | `appends`, `dedup_hits`, `compactions`, `global_reads`, `session_writes` |
+| `tool_selection` | Dynamic tool routing | `dynamic_used`, `keyword`, `llm_lc`, `llm_main` |
+| `tool_cache` | Tool list cache efficiency | `hits`, `misses`, `total_requests`, `hit_rate` |
+| `mcp_resilience` | MCP reliability tracking | `circuit_breaker_trips`, `lazy_init_success`, `lazy_init_failed` |
+| `per_tool_usage` | Per-tool call breakdown | map keyed by tool name: `{ calls, successes, failures }` |
+| `delegation` | Subtask delegation stats | `total`, `completed`, `failed`, `workers_total`, `worker_hint_used` |
+| `deep_research` | Research session activity | `sessions`, `cycles`, `validations_passed`, `early_success` |
+| `history` | Conversation file management | `sessions_started`, `sessions_resumed`, `files_kept`, `files_deleted` |
+| `wiki` | Wiki knowledge base operations | `enabled`, `ops_read`, `ops_search`, `ops_write`, `ops_total` |
+
+To print the full, up-to-date field list from a persisted channel (the channel is the authoritative reference — counters may be added as mini-a evolves):
+
+```bash
+oafp in=ch inch="(type: mvs, file: metrics.db)" path="[-1].\"mini-a\""
+```
+
+---
+
+### Reading the data
+
+Metrics are nested under the `"mini-a"` key. Because the name contains a hyphen, JMESPath requires it quoted as `\"mini-a\"` inside a double-quoted shell string.
+
+```bash
+# All snapshots as a table (t = epoch ms, d = timestamp)
+oafp in=ch inch="(type: mvs, file: metrics.db)" out=ctable
+
+# Time-series of steps taken across the session
+oafp in=ch inch="(type: mvs, file: metrics.db)" \
+     path="[*].{time: d, steps: \"mini-a\".performance.steps_taken}" \
+     out=ctable
+
+# Last snapshot: LLM token breakdown
+oafp in=ch inch="(type: mvs, file: metrics.db)" \
+     path="[-1].\"mini-a\".performance.{actual: llm_actual_tokens, cached: llm_cache_read_tokens, input: llm_normal_input_tokens, output: llm_normal_output_tokens}" \
+     out=ctable
+
+# Last snapshot: delegation counters (useful for multi-agent runs)
+oafp in=ch inch="(type: mvs, file: metrics.db)" \
+     path="[-1].\"mini-a\".delegation" \
+     out=ctable
+```
+
+---
+
+### Tuning
+
+**Extending `some`:** by default only the `mini-a` namespace is collected. Add other OpenAF metric namespaces (e.g. `memory`, `gc`) to include system-level data alongside agent metrics:
+
+```bash
+metricsch="(name: 'mini-a-metrics', type: 'mvs', options: (file: 'metrics.db'), some: ['mini-a', 'memory', 'gc'])"
+```
+
+**Compact keys with `noDate`:** omit the `d` Date field to reduce entry size when only the epoch timestamp `t` is needed:
+
+```bash
+metricsch="(name: 'mini-a-metrics', type: 'mvs', options: (file: 'metrics.db'), noDate: true)"
+```
+
+**Shared channel name:** multiple concurrent MiniA instances (e.g. workers in delegation mode) that share the same `name` will reference-count the channel — it is only destroyed when the last instance releases it.
+
+---
+
+### Viewing output with CHManager
+
+[CHManager](https://github.com/OpenAF/openaf-opacks/tree/master/CHManager) is an OpenAF opack with a web UI and TUI for browsing channel contents without writing code.
+
+**Install:**
+```bash
+opack install CHManager
+```
+
+**Post-run browse** (any persisted backend — `mvs`, `file`, `db`): after mini-a finishes, open CHManager pointing at the same `type` and `options` used in `metricsch`. Use auto-refresh and the **"newest first"** order to page through snapshots, or use `/getall`, `/keys`, and `/size` in the TUI.
+
+```bash
+# Web UI at http://localhost:8090
+ch-manager-web
+
+# TUI
+ch-manager
+```
+
+**Truly live (during a running mini-a session):** an `mvs` file cannot be safely shared between a running mini-a process and a separate CHManager — H2 MVStore holds an exclusive writer lock. To watch snapshots land in real time while mini-a is running, point `metricsch` at a **shared concurrent backend** (a running PostgreSQL/MySQL database, Redis, or Elasticsearch) that both processes can reach independently, then open that definition in CHManager's Live tab or use the `/subscribe` command.
+
+---
+
 ## Reading Channel Data
 
 Data stored by mini-a channels is standard JSON. You can inspect it without mini-a using `oafp` (the OpenAF data processor):
