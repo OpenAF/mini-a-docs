@@ -320,7 +320,7 @@ The `"mini-a"` object mirrors the counters shown by `/stats`, grouped into 19 se
 | `goals` | Goal completion state | `achieved`, `failed`, `stopped` |
 | `actions` | Agent action execution | `thoughts_made`, `mcp_actions_executed`, `mcp_actions_failed`, `shell_commands_executed` |
 | `planning` | Planning phase activity | `plans_generated`, `plans_validated`, `plans_replanned` |
-| `performance` | Step timing and per-tier token usage | `steps_taken`, `total_session_time_ms`, `avg_step_time_ms`, `llm_actual_tokens`, `llm_cache_read_tokens`, `llm_normal_input_tokens`, `llm_normal_output_tokens`, `llm_lc_input_tokens`, `llm_lc_output_tokens`, `llm_val_input_tokens`, `llm_val_output_tokens`, `llm_main_total_tokens`, `llm_lc_total_tokens`, `llm_lc_share_pct` |
+| `performance` | Step timing and per-tier token usage | `steps_taken`, `total_session_time_ms`, `avg_step_time_ms`, `llm_actual_tokens`, `llm_cache_read_tokens`, `llm_cache_creation_tokens`, `llm_cached_tokens`, `llm_normal_input_tokens`, `llm_normal_output_tokens`, `llm_lc_input_tokens`, `llm_lc_output_tokens`, `llm_val_input_tokens`, `llm_val_output_tokens`, `llm_main_total_tokens`, `llm_lc_total_tokens`, `llm_lc_share_pct` |
 | `behavior_patterns` | Error detection and loop tracking | `escalations`, `consecutive_errors`, `json_parse_failures`, `action_loops_detected` |
 | `advisor` | Advisor model usage | `calls`, `tokens`, `helpful_escalations`, `declined_under_budget` |
 | `guardrails` | Safety gate decisions | `hard_decision_checkpoints`, `evidence_gate_rejections` |
@@ -331,7 +331,7 @@ The `"mini-a"` object mirrors the counters shown by `/stats`, grouped into 19 se
 | `tool_cache` | Tool list cache efficiency | `hits`, `misses`, `total_requests`, `hit_rate` |
 | `mcp_resilience` | MCP reliability tracking | `circuit_breaker_trips`, `lazy_init_success`, `lazy_init_failed` |
 | `per_tool_usage` | Per-tool call breakdown | map keyed by tool name: `{ calls, successes, failures }` |
-| `delegation` | Subtask delegation stats | `total`, `completed`, `failed`, `workers_total`, `worker_hint_used` |
+| `delegation` | Subtask delegation stats | `total`, `completed`, `failed`, `workers_total`, `worker_hint_used`, `autodelegation_triggered`, `startup_subtasks_submitted`, `startup_subtasks_completed`, `startup_subtasks_failed` |
 | `deep_research` | Research session activity | `sessions`, `cycles`, `validations_passed`, `early_success` |
 | `history` | Conversation file management | `sessions_started`, `sessions_resumed`, `files_kept`, `files_deleted` |
 | `wiki` | Wiki knowledge base operations | `enabled`, `ops_read`, `ops_search`, `ops_write`, `ops_total` |

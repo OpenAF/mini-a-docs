@@ -74,6 +74,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/wiki mounts` | List active read-only mounts |
 | `/wiki attach <name> [backend=fs] [root=path]` | Mount a read-only wiki |
 | `/wiki detach <name>` | Unmount a wiki |
+| `/rewind [n]` | Undo the last `n` user+assistant exchanges (default 1); cancels any active subtasks |
 | `/dream [memory\|wiki] [plan\|apply\|reorg\|dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
 | `/history [n]` | Show recent user goals from conversation history |
 | `/exit` | Exit mini-a |

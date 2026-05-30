@@ -93,6 +93,8 @@ export MINI_A_PARAM=value
 | `compressgoaltokens` | `250` | Estimated token threshold above which goal compression is considered |
 | `compressgoalchars` | `1000` | Character threshold above which goal compression is considered |
 | `nologtrunc` | `false` | Disable truncation of long log output lines in the console (show full content) |
+| `promptprofile` | context-dependent | System prompt verbosity: `minimal`, `balanced`, or `verbose`. Default is `minimal` in chatbot mode, `verbose` when `debug=true`, otherwise `balanced` |
+| `systempromptbudget` | - | Maximum estimated token size for the system prompt. When exceeded, lower-priority sections (examples, detailed tool guidance) are dropped to stay within budget |
 
 </div>
 
@@ -136,7 +138,8 @@ export MINI_A_PARAM=value
 | `utilsroot` | - | Root path used by Mini Utils file operations |
 | `mini-a-docs` | `false` | If `true` and `utilsroot` is not set, automatically uses the mini-a oPack docs path as `utilsroot` |
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
-| `usetools` | `false` | Enable tool usage |
+| `usetools` | `false` | Enable native tool calling on the active model (main or LC) |
+| `usetoolslc` | `false` | Register MCP tools natively only on the low-cost model; the main model continues using prompt/action-based tool guidance. Use when you want the cheaper model to call tools directly without enabling native tool calling on the main model |
 | `usejsontool` | `false` | Register a compatibility `json` tool for models that sometimes emit `json` tool calls |
 | `libs` | - | Additional library paths to load |
 | `toolcachettl` | `600000` | Default cache TTL in milliseconds for MCP tool results |
