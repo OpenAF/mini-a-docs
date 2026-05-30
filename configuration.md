@@ -301,6 +301,10 @@ export MINI_A_PARAM=value
 | `workertags` | - | Comma-separated tags appended to the default worker skill in the AgentCard |
 | `shellworker` | `false` | Convenience shorthand: sets `useshell=true` and auto-emits the `shell` A2A skill |
 | `apitoken` | - | Bearer token required to authenticate requests to the worker API server |
+| `apiallow` | - | Comma-separated IP allowlist for the worker API (e.g. `127.0.0.1,192.168.1.0/24`) |
+| `defaulttimeout` | `300000` | Default task deadline in milliseconds for delegated tasks |
+| `maxtimeout` | `600000` | Maximum allowed task deadline in milliseconds |
+| `taskretention` | `3600` | Seconds to keep completed task results before cleanup |
 | `subtasks` | - | Inline startup scout subtasks (pipe-separated goals) executed before the main loop |
 | `subtasksfile` | - | Path to a JSON/YAML file containing startup scout task definitions |
 | `subtaskssequential` | `false` | Run startup subtasks sequentially instead of in parallel |
@@ -469,6 +473,7 @@ An LLM-powered off-line consolidation pass over persistent memory and/or the wik
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `dream` | `false` | Run in standalone dream-pass mode instead of a regular agent session |
+| `dreammode` | - | Dream mode selector: `memory`, `wiki`, or `both` — controls which pass(es) run |
 | `dryrun` | `false` | Preview what would change without writing anything back |
 | `dreamwikimode` | `apply` | Wiki dream mode: `lint`, `plan`, `apply`, `reorg` |
 | `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
