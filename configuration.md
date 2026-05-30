@@ -92,6 +92,7 @@ export MINI_A_PARAM=value
 | `compressgoal` | `false` | Enable automatic compression of oversized goal text before execution |
 | `compressgoaltokens` | `250` | Estimated token threshold above which goal compression is considered |
 | `compressgoalchars` | `1000` | Character threshold above which goal compression is considered |
+| `nologtrunc` | `false` | Disable truncation of long log output lines in the console (show full content) |
 
 </div>
 
@@ -126,7 +127,8 @@ export MINI_A_PARAM=value
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `useutils` | `false` | Enable Mini Utils Tool utilities (`init`, `filesystemQuery`, `filesystemModify`, `markdownFiles`) |
+| `useutils` | `false` | Enable Mini Utils Tool utilities. With `usestdutils=true` (default), exposes standard aliases: `read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, and `bash` (when `useshell=true`). Legacy names (`filesystemQuery`, `filesystemModify`, etc.) are used when `usestdutils=false`. |
+| `usestdutils` | `true` | When `useutils=true`, expose standard Mini Utils aliases (`read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, `bash`) instead of legacy Mini Utils internal names |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `skillmaxautoload` | `1` | Maximum number of high-confidence matching skills to auto-load into bounded runtime context |
 | `skillcontextchars` | `8000` | Maximum characters read from each auto-loaded SKILL.md for runtime context |
@@ -442,12 +444,15 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 | `wikiuseversion1` | `false` | Use S3 path-style (v1) signing (`s3`/`s3fs` backend) |
 | `wikiignorecertcheck` | `false` | Skip TLS certificate validation (`s3`/`s3fs` backend) |
 | `wikilintstaleddays` | `90` | Days before a page without an `updated` field is marked stale in lint |
+| `wikimounts` | - | SLON/JSON array of read-only wiki mounts: `[{name: 'team', backend: 'fs', root: '/path'}]` — mounted pages appear as `@name/path.md` in all wiki operations |
 
-When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps `AGENTS.md` (ingestion workflow and rules) and `index.md` (entrypoint). `AGENTS.md` is protected and cannot be deleted.
+When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps three starter pages: `AGENTS.md` (ingestion workflow and rules), `index.md` (entrypoint/catalog), and `log.md` (append-only journal of every write, delete, and move). `AGENTS.md` and `log.md` are protected and cannot be deleted.
 
-Wiki operations available to the agent: `list`, `tree`, `browse`, `read`, `search`, `backlinks`, `lint`, `write`, `move`, `init`, `reindex`.
+Start each wiki session with `wiki op="context"` for a compact overview (page count, sections, mounts, recent log entries), then use `search` before reading any page.
+
+Wiki operations available to the agent: `context`, `list`, `tree`, `browse`, `read`, `search`, `backlinks`, `lint`, `write`, `move`, `init`, `reindex`, `mounts`, `attach`, `detach`.
 Operations that require `wikiaccess=rw`: `write`, `move`, `init`, `reindex`.
-Console commands: `/wiki list [prefix]`, `/wiki tree [prefix]`, `/wiki browse [prefix]`, `/wiki read <page.md>`, `/wiki search <query>`, `/wiki backlinks <page.md>`, `/wiki lint`, `/wiki reindex`.
+Console commands: `/wiki context`, `/wiki list [prefix]`, `/wiki tree [prefix]`, `/wiki browse [prefix]`, `/wiki read <page.md>`, `/wiki search <query>`, `/wiki backlinks <page.md>`, `/wiki lint`, `/wiki reindex`, `/wiki mounts`, `/wiki attach <name> [backend=fs] [root=path]`, `/wiki detach <name>`.
 Use `/stats wiki` to see per-operation counters for the current session.
 
 </div>

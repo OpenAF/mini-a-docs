@@ -883,7 +883,7 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
    - Apply only high-confidence category moves with `move`; skip uncertain relocations.
    - Create missing section indexes and fix index links for local pages and child sections.
    - For each heading hierarchy violation: fix heading levels.
-   - For orphan pages (excluding `index.md` and `AGENTS.md`): add a link from `AGENTS.md` or the most related existing page.
+   - For orphan pages (excluding `index.md`, `AGENTS.md`, and `log.md`): add a link from `AGENTS.md` or the most related existing page.
    - Re-run lint and confirm zero errors and warnings remain.
 9. The agent's final answer summarises `pages_moved`, `pages_changed`, `pages_deleted`, `indexes_created`, `issues_fixed`, and `skipped_uncertain_moves`.
 

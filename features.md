@@ -597,25 +597,35 @@ Supported operations:
 
 | Operation | Description |
 |-----------|-------------|
-| `list` | List all pages (optional prefix filter) |
+| `context` | Compact overview: page count, sections, mounts, recent log — **start here** |
+| `list` | List all pages (optional prefix filter; add `withMeta=true` for title+description) |
 | `read` | Read a specific page |
-| `search` | Full-text search across all pages |
+| `search` | Full-text search across all pages and mounts |
 | `lint` | Validate wiki health (broken links, orphans, stale pages, near-duplicates) |
 | `write` | Write or update a page (requires `wikiaccess=rw`) |
+| `mounts` | List active read-only mounts |
+| `attach` | Mount a read-only wiki (`name`, `backend`, `root`) |
+| `detach` | Unmount a previously attached wiki |
 
-When a brand-new wiki is opened with `wikiaccess=rw`, Mini-A auto-bootstraps `AGENTS.md` (ingestion workflow and contribution rules) and `index.md` (entrypoint and table of contents). `AGENTS.md` is protected and cannot be deleted.
+When a brand-new wiki is opened with `wikiaccess=rw`, Mini-A auto-bootstraps three starter pages: `AGENTS.md` (ingestion workflow and contribution rules), `index.md` (entrypoint and table of contents), and `log.md` (append-only journal of every write, delete, and move). `AGENTS.md` and `log.md` are protected and cannot be deleted.
+
+Start each session with `/wiki context` for a compact overview, then search before reading any page.
 
 ### Wiki Console Commands
 
 ```
-/wiki list [prefix]    — list pages, optionally filtered
+/wiki context          — compact overview: page count, sections, mounts, recent log
+/wiki list [prefix]    — list pages, optionally filtered (--meta for title+description)
 /wiki tree [prefix]    — list pages as a hierarchy
 /wiki browse [prefix]  — interactive wiki page browser
 /wiki read <page.md>   — print a page
-/wiki search <query>   — full-text search
+/wiki search <query>   — full-text search across all pages and mounts
 /wiki backlinks <page> — list pages linking to a target page
 /wiki lint             — run health checks
 /wiki reindex          — rebuild search index (requires wikiaccess=rw)
+/wiki mounts           — list active read-only mounts
+/wiki attach <name> [backend=fs] [root=path]  — mount a read-only wiki
+/wiki detach <name>    — unmount a wiki
 /stats wiki            — show per-operation stats for the session
 ```
 

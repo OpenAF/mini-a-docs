@@ -8,6 +8,128 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Standard Tool Aliases (`usestdutils`)
+
+**Change**: `useutils=true` now exposes human-friendly standard aliases for Mini Utils tools by default. The classic internal names (`filesystemQuery`, `filesystemModify`, etc.) are replaced with names familiar from standard coding agents.
+
+**What's New**:
+- New `usestdutils` parameter (default `true` when `useutils=true`): exposes `read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, and `bash` (when `useshell=true`) instead of the legacy tool names.
+- Legacy names remain available when `usestdutils=false`.
+- Reduces tool-selection errors on models trained on common coding-agent conventions.
+
+**Examples**:
+```bash
+# Default (usestdutils=true): model sees read, glob, grep, webfetch, etc.
+mini-a goal="read src/main.js and summarize it" useutils=true
+
+# Opt out to keep legacy names (filesystemQuery, filesystemModify, etc.)
+mini-a goal="..." useutils=true usestdutils=false
+```
+
+**Impact**: Coding and file-inspection goals resolve tool names more reliably without any configuration change.
+
+---
+
+### Wiki Bootstrap Enhancements and `context` Operation
+
+**Change**: Wiki bootstrap now creates three starter pages instead of two, and a new `wiki op="context"` provides a fast overview of any wiki.
+
+**What's New**:
+- **`log.md`** is now bootstrapped alongside `AGENTS.md` and `index.md` when a new empty wiki is opened with `wikiaccess=rw`. `log.md` is an append-only journal of every write, delete, and move operation. Like `AGENTS.md`, it is protected and cannot be deleted.
+- **`wiki op="context"`** returns a compact overview: total page count, sections, active mounts, and the 5 most recent `log.md` entries. Recommended as the first wiki action in every session.
+- **Folder taxonomy guidance**: `AGENTS.md` now suggests common folder names (`topics/`, `concepts/`, `entities/`, `comparisons/`). Following it is optional; the taxonomy is never enforced.
+
+**New wiki parameter**:
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `wikimounts` | - | SLON/JSON array of read-only wiki mounts: `[{name: 'team', backend: 'fs', root: '/path'}]` — mounted pages appear as `@name/path.md` |
+
+**New wiki operations** (via agent `wiki` action or `/wiki` console command):
+
+| Op | Description |
+|----|-------------|
+| `context` | Compact wiki overview: page count, sections, active mounts, recent log |
+| `mounts` | List active read-only mounts |
+| `attach` | Mount a read-only wiki: `name=team backend=fs root=/path` |
+| `detach` | Unmount a previously attached wiki |
+
+**Examples**:
+```bash
+# Start with context, then search before reading any page
+mini-a ➤ /wiki context
+mini-a ➤ /wiki search "authentication"
+
+# Mount a read-only reference wiki
+mini-a usewiki=true wikiaccess=rw wikiroot=/shared/wiki \
+  wikimounts="[{name: 'standards', backend: 'fs', root: '/shared/standards-wiki'}]"
+
+# Dynamically attach/detach a mount mid-session
+mini-a ➤ /wiki attach standards backend=fs root=/shared/standards-wiki
+mini-a ➤ /wiki detach standards
+```
+
+**Impact**: Agents now have a structured audit trail of wiki changes (`log.md`), a fast first-action overview (`context`), and can cross-reference multiple wiki roots without merging them.
+
+---
+
+### Per-Tier Token Metrics
+
+**Change**: The `/stats` command and exported metrics now track input and output tokens separately for each model tier (main, LC, validation), along with the LC cost share percentage.
+
+**What's New**:
+- New `/stats` rows: **Main Input Tokens**, **Main Output Tokens**, **LC Input Tokens**, **LC Output Tokens**, **LC Total**, **Main Total (In+Out)**, **LC Share %**, and validation input/output when applicable.
+- New performance counters in exported stats: `llm_normal_input_tokens`, `llm_normal_output_tokens`, `llm_lc_input_tokens`, `llm_lc_output_tokens`, `llm_val_input_tokens`, `llm_val_output_tokens`, `llm_main_total_tokens`, `llm_lc_total_tokens`, `llm_lc_share_pct`.
+- Validation LLM calls (deep research) are now correctly attributed to the `val` tier in call counts and token accounting.
+
+**Impact**: You can now measure exactly how much of your token spend each tier consumed and compute cost savings from LC usage — without any additional configuration.
+
+---
+
+### `nologtrunc` — Disable Log Output Truncation
+
+**Change**: A new `nologtrunc=true` parameter disables the automatic truncation applied to long shell and tool log output lines.
+
+**What's New**:
+- By default, mini-a truncates long log output lines for readability in the console. `nologtrunc=true` disables this truncation so the full content is always shown.
+- Useful for debugging scenarios where truncated output would hide relevant information.
+
+**Examples**:
+```bash
+# Show full shell output without truncation
+mini-a goal="inspect large config file" useshell=true nologtrunc=true
+
+# Debug a tool that returns very long responses
+mini-a goal="fetch API response" useutils=true nologtrunc=true debug=true
+```
+
+**Impact**: Debugging long shell or tool outputs no longer requires piping to a file or using `debugfile`.
+
+---
+
+### Web UI Sub-Agent State Panel
+
+**Change**: The mini-a web interface now displays a collapsible sub-agent panel that tracks subtask status, duration, and events in real time.
+
+**What's New**:
+- A new `<details>` panel appears in the web UI as soon as the first sub-agent event is received, showing each subtask's title, status (running / done / failed / timeout / retrying), elapsed duration, and last event message.
+- Server-side state (`global.__subagentState`) is maintained per-session and returned in every `/status` response, so the panel survives SSE reconnects without losing history.
+- No new parameters required. The panel activates automatically when sub-agent activity occurs (e.g. `usedelegation=true`, `subtasks=`, or any other mechanism that spawns sub-agents).
+- Status is inferred from event message content — `✅` / "completed in" → done; `❌` / "failed after" → failed; `⏱️` / "timeout" → timeout; `⚠️` / "will retry" → retrying.
+
+**Examples**:
+```bash
+# Launch web UI with delegation — sub-agent panel appears as tasks are dispatched
+./mini-a-web.sh onport=8888 usedelegation=true usetools=true
+
+# Also works with startup scouts (subtasks=)
+./mini-a-web.sh onport=8888 subtasks="Scout A|Scout B"
+```
+
+**Impact**: Subtask progress is now visible in the web UI without tailing server logs — each sub-agent's lifecycle from dispatch to completion is tracked per session.
+
+---
+
 ### `delegate` Model Strategy
 
 **Change**: A new `delegate` value for `modelstrategy` lets the LC model execute all steps, including step 0 — ideal for batch and throughput workloads.
@@ -500,7 +622,7 @@ mini-a systempromptbudget=4000 goal="..."
 | `wikiignorecertcheck` | `false` | Skip TLS cert check |
 | `wikilintstaleddays` | `90` | Stale threshold for lint (days) |
 
-**Protected Pages**: `AGENTS.md` is protected and cannot be deleted. Attempting to delete it returns: `"cannot delete AGENTS.md (protected)"`.
+**Protected Pages**: `AGENTS.md` and `log.md` are protected and cannot be deleted. Attempting to delete them returns an error: `"cannot delete AGENTS.md (protected)"` / `"cannot delete log.md (protected)"`.
 
 **When to use `usewiki` vs `usememory`**:
 

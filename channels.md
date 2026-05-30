@@ -320,7 +320,7 @@ The `"mini-a"` object mirrors the counters shown by `/stats`, grouped into 19 se
 | `goals` | Goal completion state | `achieved`, `failed`, `stopped` |
 | `actions` | Agent action execution | `thoughts_made`, `mcp_actions_executed`, `mcp_actions_failed`, `shell_commands_executed` |
 | `planning` | Planning phase activity | `plans_generated`, `plans_validated`, `plans_replanned` |
-| `performance` | Step timing and token usage | `steps_taken`, `total_session_time_ms`, `avg_step_time_ms`, `llm_actual_tokens`, `llm_cache_read_tokens` |
+| `performance` | Step timing and per-tier token usage | `steps_taken`, `total_session_time_ms`, `avg_step_time_ms`, `llm_actual_tokens`, `llm_cache_read_tokens`, `llm_normal_input_tokens`, `llm_normal_output_tokens`, `llm_lc_input_tokens`, `llm_lc_output_tokens`, `llm_val_input_tokens`, `llm_val_output_tokens`, `llm_main_total_tokens`, `llm_lc_total_tokens`, `llm_lc_share_pct` |
 | `behavior_patterns` | Error detection and loop tracking | `escalations`, `consecutive_errors`, `json_parse_failures`, `action_loops_detected` |
 | `advisor` | Advisor model usage | `calls`, `tokens`, `helpful_escalations`, `declined_under_budget` |
 | `guardrails` | Safety gate decisions | `hard_decision_checkpoints`, `evidence_gate_rejections` |
@@ -357,9 +357,9 @@ oafp in=ch inch="(type: mvs, file: metrics.db)" \
      path="[*].{time: d, steps: \"mini-a\".performance.steps_taken}" \
      out=ctable
 
-# Last snapshot: LLM token breakdown
+# Last snapshot: per-tier LLM token breakdown
 oafp in=ch inch="(type: mvs, file: metrics.db)" \
-     path="[-1].\"mini-a\".performance.{actual: llm_actual_tokens, cached: llm_cache_read_tokens, input: llm_normal_input_tokens, output: llm_normal_output_tokens}" \
+     path="[-1].\"mini-a\".performance.{actual: llm_actual_tokens, cached: llm_cache_read_tokens, main_in: llm_normal_input_tokens, main_out: llm_normal_output_tokens, lc_in: llm_lc_input_tokens, lc_out: llm_lc_output_tokens, lc_share_pct: llm_lc_share_pct}" \
      out=ctable
 
 # Last snapshot: delegation counters (useful for multi-agent runs)

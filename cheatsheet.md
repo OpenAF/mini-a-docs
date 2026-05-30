@@ -60,11 +60,20 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/last [md]` | Reprint last final answer (`md` for raw markdown) |
 | `/save <path>` | Save last final answer to a file |
 | `/stats [mode] [out=file.json]` | Usage statistics (`summary`, `detailed`, `tools`, `memory`, `wiki`) |
-| `/wiki list [prefix]` | List wiki pages (optionally filtered by prefix) |
+| `/wiki context` | Compact wiki overview: page count, sections, mounts, recent log |
+| `/wiki list [prefix]` | List wiki pages (optionally filtered by prefix); add `--meta` for title+description |
 | `/wiki read <page.md>` | Print a wiki page |
-| `/wiki search <query>` | Full-text search across wiki pages |
+| `/wiki search <query>` | Full-text search across wiki pages and mounts |
+| `/wiki browse [path]` | Navigate section structure |
+| `/wiki tree [path]` | Show full folder hierarchy |
+| `/wiki backlinks <page.md>` | Show pages linking to this page |
 | `/wiki lint` | Run wiki health checks (broken links, orphans, stale pages) |
 | `/wiki reindex` | Rebuild wiki search index (requires `wikiaccess=rw`) |
+| `/wiki move <from.md> <to.md>` | Move page and rewrite links (requires `wikiaccess=rw`) |
+| `/wiki init [section/]` | Create section index (requires `wikiaccess=rw`) |
+| `/wiki mounts` | List active read-only mounts |
+| `/wiki attach <name> [backend=fs] [root=path]` | Mount a read-only wiki |
+| `/wiki detach <name>` | Unmount a wiki |
 | `/dream [memory\|wiki] [plan\|apply\|reorg\|dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
 | `/history [n]` | Show recent user goals from conversation history |
 | `/exit` | Exit mini-a |
@@ -94,7 +103,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `validationthreshold` | `PASS` | Validation verdict/score required to stop |
 | `persistlearnings` | `true` | Carry learnings forward between cycles |
 | `useplanning` | `false` | Enable planning |
-| `useutils` | `false` | Built-in utilities |
+| `useutils` | `false` | Built-in utilities; with `usestdutils=true` (default) exposes `read`, `glob`, `grep`, `webfetch`, etc. |
+| `usestdutils` | `true` | Expose standard tool aliases instead of legacy Mini Utils names (requires `useutils=true`) |
 | `mini-a-docs` | `false` | Docs-aware Mini Utils root (`markdownFiles`) when `utilsroot` is unset |
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
@@ -158,11 +168,13 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `harddecision` | `warn` | Hard-decision checkpoint mode: `require`, `warn`, or `off` |
 | `evidencegate` | `false` | Enable lightweight evidence gating for non-trivial actions |
 | `evidencegatestrictness` | `medium` | Tuning level for evidence gate heuristics: `low`, `medium`, or `high` |
+| `nologtrunc` | `false` | Disable truncation of long log output lines (show full content) |
 | `usewiki` | `false` | Enable wiki knowledge base |
 | `wikiaccess` | `ro` | Wiki access: `ro` (read-only) or `rw` (read-write) |
 | `wikibackend` | `fs` | Wiki backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |
 | `wikiroot` | `.` | Root directory for the `fs` backend |
 | `wikibucket` | - | S3 bucket name (`s3` backend) |
+| `wikimounts` | - | Read-only wiki mounts (SLON/JSON array): `[{name: 'team', backend: 'fs', root: '/path'}]` |
 | `usememory` | `false` | Enable the working memory subsystem |
 | `memoryuser` | `false` | Convenience preset: file-backed global + session memory at `~/.openaf-mini-a/`, auto-promote `facts,decisions,summaries`, 30-day stale sweep |
 | `memoryusersession` | `false` | Convenience preset: enables `usememory`, session-only file-backed channel under `~/.openaf-mini-a/` |
