@@ -185,6 +185,29 @@ mini-a mcplazy=true
 
 This reduces startup time and memory usage, especially when specifying many MCP servers but only using a few per session.
 
+### Republishing MCPs with mcp-pass (gateway pattern)
+
+While `mcpproxy=true` aggregates MCPs *inside* a running mini-a session, `mcp-pass` republishes one or more MCP servers as a single standalone MCP endpoint that any client (mini-a, Claude, IDEs, other agents) can consume. The downstream tools are forwarded directly — clients see them as native tools, not behind a dispatcher:
+
+```bash
+ojob mcps/mcp-pass.yaml onport=9091 uri=/mcp \
+  mainmcp="(type: remote, url: 'http://internal-mcp:8080/mcp')" \
+  othermcps="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-random.yaml')]" \
+  useprefix="core-,time-,rand-" excludeTool="rand-pick"
+```
+
+Use `includeTool`/`excludeTool` to curate the exposed surface, `useprefix` to avoid name collisions, and `serverdesc` to override the advertised server identity.
+
+### TOON tool results
+
+Set the OpenAF runtime flag `MCPSERVER.answerInTOON` to make built-in MCP servers serialize tool results as TOON (Token-Oriented Object Notation) instead of JSON — a more token-efficient encoding for structured data:
+
+```bash
+OAF_FLAGS="(MCPSERVER: (answerInTOON: true))" ojob mcps/mcp-time.yaml onport=8888
+```
+
+Combined with `mcp-pass`, this turns a container into a drop-in gateway that converts existing MCPs' JSON output to TOON. See [Deploying MCP Servers in Docker & Kubernetes]({{ '/mcp-catalog' | relative_url }}#deploying-mcp-servers-in-docker--kubernetes) for Docker and Kubernetes recipes.
+
 <div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S15 — MCP proxy aggregation diagram]</div>
 
 ---

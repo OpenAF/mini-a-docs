@@ -31,11 +31,14 @@ mini-a ships with **29 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-telco` | Telecom utilities | STDIO | `parseNumber`, `validate`, `lookup` |
 | `mcp-weather` | Weather information | STDIO | `current`, `forecast` |
 | `mcp-ch` | ClickHouse database | STDIO | `query`, `listTables` |
+| `mcp-es-search` | ElasticSearch/OpenSearch full-text search | STDIO/HTTP | `search`, `get`, `read`, `info` |
 | `mcp-mini-a` | Spawn sub-agents | STDIO | `delegate`, `status` |
+| `mcp-a2a` | Bridge external A2A-protocol agents as tools | STDIO/HTTP | `a2a-agents`, `a2a-task` |
 | `mcp-proxy` | MCP proxy/aggregator | STDIO | `aggregate`, `route` |
 | `mcp-pass` | MCP passthrough combiner | STDIO/HTTP | downstream tools forwarded directly |
 | `mcp-oaf` | OpenAF utilities | STDIO | `oafp`, `ow.format` |
 | `mcp-oafp` | OpenAF processor | STDIO | `process`, `transform` |
+| `mcp-oaf-browse` | Generic browse over the oJob-common HTTP Browse API | STDIO/HTTP | `list`, `get`, `search` |
 | `mcp-office` | Office document processing | STDIO | `readExcel`, `readWord`, `readPDF` |
 | `mcp-ollama-web-search` | Web search via Ollama API | STDIO/HTTP | `web-search` |
 | `mcp-wiki` | Persistent Markdown wiki knowledge base | STDIO/HTTP | `list`, `read`, `search`, `lint`, `write` |
@@ -321,6 +324,36 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-ch.yaml')" goal='List all tables in the default
 
 ---
 
+### mcp-es-search
+
+LLM-optimised full-text search over an ElasticSearch or OpenSearch index. Tools are designed for retrieval workflows: search first, then fetch or read specific documents.
+
+**Configuration:**
+
+| Argument | Description |
+|----------|-------------|
+| `url` | ElasticSearch/OpenSearch base URL (required) |
+| `index` | Default index to search (required) |
+| `contentField` | Field holding the document full text (default: `content`) |
+| `pathField` | Field holding the source file path (default: `path`) |
+| `titleField` | Field holding the document title (default: `title`) |
+| `toolPrefix` | Optional prefix for tool names (e.g. `docs-` → `docs-search`, `docs-get`, …) |
+| `label` | Human-readable label injected into tool descriptions |
+| `user` / `password` | Optional HTTP Basic auth credentials |
+| `onport` | Start an HTTP MCP server on this port instead of STDIO |
+
+**Usage:**
+```bash
+mini-a mcp="(cmd: 'ojob mcps/mcp-es-search.yaml url=http://localhost:9200 index=docs label=Documentation')" \
+  goal='Search the docs index for authentication examples'
+```
+
+Run multiple instances side by side (one per index) using `toolPrefix` to keep tool names distinct.
+
+**Tools:** `search`, `get`, `read`, `info`
+
+---
+
 ### mcp-mini-a
 
 Spawn sub-agents to handle delegated tasks. The parent agent can assign goals to child mini-a instances and monitor their progress.
@@ -331,6 +364,36 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-mini-a.yaml')" goal='Research three topics in p
 ```
 
 **Tools:** `delegate`, `status`, `cancel`
+
+---
+
+### mcp-a2a
+
+Bridge external **Google A2A-protocol** agents into mini-a as MCP tools. At startup it fetches each agent's Agent Card (`/.well-known/agent.json`), registers its skills, and routes calls via JSON-RPC 2.0 (`tasks/send` + `tasks/get` polling) until the task reaches a terminal state.
+
+**Configuration:**
+
+| Argument | Description |
+|----------|-------------|
+| `agents` | Comma-separated base URLs of A2A agents to connect to (required) |
+| `apitoken` | Optional Bearer token sent with every A2A HTTP request |
+| `pollinterval` | Polling interval in ms while awaiting task completion (default: `1000`) |
+| `timeout` | Default task timeout in seconds (default: `120`) |
+| `serverdesc` | Optional JSON/SLON map overriding the exposed MCP server identity |
+| `onport` | Start an HTTP MCP server on this port instead of STDIO |
+
+**Usage:**
+```bash
+# Give mini-a access to two external A2A agents
+mini-a usetools=true \
+  mcp="(cmd: 'ojob mcps/mcp-a2a.yaml agents=http://analyst:9000,http://writer:9000')" \
+  goal='Ask the data-analyst agent to summarize last quarter sales'
+
+# Standalone HTTP bridge
+ojob mcps/mcp-a2a.yaml agents="http://agent1:9000,http://agent2:9000" onport=8888
+```
+
+**Tools:** `a2a-agents` (list registered agents and skills), `a2a-task` (send a task and await the result)
 
 ---
 
@@ -388,10 +451,25 @@ ojob mcps/mcp-pass.yaml onport=9091 uri=/mcp usesse=true \
   excludeTool="rand-pick"
 ```
 
+**Returning TOON instead of JSON:**
+
+OpenAF's MCP server helpers honor the `MCPSERVER.answerInTOON` runtime flag. When set, tool results are serialized as [TOON](https://github.com/toon-format/toon) (Token-Oriented Object Notation) text instead of JSON — typically 30–50% fewer tokens for tabular/structured payloads. Because STDIO MCPs launched by `mcp-pass` inherit the environment, setting the flag once turns the whole passthrough into a TOON gateway:
+
+```bash
+OAF_FLAGS="(MCPSERVER: (answerInTOON: true))" \
+ojob mcps/mcp-pass.yaml onport=9091 uri=/mcp \
+  mainmcp="(cmd: 'ojob mcps/mcp-web.yaml')" \
+  othermcps="[(cmd: 'ojob mcps/mcp-time.yaml')]"
+```
+
+The downstream STDIO servers emit TOON tool results and `mcp-pass` forwards them verbatim to the client. For *remote* downstream MCPs, set the flag on those servers instead — `mcp-pass` does not re-encode content produced elsewhere.
+
 **When to choose `mcp-pass` vs `mcp-proxy`:**
 
 - Use `mcp-pass` when you want the merged tools to appear directly to the client.
 - Use `mcp-proxy` when you want an explicit proxy or dispatcher layer in front of multiple MCP backends.
+
+See [Deploying MCP Servers in Docker & Kubernetes](#deploying-mcp-servers-in-docker--kubernetes) below for running `mcp-pass` as a containerized gateway.
 
 ---
 
@@ -418,6 +496,32 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-oafp.yaml')" goal='Process this CSV file and ou
 ```
 
 **Tools:** `process`, `transform`, `filter`, `sort`
+
+---
+
+### mcp-oaf-browse
+
+Generic browse server backed by the oJob-common **HTTP Browse API**. Exposes any Browse API endpoint (file listings, data catalogs, etc.) as list/get/search MCP tools.
+
+**Configuration:**
+
+| Argument | Description |
+|----------|-------------|
+| `browseAPIURL` | Base URL of an HTTP Browse API endpoint (required) |
+| `browseUri` | Target browse URI exposed by the Browse API (required) |
+| `label` | Human-readable label injected into tool descriptions |
+| `toolPrefix` | Optional prefix for tool names (e.g. `files-` → `files-list`, `files-get`, …) |
+| `headers` | Optional HTTP headers map sent on every Browse API request |
+| `defaultParams` | Optional query parameters map merged into every request |
+| `onport` | Start an HTTP MCP server on this port instead of STDIO |
+
+**Usage:**
+```bash
+mini-a mcp="(cmd: 'ojob mcps/mcp-oaf-browse.yaml browseAPIURL=http://127.0.0.1:8091/api/browse browseUri=/files label=\"Local files\"')" \
+  goal='List the available files and read the most recent one'
+```
+
+**Tools:** `list`, `get`, `search`
 
 ---
 
@@ -582,6 +686,146 @@ You can also combine STDIO and HTTP servers in a single session:
 # Mix local and remote MCP servers
 mini-a mcp="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-math.yaml'), (type: remote, url: 'http://remote-mcp:8080/mcp')]"
 ```
+
+---
+
+## Deploying MCP Servers in Docker & Kubernetes
+
+Every built-in MCP server that accepts `onport` can run as a standalone HTTP service inside a container. The official [`openaf/mini-a`](https://hub.docker.com/r/openaf/mini-a) image ships with the mini-a oPack (including all built-in MCPs) pre-installed, so a container only needs the `OJOB` environment variable pointing at the MCP definition inside the oPack: `mini-a/mcps/<name>.yaml`. Everything after the image name is passed as arguments to the oJob.
+
+> The `openaf/mini-a` image presets `OPACK_EXEC=mini-a`, which would start the agent console after the oJob exits. Clear it with `-e OPACK_EXEC=` so the container runs only the MCP server.
+
+### Running a single MCP server in Docker
+
+```bash
+# Standalone mcp-time HTTP MCP server on port 8888
+docker run -d --rm --name mcp-time \
+  -e OJOB=mini-a/mcps/mcp-time.yaml \
+  -e OPACK_EXEC= \
+  -p 8888:8888 \
+  openaf/mini-a \
+  onport=8888
+```
+
+Connect from any MCP client — including another mini-a:
+
+```bash
+mini-a mcp="(type: remote, url: 'http://localhost:8888/mcp')" goal='What time is it in Tokyo?'
+```
+
+Built-in MCP servers started with `onport` also expose `/healthz` and `/metrics` endpoints, ready for container health checks and Prometheus scraping. (`mcp-pass` serves only its MCP URI — use a TCP probe for it.)
+
+### mcp-pass as a passthrough gateway container
+
+`mcp-pass` is the natural fit for containerized deployment: a single container connects to one main MCP plus any number of extra ones (local STDIO or remote HTTP) and republishes the merged tool set as one HTTP MCP endpoint.
+
+```bash
+docker run -d --rm --name mcp-gateway \
+  -e OJOB=mini-a/mcps/mcp-pass.yaml \
+  -e OPACK_EXEC= \
+  -p 9091:9091 \
+  openaf/mini-a \
+  onport=9091 uri=/mcp \
+  mainmcp="(type: remote, url: 'http://internal-mcp:8080/mcp')" \
+  othermcps="[(cmd: 'ojob mini-a/mcps/mcp-time.yaml'), (cmd: 'ojob mini-a/mcps/mcp-random.yaml')]" \
+  useprefix="core-,time-,rand-"
+```
+
+The STDIO MCPs referenced in `othermcps` are spawned *inside* the container as child processes — no extra containers or ports needed. Clients see a single endpoint at `http://host:9091/mcp` with the merged (and optionally prefixed/filtered) tools.
+
+### Quick TOON gateway: republish any MCP in TOON format
+
+A common use of the gateway pattern is converting tool results from JSON to **TOON** to cut token usage for LLM clients. Set `OAF_FLAGS="(MCPSERVER: (answerInTOON: true))"` on the container — the STDIO MCP servers spawned inside it inherit the flag, serialize their tool results as TOON, and `mcp-pass` forwards that text verbatim:
+
+```bash
+docker run -d --rm --name mcp-gateway-toon \
+  -e OJOB=mini-a/mcps/mcp-pass.yaml \
+  -e OPACK_EXEC= \
+  -e OAF_FLAGS="(MCPSERVER: (answerInTOON: true))" \
+  -p 9091:9091 \
+  openaf/mini-a \
+  onport=9091 uri=/mcp \
+  mainmcp="(cmd: 'ojob mini-a/mcps/mcp-web.yaml')" \
+  othermcps="[(cmd: 'ojob mini-a/mcps/mcp-time.yaml'), (cmd: 'ojob mini-a/mcps/mcp-math.yaml')]"
+```
+
+Notes:
+
+- The flag is honored by OpenAF's MCP server helpers in both STDIO and HTTP modes, so it also works when running a single built-in MCP directly (without `mcp-pass`).
+- Tool results produced by *remote* downstream MCPs pass through unchanged; enable the flag on those servers if you want end-to-end TOON.
+- On the consuming side, mini-a can also use TOON internally — see `mcpproxytoon` in the [Configuration Reference]({{ '/configuration' | relative_url }}).
+
+### Kubernetes deployment
+
+The same gateway runs in Kubernetes with a standard Deployment + Service. oJob arguments go in `args`; environment configuration in `env`:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcp-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcp-gateway
+  template:
+    metadata:
+      labels:
+        app: mcp-gateway
+    spec:
+      containers:
+      - name: mcp-pass
+        image: openaf/mini-a
+        env:
+        - name: OJOB
+          value: mini-a/mcps/mcp-pass.yaml
+        - name: OPACK_EXEC
+          value: ""
+        - name: OAF_FLAGS
+          value: "(MCPSERVER: (answerInTOON: true))"   # optional: TOON tool results
+        args:
+        - onport=9091
+        - uri=/mcp
+        - "mainmcp=(cmd: 'ojob mini-a/mcps/mcp-web.yaml')"
+        - "othermcps=[(cmd: 'ojob mini-a/mcps/mcp-time.yaml'), (cmd: 'ojob mini-a/mcps/mcp-math.yaml')]"
+        ports:
+        - containerPort: 9091
+        readinessProbe:
+          tcpSocket:
+            port: 9091
+          initialDelaySeconds: 10
+        livenessProbe:
+          tcpSocket:
+            port: 9091
+          periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcp-gateway
+spec:
+  selector:
+    app: mcp-gateway
+  ports:
+  - port: 80
+    targetPort: 9091
+```
+
+Clients inside the cluster connect with:
+
+```bash
+mini-a mcp="(type: remote, url: 'http://mcp-gateway/mcp')" goal='...'
+```
+
+For single built-in MCPs deployed this way (e.g. `mcp-wiki`, `mcp-es-search`), prefer HTTP probes against `/healthz` instead of TCP probes. Use `serverdesc` on `mcp-pass` to give the gateway a distinct advertised identity, and `includeTool`/`excludeTool` to publish only a curated tool subset.
+
+### Image variants
+
+| Image | Best for |
+|-------|----------|
+| `openaf/mini-a` | Running mini-a and its built-in MCPs (oPack pre-installed) |
+| `openaf/oaf:edge` + `-e OPACKS=mini-a` | Custom oPack combinations; installs mini-a on first start |
 
 ---
 

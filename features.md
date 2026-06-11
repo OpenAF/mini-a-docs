@@ -109,7 +109,7 @@ mini-a maxcontext=32000 maxtokens=4096
 
 **MCP (Model Context Protocol)** is an open standard that defines how LLMs discover and invoke external tools. Instead of hard-coding tool integrations, mini-a uses MCP servers that expose capabilities through a uniform interface.
 
-mini-a ships with **25+ built-in MCP servers** covering common tasks such as file operations, web browsing, databases, Kubernetes, finance, office documents, OpenAF helpers, and more.
+mini-a ships with **29 built-in MCP servers** covering common tasks such as file operations, web browsing, databases, Kubernetes, finance, office documents, full-text search, A2A agent bridging, OpenAF helpers, and more. Any of them can also be deployed as a standalone containerized HTTP service — see [Deploying MCP Servers in Docker & Kubernetes]({{ '/mcp-catalog' | relative_url }}#deploying-mcp-servers-in-docker--kubernetes).
 
 ### STDIO vs HTTP Mode
 

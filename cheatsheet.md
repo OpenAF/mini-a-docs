@@ -371,3 +371,31 @@ docker run -p 8080:8080 -e OAF_MODEL="(type: openai, model: gpt-5-mini, key: '..
 | `mcp-web` | Web search, fetch pages | `mcp="(cmd: 'ojob mcps/mcp-web.yaml')"` |
 | `mcp-file` | File operations | `mcp="(cmd: 'ojob mcps/mcp-file.yaml')"` |
 | `mcp-shell` | Shell command execution | `mcp="(cmd: 'ojob mcps/mcp-shell.yaml')"` |
+| `mcp-pass` | Republish/merge MCPs as one endpoint | `ojob mcps/mcp-pass.yaml onport=9091 mainmcp="(cmd: 'ojob mcps/mcp-web.yaml')"` |
+
+Full list of the 29 built-in servers: [MCP Catalog]({{ '/mcp-catalog' | relative_url }}).
+
+## MCP Server Deployment One-Liners
+
+```bash
+# Built-in MCP as a standalone Docker HTTP service
+docker run -d --rm -e OJOB=mini-a/mcps/mcp-time.yaml -e OPACK_EXEC= \
+  -p 8888:8888 openaf/mini-a onport=8888
+
+# mcp-pass gateway merging several MCPs behind one endpoint
+docker run -d --rm -e OJOB=mini-a/mcps/mcp-pass.yaml -e OPACK_EXEC= \
+  -p 9091:9091 openaf/mini-a onport=9091 uri=/mcp \
+  mainmcp="(cmd: 'ojob mini-a/mcps/mcp-web.yaml')" \
+  othermcps="[(cmd: 'ojob mini-a/mcps/mcp-time.yaml')]"
+
+# Same gateway, returning tool results in TOON instead of JSON
+docker run -d --rm -e OJOB=mini-a/mcps/mcp-pass.yaml -e OPACK_EXEC= \
+  -e OAF_FLAGS="(MCPSERVER: (answerInTOON: true))" \
+  -p 9091:9091 openaf/mini-a onport=9091 uri=/mcp \
+  mainmcp="(cmd: 'ojob mini-a/mcps/mcp-web.yaml')"
+
+# Consume any of the above
+mini-a mcp="(type: remote, url: 'http://localhost:9091/mcp')" goal='...'
+```
+
+Docker & Kubernetes recipes: [Deploying MCP Servers]({{ '/mcp-catalog' | relative_url }}#deploying-mcp-servers-in-docker--kubernetes).

@@ -574,6 +574,7 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 | `OAF_MINI_A_LCNOJSONPROMPT` | Force text prompt mode for low-cost model (set explicitly for Gemini low-cost models) |
 | `OAF_MINI_A_CON_HIST_SIZE` | Maximum console history size (defaults to JLine's default) |
 | `OAF_MINI_A_LIBS` | Comma-separated library paths to load automatically at startup |
+| `OAF_FLAGS` | OpenAF runtime flags as a SLON/JSON map. Notable: `(MCPSERVER: (answerInTOON: true))` makes built-in MCP servers (STDIO and HTTP) return tool results in TOON instead of JSON — see [MCP Catalog deployment]({{ '/mcp-catalog' | relative_url }}#deploying-mcp-servers-in-docker--kubernetes); `(MD_DARKMODE: 'auto')` controls markdown dark mode |
 | `MINI_A_GOAL` | `goal` |
 | `MINI_A_PORT` | `onport` |
 | `OAF_MODEL` / `OAF_LC_MODEL` `key` field | Provider API credential (recommended) |
