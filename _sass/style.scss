@@ -181,16 +181,6 @@ pre.highlight:focus-within .code-copy-button {
   }
 }
 
-@media (hover: none) {
-  .post-content {
-    h1, h2, h3, h4, h5, h6 {
-      .heading-anchor {
-        opacity: 0.35;
-      }
-    }
-  }
-}
-
 // Site navigation
 .site-title {
   .brand-mini {
