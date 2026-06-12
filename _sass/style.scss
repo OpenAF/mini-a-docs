@@ -148,6 +148,49 @@ pre.highlight:focus-within .code-copy-button {
   }
 }
 
+// Heading anchor links
+.post-content {
+  h1, h2, h3, h4, h5, h6 {
+    .heading-anchor {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 0.4em;
+      color: currentColor;
+      opacity: 0;
+      vertical-align: middle;
+      transition: opacity 0.18s ease, color 0.18s ease;
+      text-decoration: none;
+
+      &:hover,
+      &:focus-visible {
+        opacity: 0.75;
+        text-decoration: none;
+      }
+
+      &.is-copied {
+        opacity: 1;
+        color: #62bb47;
+      }
+    }
+
+    &:hover .heading-anchor,
+    &:focus-within .heading-anchor {
+      opacity: 0.35;
+    }
+  }
+}
+
+@media (hover: none) {
+  .post-content {
+    h1, h2, h3, h4, h5, h6 {
+      .heading-anchor {
+        opacity: 0.35;
+      }
+    }
+  }
+}
+
 // Site navigation
 .site-title {
   .brand-mini {
