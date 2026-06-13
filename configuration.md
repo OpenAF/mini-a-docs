@@ -96,6 +96,9 @@ export MINI_A_PARAM=value
 | `promptprofile` | context-dependent | System prompt verbosity: `minimal`, `balanced`, or `verbose`. Default is `minimal` in chatbot mode, `verbose` when `debug=true`, otherwise `balanced` |
 | `systempromptbudget` | - | Maximum estimated token size for the system prompt. When exceeded, lower-priority sections (examples, detailed tool guidance) are dropped to stay within budget |
 
+> [!NOTE]
+> **Automatic `AGENTS.md` loading**: on startup, Mini-A walks up from the current directory looking for the nearest project-level `AGENTS.md` file. If found, its content is automatically appended to `rules` as a "Follow AGENTS.md instructions from `<path>`" entry. This is the coding-agent convention (similar to `CLAUDE.md`) and is unrelated to the protected `AGENTS.md` page inside a [Wiki Knowledge Base](#10c-wiki-knowledge-base). Set `noagentsmd=true` to disable this automatic discovery and injection.
+
 </div>
 
 <div class="config-category" markdown="1">
@@ -120,6 +123,7 @@ export MINI_A_PARAM=value
 | `mcplazy` | `false` | Lazy-load MCP servers |
 | `mcpurl` | - | Remote MCP server URL |
 | `nosetmcpwd` | `false` | Do not set the default MCP command working directory to the mini-a install path |
+| `noagentsmd` | `false` | Disable automatic discovery and injection of the nearest `AGENTS.md` file as a rule |
 
 </div>
 
@@ -450,7 +454,11 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 | `wikiregion` | - | S3 region (`s3`/`s3fs` backend) |
 | `wikiuseversion1` | `false` | Use S3 path-style (v1) signing (`s3`/`s3fs` backend) |
 | `wikiignorecertcheck` | `false` | Skip TLS certificate validation (`s3`/`s3fs` backend) |
+| `wikiindexdir` | - | Override the local index/cache root used for non-filesystem wiki indexes |
+| `wikimetacache` | `true` | Enable the sharded wiki page metadata cache |
 | `wikilintstaleddays` | `90` | Days before a page without an `updated` field is marked stale in lint |
+| `wikilintstreamthreshold` | `2000` | Page count above which `lint` switches into streaming mode |
+| `wikilintmaxpairs` | `250000` | Max near-duplicate comparisons performed during streaming lint |
 | `wikimounts` | - | SLON/JSON array of read-only wiki mounts: `[{name: 'team', backend: 'fs', root: '/path'}]` — mounted pages appear as `@name/path.md` in all wiki operations |
 
 When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps three starter pages: `AGENTS.md` (ingestion workflow and rules), `index.md` (entrypoint/catalog), and `log.md` (append-only journal of every write, delete, and move). `AGENTS.md` and `log.md` are protected and cannot be deleted.
@@ -461,6 +469,31 @@ Wiki operations available to the agent: `context`, `list`, `tree`, `browse`, `re
 Operations that require `wikiaccess=rw`: `write`, `move`, `init`, `reindex`.
 Console commands: `/wiki context`, `/wiki list [prefix]`, `/wiki tree [prefix]`, `/wiki browse [prefix]`, `/wiki read <page.md>`, `/wiki search <query>`, `/wiki backlinks <page.md>`, `/wiki lint`, `/wiki reindex`, `/wiki mounts`, `/wiki attach <name> [backend=fs] [root=path]`, `/wiki detach <name>`.
 Use `/stats wiki` to see per-operation counters for the current session.
+
+### Wiki Knowledge Graph
+
+An optional knowledge-graph layer built on top of the wiki's pages. When enabled, `wiki search` transparently appends related-page hints, and the graph can be queried directly via the `/graph` console command or `mcp-wiki-ops`'s `graph_build`/`graph_falkor` tools.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `usewikigraph` | `false` | Enable the wiki knowledge graph layer. Automatically enabled when `wikigraphfalkorhost` is set |
+| `wikigraphsemantic` | `false` | Enable semantic graph extraction when running `graph build` |
+| `wikigraphcommunity` | `louvain` | Community detection algorithm |
+| `wikigraphsearchhints` | `true` | Enrich `wiki search` results with related pages from the graph |
+| `wikigraphmounts` | `true` | Include graph hints from attached wiki mounts when their cached graphs are available |
+| `wikigraphhintcap` | `5` | Maximum related graph hints returned per search |
+| `wikimountgraphttlms` | `60000` | TTL (ms) for cached mount `graph.json` loads |
+| `wikigraphautosave` | `always` | Graph autosave policy: `always`, `debounced`, or `off` |
+| `wikigraphsavedebouncems` | `5000` | Debounce interval (ms) when `wikigraphautosave=debounced` |
+| `wikigraphfalkorhost` | - | FalkorDB host for graph-backed wiki state/query; when set, FalkorDB is used instead of the local graph cache |
+| `wikigraphfalkorport` | `6379` | FalkorDB port |
+| `wikigraphfalkorgraph` | `mini_a_wiki` | FalkorDB graph name |
+| `wikigraphfalkoruser` | - | FalkorDB username |
+| `wikigraphfalkorpass` | - | FalkorDB password |
+
+The local graph cache (when FalkorDB is not configured) lives under `.mini-a-wiki-graph/` inside the wiki root and, like the protected pages, is excluded from search indexing and listings — along with `AGENTS.md`, `index.md`, and `log.md`.
+
+Console command: `/graph [build|query|neighbors|path|communities|surprise|export|stats]`. `/stats wiki` includes wiki graph operation counters when the graph is enabled.
 
 </div>
 

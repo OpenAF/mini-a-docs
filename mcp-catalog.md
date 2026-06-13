@@ -575,6 +575,11 @@ Persistent Markdown wiki knowledge base backed by the `MiniAWikiManager`. Expose
 | `wikiurl` | S3-compatible endpoint URL (`s3` backend) |
 | `wikiaccesskey` | S3 access key (`s3` backend) |
 | `wikisecret` | S3 secret key (`s3` backend) |
+| `wikimounts` | SLON/JSON array of read-only wiki mounts: `[{name, backend, root|bucket|prefix|url|...}]` |
+| `usewikigraph` | Enable the wiki knowledge graph (auto-enabled when `wikigraphfalkorhost` is set); search transparently appends related-page hints |
+| `wikigraphsearchhints` | Append graph-related pages to search results when the wiki graph is enabled (default: `true`) |
+| `wikigraphhintcap` | Maximum graph-hint pages appended to search results (default: `5`) |
+| `wikigraphfalkorhost` / `wikigraphfalkorport` / `wikigraphfalkorgraph` / `wikigraphfalkoruser` / `wikigraphfalkorpass` | FalkorDB connection settings for graph-backed wiki state/query |
 | `label` | Human-readable wiki label injected into tool descriptions |
 | `toolPrefix` | Optional prefix for tool names (e.g. `docs-` → `docs-list`, `docs-read`, …) |
 | `onport` | Start an HTTP MCP server on this port instead of STDIO |
@@ -609,6 +614,10 @@ Maintenance MCP for wiki lifecycle operations such as targeted edits, maintenanc
 | `wikibucket` | S3 bucket name (`s3`/`s3fs`) |
 | `wikiprefix` | S3 key prefix or Elasticsearch index name |
 | `wikiurl` | Backend endpoint (`s3`/`s3fs`/`es`) |
+| `wikimounts` | SLON/JSON array of read-only wiki mounts: `[{name, backend, root|bucket|prefix|url|...}]` |
+| `usewikigraph` | Enable the wiki knowledge graph explicitly (auto-enabled when a FalkorDB host is provided) |
+| `wikigraphcommunity` | Community detection algorithm for the wiki graph (default: `louvain`) |
+| `wikigraphfalkorhost` / `wikigraphfalkorport` / `wikigraphfalkorgraph` / `wikigraphfalkoruser` / `wikigraphfalkorpass` | FalkorDB connection settings for graph-backed wiki state/query |
 | `label` | Human-readable label used in tool descriptions |
 | `toolPrefix` | Optional prefix for tool names |
 | `onport` | Start in HTTP mode on this port instead of STDIO |
@@ -624,7 +633,7 @@ mini-a usetools=true \
 ojob mcps/mcp-wiki-ops.yaml onport=8991 wikiroot=/shared/wiki wikiaccess=rw label=TeamWikiOps
 ```
 
-**Tools:** `lint`, `edit`, `maintain`, `reindex` (`reindex` requires `wikiaccess=rw` and `wikiopsreadonly=false`)
+**Tools:** `lint`, `edit`, `maintain`, `reindex` (`reindex` requires `wikiaccess=rw` and `wikiopsreadonly=false`), `graph_build` (build the wiki graph; structural always, semantic when `semantic=true`; syncs FalkorDB when configured), `graph_falkor` (query the wiki graph in FalkorDB, or resync when called without a `query`)
 
 ---
 

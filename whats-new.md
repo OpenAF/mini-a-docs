@@ -8,6 +8,49 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Automatic `AGENTS.md` Loading
+
+**Change**: Mini-A now automatically discovers and loads a project-level `AGENTS.md` file into the agent's rules at startup — the same convention used by other coding agents (e.g. `CLAUDE.md`).
+
+**What's New**:
+- On startup, Mini-A walks up from the current directory looking for the nearest `AGENTS.md` file.
+- If found, its content is appended to `rules` as a "Follow AGENTS.md instructions from `<path>`" entry.
+- Applied once per run; re-applying does not duplicate the injected rule.
+- This is unrelated to the wiki's protected `AGENTS.md` page (see [Wiki Knowledge Base](/configuration/#10c-wiki-knowledge-base)) — that page documents wiki ingestion conventions, while this feature loads project-level instructions for the agent itself.
+- Set `noagentsmd=true` to disable this automatic discovery and injection.
+
+**Examples**:
+```bash
+# A project AGENTS.md in the current (or any parent) directory is
+# automatically merged into the agent's rules
+cat AGENTS.md
+# - Always run tests before committing
+# - Use 2-space indentation
+
+mini-a goal="add a new endpoint" useshell=true
+# Mini-A's rules now include the AGENTS.md content automatically
+
+# Opt out of automatic AGENTS.md discovery/injection
+mini-a goal="add a new endpoint" useshell=true noagentsmd=true
+```
+
+---
+
+### Wiki Knowledge Graph Enhancements
+
+**Change**: The wiki knowledge graph layer gained new configuration options for graph autosave, FalkorDB-backed state, mount graph hints, and streaming lint — plus a new `mini-a-mcp-wiki.js` module and reshuffled `mcp-wiki`/`mcp-wiki-ops` tool sets.
+
+**What's New**:
+- `mcp-wiki` no longer exposes standalone `graph_query`/`graph_neighbors`/`graph_communities`/`graph_surprise`/`graph_stats`/`graph_export`/`graph_retrieve` tools. Instead, `wiki search` transparently appends related-page hints when the graph is enabled (`wikigraphsearchhints`, `wikigraphhintcap`).
+- `mcp-wiki-ops` gains `graph_build` (build the structural/semantic graph, syncing FalkorDB when configured) and `graph_falkor` (query or resync the FalkorDB-backed graph).
+- `usewikigraph` is now automatically enabled whenever `wikigraphfalkorhost` is set.
+- New parameters: `wikigraphmounts`, `wikimountgraphttlms`, `wikigraphautosave`, `wikigraphsavedebouncems`, `wikiindexdir`, `wikimetacache`, `wikilintstreamthreshold`, `wikilintmaxpairs`.
+- Internal files (`AGENTS.md`, `index.md`, `log.md`, and the `.mini-a-wiki-graph/` directory) are now consistently excluded from search, indexing, and graph building.
+
+See the new [Wiki Knowledge Graph](/configuration/#wiki-knowledge-graph) section for the full parameter reference.
+
+---
+
 ### Standard Tool Aliases (`usestdutils`)
 
 **Change**: `useutils=true` now exposes human-friendly standard aliases for Mini Utils tools by default. The classic internal names (`filesystemQuery`, `filesystemModify`, etc.) are replaced with names familiar from standard coding agents.
