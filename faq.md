@@ -61,11 +61,11 @@ It depends on your needs:
 
 | Use Case | Recommended Model | Why |
 |----------|-------------------|-----|
-| General purpose | `openai:gpt-5.2` | Good balance of speed, cost, and quality |
-| Budget-friendly | `openai:gpt-5-mini` | Low cost, good for simple tasks |
-| Best quality | `anthropic:claude-sonnet-4-20250514` | Strong reasoning and coding |
-| Privacy/local | `ollama:llama3` | Runs locally, no data leaves your machine |
-| AWS environments | `bedrock:anthropic.claude-sonnet-4-20250514-v1:0` | Uses existing AWS credentials |
+| General purpose | `(type: openai, model: gpt-5.2, key: '...')` | Good balance of speed, cost, and quality |
+| Budget-friendly | `(type: openai, model: gpt-5-mini, key: '...')` | Low cost, good for simple tasks |
+| Best quality | `(type: anthropic, model: claude-sonnet-4-5-20250929, key: '...')` | Strong reasoning and coding |
+| Privacy/local | `(type: ollama, model: 'llama3', url: 'http://localhost:11434')` | Runs locally, no data leaves your machine |
+| AWS environments | `(type: bedrock, options: (region: eu-west-1, model: 'anthropic.claude-sonnet-4-5-20250929-v1:0'))` | Uses existing AWS credentials |
 
 ### Can I use local models?
 

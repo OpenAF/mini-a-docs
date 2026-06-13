@@ -10,28 +10,25 @@ mini-a packs a comprehensive set of features into a minimalist framework. This p
 
 ## Multi-Model Support
 
-mini-a works with **10+ LLM providers** out of the box. Switch between providers by changing a single environment variable — no code changes required.
+mini-a works with **any LLM provider** out of the box. Switch between providers by changing a single environment variable — no code changes required, and model names are used as-is, with no provider prefix.
 
-| Provider | Prefix | Example Model |
-|----------|--------|---------------|
-| OpenAI | `openai:` | `gpt-5.2`, `gpt-5-mini` |
-| Google Gemini | `google:` | `gemini-2.0-flash`, `gemini-1.5-pro` |
-| Anthropic Claude | `anthropic:` | `claude-sonnet-4-20250514` |
-| Ollama (local) | `ollama:` | `llama3`, `mistral`, `codellama` |
-| AWS Bedrock | `bedrock:` | `anthropic.claude-v2` |
-| GitHub Models | `github:` | `openai/gpt-5` |
-| Deepseek | `deepseek:` | `deepseek-chat` |
-| Groq | `groq:` | `llama3-70b-8192` |
-| Cerebras | `cerebras:` | `llama3.1-70b` |
-| Mistral | `mistral:` | `mistral-large-latest` |
-| OpenRouter | `openrouter:` | `meta-llama/llama-3-70b` |
+`OAF_MODEL` (and `OAF_LC_MODEL`/`OAF_VAL_MODEL`) is a map with a `type` field that selects the provider implementation:
 
-Switching is as simple as setting the environment variable:
+| `type` | Covers | Example |
+|--------|--------|---------|
+| `openai` | OpenAI, plus any OpenAI-compatible API — Cerebras, Groq, Mistral, Grok (x.ai), GitHub Models, Scaleway, OpenRouter, Azure OpenAI, etc. (set `url` to the provider's endpoint) | `(type: openai, model: gpt-5.2, key: '...')` |
+| `gemini` | Google Gemini | `(type: gemini, model: gemini-3-pro-preview, key: '...')` |
+| `anthropic` | Anthropic Claude | `(type: anthropic, model: claude-sonnet-4-5-20250929, key: '...')` |
+| `ollama` | Ollama (local or cloud models) | `(type: ollama, model: 'llama3', url: 'http://localhost:11434')` |
+| `bedrock` | AWS Bedrock | `(type: bedrock, options: (region: eu-west-1, model: '...'))` |
+
+For OpenAI-compatible providers, just point `url` at the provider's endpoint and `model` at its model id:
 
 ```bash
-export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"             # OpenAI
-export OAF_MODEL="(type: gemini, model: gemini-2.0-flash, key: '...')"    # Google
-export OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"              # Local
+export OAF_MODEL="(type: openai, model: gpt-5.2, key: '...')"                                                      # OpenAI
+export OAF_MODEL="(type: openai, url: 'https://api.groq.com/openai', model: 'openai/gpt-oss-120b', key: '...')"    # Groq
+export OAF_MODEL="(type: gemini, model: gemini-3-pro-preview, key: '...')"                                         # Google
+export OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"                                  # Local
 ```
 
 Set credentials directly in `OAF_MODEL`/`OAF_LC_MODEL` using `key: '...'` so configuration stays in one place. Ollama runs locally and requires no key.
