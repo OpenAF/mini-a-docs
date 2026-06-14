@@ -170,6 +170,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `evidencegate` | `false` | Enable lightweight evidence gating for non-trivial actions |
 | `evidencegatestrictness` | `medium` | Tuning level for evidence gate heuristics: `low`, `medium`, or `high` |
 | `nologtrunc` | `false` | Disable truncation of long log output lines (show full content) |
+| `noagentsmd` | `false` | Disable automatic discovery and injection of the nearest `AGENTS.md` file as a rule |
 | `usewiki` | `false` | Enable wiki knowledge base |
 | `wikiaccess` | `ro` | Wiki access: `ro` (read-only) or `rw` (read-write) |
 | `wikibackend` | `fs` | Wiki backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |

@@ -8,6 +8,17 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Wiki: Open Knowledge Format (OKF) compatibility
+
+**Change**: The wiki (`mini-a-wiki.js`) is now format-level compatible with Google's [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog) (OKF), so mini-a wikis can be read by — and can read — OKF bundles.
+
+- **`type` front-matter field**: `write` now auto-fills `type: concept` when omitted (OKF's only required field). `lint` reports an info-level `missing_frontmatter` issue (field `type`) for legacy pages with no `type`, skipping `index.md` / `*/index.md`.
+- **Bundle-root-relative links**: `[label](/path/to/page.md)` links (leading `/`) now resolve from the wiki root instead of being rejected as external/absolute — they participate in link resolution, lint, and the backlinks graph like any other internal link. `move` continues to leave `/`-rooted links untouched (a pre-existing guard), so an absolute link pointing at a moved page is not auto-rewritten.
+- **`timestamp` alias**: `timestamp` (OKF's last-modified field) is accepted on read as an alias for `updated` when `updated` is absent, and is written alongside `updated` on every save.
+- `AGENTS.md`'s managed page-schema section documents `type` as required and `timestamp` as an `updated` alias (`agentsVersion` bumped to `3`, auto-upgrading existing wikis on next open).
+
+---
+
 ### Automatic `AGENTS.md` Loading
 
 **Change**: Mini-A now automatically discovers and loads a project-level `AGENTS.md` file into the agent's rules at startup — the same convention used by other coding agents (e.g. `CLAUDE.md`).
@@ -637,7 +648,7 @@ mini-a systempromptbudget=4000 goal="..."
   { "action": "wiki", "params": { "op": "search", "query": "authentication decision" } }
   ```
 
-- **Lint checks**: `broken_link` (error), `missing_frontmatter` (warning), `heading_hierarchy` (warning), `orphan` (warning), `near_duplicate` (info), `stale` (info), `memory_conflict` (warning).
+- **Lint checks**: `broken_link` (error), `missing_index` (warning), `index_missing_links` (warning), `stale_index` (info), `missing_frontmatter` (warning for missing title / info for missing description or type), `heading_hierarchy` (warning), `orphan` (warning), `near_duplicate` (info), `stale` (info), `memory_conflict` (warning).
 
 - **Auto-bootstrapping**: when a new empty wiki is opened in `rw` mode, Mini-A creates both `AGENTS.md` and `index.md`. `AGENTS.md` contains the ingestion workflow and contribution rules; `index.md` is the wiki entrypoint and starter table of contents.
 
