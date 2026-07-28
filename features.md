@@ -667,7 +667,36 @@ Three dream execution modes (`plan`, `apply`, `reorg`) and safety write gates ar
 | **Reorg Approval** | **`dreamwikiapproval`** | Control structural approval flow (`auto`, `ask`, `never`) |
 | **JSON Reporting** | `dreamreport` | Optional path to write a JSON run report |
 
-Use `dryrun=true` or the `plan` mode to preview what would change without writing anything back. The pre-dream state is always backed up to a sibling namespace before any write.
+Use `dryrun=true` or the `plan` mode to preview what would change without writing anything back. Memory dreams back up their pre-dream channel state to a sibling namespace before writing; wiki dreams rely on the explicit write and reorganization gates described below, so plan first and keep normal storage backups for the primary wiki.
+
+### Wiki dreaming and reorganization
+
+Wiki dreaming is a maintenance workflow for a writable primary wiki; it is not an operation provided by the read-only `mcp-wiki` endpoint. Run it from Mini-A with `usewiki=true`; the dream runner forces its own wiki manager to read-write mode. Keep the discovery MCP available to broad clients, and restrict the credentials used for dream runs and `mcp-wiki-ops` to trusted operators.
+
+| Mode | Writes pages? | Purpose | Required controls |
+|---|---:|---|---|
+| `lint` | No | Inspect wiki health and report issues | `usewiki=true` |
+| `plan` / `dryrun=true` | No | Produce a proposed tree, index changes, and lint summary | `usewiki=true` |
+| `apply` | Yes | Make safe, non-structural index and metadata improvements | `dreamwikiapply=true` |
+| `reorg` | Yes | Run an agent-led structural reorganization, including high-confidence moves and index repair | `dreamwikiapply=true`, `dreamwikireorg=true`, `dreamwikiapproval=auto` |
+
+`plan` is the recommended first run, especially for S3 and OpenSearch-backed wikis. It emits a proposal rather than changing remote pages. `apply` will refuse to run until its explicit write gate is set. `reorg` has three independent guards: structural reorganization must be enabled, writes must be enabled, and non-interactive approval must be `auto`. With the default `ask` approval it returns `approval-required`; with `never` it returns `approval-denied`.
+
+```bash
+# Inspect a MinIO/S3 wiki without modifying it
+mini-a dream=true usewiki=true wikibackend=s3 \
+  wikibucket=team-wiki wikiprefix=wiki/ wikiurl=http://minio.internal:9000 \
+  wikiaccesskey="$MINIO_ACCESS_KEY" wikisecret="$MINIO_SECRET_KEY" \
+  wikiuseversion1=true dreamwikimode=plan \
+  dreamreport=/var/log/mini-a/wiki-plan.json
+
+# Run a deliberately approved structural reorganization
+mini-a dream=true usewiki=true wikiroot=/shared/wiki \
+  dreamwikimode=reorg dreamwikiapply=true dreamwikireorg=true \
+  dreamwikiapproval=auto dreamreport=/var/log/mini-a/wiki-reorg.json
+```
+
+Before a reorganization, the runner loads the wiki's `AGENTS.md`; the agent then uses the hierarchy, backlinks, and lint results to make only high-confidence moves, creates or repairs section indexes, and reports skipped uncertain moves. A `dreamreport` captures counts for changed, moved, deleted, and indexed pages plus lint summaries. For operational detail and the programmatic API, see [Advanced → Dreams]({{ '/advanced/#dreams-sleep-pass' | relative_url }}).
 
 See [Advanced → Dreams]({{ '/advanced/#dreams-sleep-pass' | relative_url }}) for full documentation and the programmatic API.
 

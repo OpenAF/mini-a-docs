@@ -41,8 +41,8 @@ mini-a ships with **29 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-oaf-browse` | Generic browse over the oJob-common HTTP Browse API | STDIO/HTTP | `list`, `get`, `search` |
 | `mcp-office` | Office document processing | STDIO | `readExcel`, `readWord`, `readPDF` |
 | `mcp-ollama-web-search` | Web search via Ollama API | STDIO/HTTP | `web-search` |
-| `mcp-wiki` | Persistent Markdown wiki knowledge base | STDIO/HTTP | `list`, `read`, `search`, `lint`, `write` |
-| `mcp-wiki-ops` | Wiki maintenance and editing operations | STDIO/HTTP | `edit`, `maintain`, `reindex` |
+| `mcp-wiki` | Read-only Markdown wiki discovery | STDIO/HTTP | `context`, `search`, `read`, `browse`, `list`, `tree`, `backlinks` |
+| `mcp-wiki-ops` | Wiki maintenance, editing, and indexing | STDIO/HTTP | `context`, `lint`, `edit`, `maintain`, `reindex` |
 
 ---
 
@@ -561,20 +561,20 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-ollama-web-search.yaml apiKey=YOUR_KEY')" goal=
 
 ### mcp-wiki
 
-Persistent Markdown wiki knowledge base backed by the `MiniAWikiManager`. Exposes the wiki as an MCP server (STDIO or HTTP) so any MCP-compatible client can list, read, search, lint, and write wiki pages.
+Read-only discovery MCP for a Markdown wiki, backed by `MiniAWikiManager`. Use it for an agent or external client that should be able to orient itself, search, browse, and read without any capability to modify the wiki. It is deliberately separate from `mcp-wiki-ops`: passing `wikiaccess=rw` does not make this server writable.
 
 **Configuration:**
 
 | Argument | Description |
 |----------|-------------|
-| `wikibackend` | Backend type: `fs` (filesystem) or `s3` (default: `fs`) |
-| `wikiaccess` | Access mode: `ro` (read-only) or `rw` (read-write, default: `ro`) |
+| `wikibackend` | Backend type: `fs`, `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch; default: `fs`) |
 | `wikiroot` | Root directory for the `fs` backend (default: `.`) |
 | `wikibucket` | S3 bucket name (`s3` backend) |
-| `wikiprefix` | S3 key prefix (`s3` backend) |
-| `wikiurl` | S3-compatible endpoint URL (`s3` backend) |
-| `wikiaccesskey` | S3 access key (`s3` backend) |
-| `wikisecret` | S3 secret key (`s3` backend) |
+| `wikiprefix` | S3 key prefix (`s3`/`s3fs`) or Elasticsearch/OpenSearch index name (`es`) |
+| `wikiurl` | S3-compatible endpoint (`s3`/`s3fs`) or Elasticsearch/OpenSearch base URL (`es`) |
+| `wikiaccesskey` | S3 access key or Elasticsearch/OpenSearch username |
+| `wikisecret` | S3 secret key or Elasticsearch/OpenSearch password |
+| `wikiregion` / `wikiuseversion1` / `wikiignorecertcheck` | S3 region, path-style/signature-v1 compatibility, and TLS-validation control |
 | `wikimounts` | SLON/JSON array of read-only wiki mounts: `[{name, backend, root|bucket|prefix|url|...}]` |
 | `usewikigraph` | Enable the wiki knowledge graph (auto-enabled when `wikigraphfalkorhost` is set); search transparently appends related-page hints |
 | `wikigraphsearchhints` | Append graph-related pages to search results when the wiki graph is enabled (default: `true`) |
@@ -586,22 +586,22 @@ Persistent Markdown wiki knowledge base backed by the `MiniAWikiManager`. Expose
 
 **Usage:**
 ```bash
-# STDIO: share a filesystem wiki with another agent
+# STDIO: expose a filesystem wiki to another agent without write access
 mini-a usetools=true \
-  mcp="(cmd: 'ojob mcps/mcp-wiki.yaml wikiroot=/shared/wiki wikiaccess=rw label=TeamWiki')" \
+  mcp="(cmd: 'ojob mcps/mcp-wiki.yaml wikiroot=/shared/wiki label=TeamWiki')" \
   goal='Summarize what the wiki says about authentication'
 
-# HTTP: standalone wiki server accessible by multiple clients
-ojob mcps/mcp-wiki.yaml onport=8990 wikiroot=/shared/wiki wikiaccess=rw label=TeamWiki
+# HTTP: standalone read-only wiki server accessible by multiple clients
+ojob mcps/mcp-wiki.yaml onport=8990 wikiroot=/shared/wiki label=TeamWiki
 ```
 
-**Tools:** `list`, `read`, `search`, `lint`, `write` (write requires `wikiaccess=rw`)
+**Tools:** `context`, `search`, `read`, `browse`, `list`, `tree`, `backlinks`.
 
 ---
 
 ### mcp-wiki-ops
 
-Maintenance MCP for wiki lifecycle operations such as targeted edits, maintenance jobs, and full reindexing.
+Maintenance MCP for trusted wiki lifecycle operations: linting, targeted edits, moves, deletes, section initialization, graph maintenance, and full reindexing. It defaults to writable mode; set `wikiopsreadonly=true` to publish only its read-only operations.
 
 **Configuration:**
 
@@ -634,6 +634,53 @@ ojob mcps/mcp-wiki-ops.yaml onport=8991 wikiroot=/shared/wiki wikiaccess=rw labe
 ```
 
 **Tools:** `lint`, `edit`, `maintain`, `reindex` (`reindex` requires `wikiaccess=rw` and `wikiopsreadonly=false`), `graph_build` (build the wiki graph; structural always, semantic when `semantic=true`; syncs FalkorDB when configured), `graph_falkor` (query the wiki graph in FalkorDB, or resync when called without a `query`)
+
+### Wiki storage, indexing, and graph deployment
+
+Use `mcp-wiki` for the broad read-only audience and keep `mcp-wiki-ops` as a separately deployed, tightly permissioned maintenance endpoint. Both servers accept the same wiki backend connection settings, so point them at the same root, S3 bucket/prefix, or OpenSearch index when they must operate on the same content.
+
+#### S3 and MinIO
+
+For S3-compatible storage, set `wikibackend=s3`, `wikibucket`, `wikiprefix`, `wikiurl`, `wikiaccesskey`, and `wikisecret`. `wikiuseversion1=true` is useful for path-style-compatible endpoints such as some MinIO deployments. The pages remain Markdown objects under the selected prefix.
+
+```bash
+# Read-only discovery endpoint backed by MinIO
+ojob mcps/mcp-wiki.yaml onport=8990 \
+  wikibackend=s3 wikibucket=team-wiki wikiprefix=wiki/ \
+  wikiurl=http://minio.internal:9000 \
+  wikiaccesskey="$MINIO_ACCESS_KEY" wikisecret="$MINIO_SECRET_KEY" \
+  wikiregion=us-east-1 wikiuseversion1=true label="Team wiki"
+
+# Trusted maintenance endpoint for the same bucket and prefix
+ojob mcps/mcp-wiki-ops.yaml onport=8991 \
+  wikibackend=s3 wikibucket=team-wiki wikiprefix=wiki/ \
+  wikiurl=http://minio.internal:9000 \
+  wikiaccesskey="$MINIO_ACCESS_KEY" wikisecret="$MINIO_SECRET_KEY" \
+  wikiregion=us-east-1 wikiuseversion1=true wikiaccess=rw label="Team wiki ops"
+```
+
+Wiki search first tries the optional local Lucene index for ordinary, unscoped literal searches. That index is local to the MCP process host, not stored in S3. A read-only `mcp-wiki` server never creates or refreshes it; on a new host or a fresh S3 prefix it lists Markdown objects and scans their content instead. Run `mcp-wiki-ops` with `wikiaccess=rw` and call `reindex` after bulk imports or migrations when you want a local Lucene index. Keep the maintenance service's local index storage durable if you rely on it, and treat it as a cache: S3 remains the source of truth. Regex, path-scoped, and explicit scan searches also use the scan path.
+
+`wikibackend=s3fs` is a bootstrap/cache mode, not bidirectional synchronization: in writable mode it first copies the S3 pages into `wikiroot`, then uses the local filesystem backend. Do not use it as a multi-writer S3 replication mechanism.
+
+#### Elasticsearch/OpenSearch and hybrid search
+
+Set `wikibackend=es`, use `wikiurl` for the cluster base URL, `wikiprefix` for the index name, and `wikiaccesskey` / `wikisecret` for optional basic authentication. The wiki stores each Markdown page as a document keyed by `path`; listing is prefix-based and reading retrieves the document's raw Markdown.
+
+This is a hybrid storage/search arrangement, not a direct pass-through to an OpenSearch full-text query: `MiniAWikiManager.search()` still uses its local Lucene index when present, otherwise it lists and scans wiki documents. Choose the `es` backend for centrally managed page storage and concurrent access; use the separate `mcp-es-search` MCP when an agent needs to issue native OpenSearch/Elasticsearch search queries against arbitrary indexes.
+
+```bash
+ojob mcps/mcp-wiki.yaml onport=8990 \
+  wikibackend=es wikiurl=https://opensearch.internal:9200 \
+  wikiprefix=team_wiki wikiaccesskey="$OS_USER" wikisecret="$OS_PASSWORD" \
+  label="Team wiki"
+```
+
+#### Optional wiki graph
+
+Enable `usewikigraph=true` to maintain a structural graph of page links. Search then appends a bounded set of related-page hints; it does not replace the normal Lucene-or-scan search described above. `mcp-wiki` exposes those enriched read results, while `mcp-wiki-ops` provides `graph_build` and `graph_falkor` for trusted graph maintenance and FalkorDB queries.
+
+Without FalkorDB, graph state is a local cache beside the wiki/index runtime. With `wikigraphfalkorhost` (and optionally port, graph name, user, and password), graph support is enabled automatically and the maintenance MCP synchronizes and queries FalkorDB. For S3 and OpenSearch deployments, give every graph-building maintenance instance a durable local cache or a shared FalkorDB configuration; do not assume S3 or OpenSearch itself stores the graph.
 
 ---
 

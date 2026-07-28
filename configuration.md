@@ -495,6 +495,16 @@ The local graph cache (when FalkorDB is not configured) lives under `.mini-a-wik
 
 Console command: `/graph [build|query|neighbors|path|communities|surprise|export|stats]`. `/stats wiki` includes wiki graph operation counters when the graph is enabled.
 
+### MCP deployment, storage, and search behavior
+
+Publish `mcp-wiki` to clients that only need discovery and retrieval: it is always read-only and exposes `context`, `search`, `read`, `browse`, `list`, `tree`, and `backlinks`. Deploy `mcp-wiki-ops` separately for trusted maintenance: it provides `context`, `lint`, `edit`, `maintain`, `reindex`, `graph_build`, and `graph_falkor`; it defaults to writable mode, and `wikiopsreadonly=true` disables mutations.
+
+For `s3` backends, the bucket and prefix contain the source Markdown pages. A local Lucene index may accelerate unscoped literal search, but it is not stored in S3 and is only built or refreshed by writable wiki operations such as `reindex`. Consequently, a fresh read-only `mcp-wiki` instance scans the S3 Markdown objects until a compatible local index already exists. Regex and path-scoped searches scan by design. `wikiindexdir` controls the non-filesystem local index/cache root for the core wiki runtime; use durable local storage when depending on that cache.
+
+The `es` backend stores wiki pages in Elasticsearch/OpenSearch, but it is not a native OpenSearch query interface: wiki search still follows the local-Lucene-or-page-scan path. Use `mcp-es-search` for native cluster queries. `s3fs` copies S3 pages into `wikiroot` on writable startup and then uses the filesystem backend; it is not bidirectional S3 synchronization.
+
+The optional graph enriches normal wiki search with related-page hints. It is maintained independently of Lucene and of the S3/OpenSearch page store: use local graph state where appropriate, or configure FalkorDB (`wikigraphfalkorhost`) for shared graph-backed state. The maintenance MCP's `graph_build` and `graph_falkor` operations are the appropriate remote management surface.
+
 </div>
 
 <div class="config-category" markdown="1">
