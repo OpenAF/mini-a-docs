@@ -8,6 +8,39 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Wiki ingestion, portable archives, and read-only artifacts
+
+**Change**: Mini-A can now turn existing documentation into a wiki through `mini-a-ingest.yaml` or `/ingest <source> [section] [dryrun] [force]`. Folders, local/remote git repositories, and web pages are supported. Discovery, filtering, chunking, change detection, writes, and finalization are deterministic; only per-source distillation uses the LLM.
+
+- Ingested pages preserve `source`, `source_ref`, `source_hash`, and `ingested` provenance. An on-disk ledger makes unchanged re-ingests no-ops unless `ingestforce=true`.
+- Files above `ingestmaxfilekb` are skipped rather than truncated; acceptable long files are split on headings. README and `docs/` content is prioritized and vendor directories are skipped.
+- `wikiroot` and filesystem mounts now accept local `.zip` and `.okt` archives. Archives are always read-only and must contain `index.md` at their entry root.
+- Read-only wikis now consume existing Lucene indexes and graph data without taking a writer lock or creating metadata/cache files. `wikis3artifactprefix` can hydrate a separately published artifact tree into `wikiindexdir` for S3 deployments.
+
+See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the ingestion and archive options.
+
+---
+
+### `mcp-wiki-safe`: bounded retrieval for untrusted clients
+
+**Change**: A new `mcp-wiki-safe` MCP endpoint exposes only restricted wiki `search` and `read` operations. Search returns bounded metadata and opaque, short-lived references; each reference permits one bounded excerpt read.
+
+- `wikirestrictprofile=tight` is the default. `moderate` and `relaxed` increase limits while retaining hard ceilings; individual `wikirestrict*` parameters override a profile.
+- `wikirestrictprofile=off` is an explicit escape hatch for trusted clients only. It removes restrictions but keeps the endpoint read-only.
+- For load-balanced replicas, use `wikirestrictrefch` with a concurrent shared channel such as Redis or Mongo. Store the independent usage ledger (`wikirestrictstate`) durably and outside the wiki root.
+
+See [MCP Catalog → mcp-wiki-safe]({{ '/mcp-catalog/#mcp-wiki-safe' | relative_url }}) for deployment examples and profile limits.
+
+---
+
+### Wiki dreams now apply by default and always finalize
+
+**Breaking change**: `dreamwikiapply` and the `lint` dream mode were removed. `dreamwikimode=apply` is now the default; use `dreamwikidryrun=true`, `dryrun=true`, or `dreamwikimode=plan` for a no-write proposal. Structural `reorg` remains explicitly gated by `dreamwikireorg=true` and `dreamwikiapproval=auto`.
+
+Every apply or reorganization now ends with a deterministic finalize pass: generated root/section indexes, metadata shards, full-text search, and the optional graph are rebuilt from live page metadata.
+
+---
+
 ### Wiki: Open Knowledge Format (OKF) compatibility
 
 **Change**: The wiki (`mini-a-wiki.js`) is now format-level compatible with Google's [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog) (OKF), so mini-a wikis can be read by — and can read — OKF bundles.

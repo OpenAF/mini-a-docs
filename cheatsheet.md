@@ -74,6 +74,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/wiki mounts` | List active read-only mounts |
 | `/wiki attach <name> [backend=fs] [root=path]` | Mount a read-only wiki |
 | `/wiki detach <name>` | Unmount a wiki |
+| `/ingest <source> [section] [dryrun] [force]` | Distil a docs folder, repository, or URL into wiki pages (requires `wikiaccess=rw`) |
 | `/rewind [n]` | Undo the last `n` user+assistant exchanges (default 1); cancels any active subtasks |
 | `/dream [memory\|wiki] [plan\|apply\|reorg\|dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
 | `/history [n]` | Show recent user goals from conversation history |
@@ -174,9 +175,11 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `usewiki` | `false` | Enable wiki knowledge base |
 | `wikiaccess` | `ro` | Wiki access: `ro` (read-only) or `rw` (read-write) |
 | `wikibackend` | `fs` | Wiki backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |
-| `wikiroot` | `.` | Root directory for the `fs` backend |
+| `wikiroot` | `.` | Filesystem directory or read-only local `.zip`/`.okt` archive for the `fs` backend |
 | `wikibucket` | - | S3 bucket name (`s3` backend) |
 | `wikimounts` | - | Read-only wiki mounts (SLON/JSON array): `[{name: 'team', backend: 'fs', root: '/path'}]` |
+| `wikis3artifactprefix` | - | S3 prefix containing published Lucene/graph artifacts to hydrate into `wikiindexdir` |
+| `wikirestrictprofile` | `tight` | `mcp-wiki-safe` profile: `tight`, `moderate`, `relaxed`, or trusted-client `off` |
 | `usememory` | `false` | Enable the working memory subsystem |
 | `memoryuser` | `false` | Convenience preset: file-backed global + session memory at `~/.openaf-mini-a/`, auto-promote `facts,decisions,summaries`, 30-day stale sweep |
 | `memoryusersession` | `false` | Convenience preset: enables `usememory`, session-only file-backed channel under `~/.openaf-mini-a/` |
@@ -210,9 +213,9 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `toolfallback` | `false` | Fall back to action mode when malformed pseudo tool calls are emitted by the model |
 | `dream` | `false` | Run in standalone dream-pass mode (memory/wiki consolidation) instead of a regular session |
 | `dryrun` | `false` | Preview dream-pass changes without writing anything back |
-| `dreamwikimode` | `apply` | Wiki dream mode: `lint`, `plan`, `apply`, `reorg` |
+| `dreamwikimode` | `apply` | Wiki dream mode: `plan`, `apply`, `reorg` |
 | `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
-| `dreamwikiapply` | `false` | Required write gate for wiki apply/reorg |
+| `dreamwikidryrun` | `false` | Propose wiki changes without writing (opt out of apply) |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
 | `dreamwikireorg` | `false` | Allow structural wiki reorg |
 | `dreamreport` | — | Optional JSON output report path |

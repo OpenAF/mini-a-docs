@@ -579,6 +579,9 @@ mini-a usewiki=true wikiroot=/shared/wiki goal="..."
 # Read-write wiki on the filesystem
 mini-a usewiki=true wikiaccess=rw wikiroot=/shared/wiki goal="..."
 
+# Read-only wiki packaged as a portable archive
+mini-a usewiki=true wikiroot=/shared/reference.okt goal="..."
+
 # Read-write wiki on Elasticsearch/OpenSearch
 mini-a usewiki=true wikiaccess=rw wikibackend=es \
   wikiurl=http://localhost:9200 goal="..."
@@ -607,6 +610,22 @@ Supported operations:
 When a brand-new wiki is opened with `wikiaccess=rw`, Mini-A auto-bootstraps three starter pages: `AGENTS.md` (ingestion workflow and contribution rules), `index.md` (entrypoint and table of contents), and `log.md` (append-only journal of every write, delete, and move). `AGENTS.md` and `log.md` are protected and cannot be deleted.
 
 Start each session with `/wiki context` for a compact overview, then search before reading any page.
+
+The filesystem backend also accepts local `.zip` and `.okt` archives as roots or mounts. Archive entries must contain `index.md` at their root; they are always read-only, including when `wikiaccess=rw` is supplied. If an archive includes `.mini-a-wiki-graph/graph.json`, Mini-A can consume it for read-only graph hints without changing the archive.
+
+### Wiki ingestion
+
+Use `mini-a-ingest.yaml` to turn a documentation folder, a local or remote git repository, or a web page into distilled wiki pages. Discovery, filtering, chunking, change detection, writing, and finalization are deterministic; only the per-source distillation calls the model.
+
+```bash
+# Preview a documentation ingest
+ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=/tmp/wiki ingestdryrun=true
+
+# In the console (requires usewiki=true wikiaccess=rw)
+/ingest ./docs reference
+```
+
+An ingest records source provenance (`source`, `source_ref`, `source_hash`, `ingested`) and skips unchanged sources through its ledger unless `ingestforce=true`. Oversized files are skipped, not truncated; accepted long sources are split at headings. See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the `ingest*` options.
 
 ### Wiki Console Commands
 
@@ -657,17 +676,17 @@ mini-a ➤ /dream memory dryrun   # preview without writing
 mini-a ➤ /dream wiki
 ```
 
-Three dream execution modes (`plan`, `apply`, `reorg`) and safety write gates are available to control exactly how changes are applied:
+Three dream execution modes (`plan`, `apply`, `reorg`) control exactly how changes are applied:
 
 | Mode / Option | Setting | Description |
 |---|---|---|
 | **Explicit Modes** | `dreamwikimode` / `dreammemorymode` | Choose consolidation depth: `plan`, `apply`, or `reorg` |
-| **Write Gates** | `dreamwikiapply=true` | Required gate to allow writes during wiki `apply` and `reorg` |
+| **No-write preview** | `dreamwikidryrun=true` | Opt out of writing during wiki `apply` |
 | **Structural Reorg** | `dreamwikireorg=true` | Allow structural directory and file moves |
 | **Reorg Approval** | **`dreamwikiapproval`** | Control structural approval flow (`auto`, `ask`, `never`) |
 | **JSON Reporting** | `dreamreport` | Optional path to write a JSON run report |
 
-Use `dryrun=true` or the `plan` mode to preview what would change without writing anything back. Memory dreams back up their pre-dream channel state to a sibling namespace before writing; wiki dreams rely on the explicit write and reorganization gates described below, so plan first and keep normal storage backups for the primary wiki.
+Use `dryrun=true`, `dreamwikidryrun=true`, or the `plan` mode to preview what would change without writing anything back. Memory dreams back up their pre-dream channel state to a sibling namespace before writing; keep normal storage backups for the primary wiki.
 
 ### Wiki dreaming and reorganization
 
@@ -675,12 +694,11 @@ Wiki dreaming is a maintenance workflow for a writable primary wiki; it is not a
 
 | Mode | Writes pages? | Purpose | Required controls |
 |---|---:|---|---|
-| `lint` | No | Inspect wiki health and report issues | `usewiki=true` |
 | `plan` / `dryrun=true` | No | Produce a proposed tree, index changes, and lint summary | `usewiki=true` |
-| `apply` | Yes | Make safe, non-structural index and metadata improvements | `dreamwikiapply=true` |
-| `reorg` | Yes | Run an agent-led structural reorganization, including high-confidence moves and index repair | `dreamwikiapply=true`, `dreamwikireorg=true`, `dreamwikiapproval=auto` |
+| `apply` | Yes | Make safe, non-structural index and metadata improvements, then finalize indexes and graph | `usewiki=true` |
+| `reorg` | Yes | Run an agent-led structural reorganization, including high-confidence moves and index repair | `dreamwikireorg=true`, `dreamwikiapproval=auto` |
 
-`plan` is the recommended first run, especially for S3 and OpenSearch-backed wikis. It emits a proposal rather than changing remote pages. `apply` will refuse to run until its explicit write gate is set. `reorg` has three independent guards: structural reorganization must be enabled, writes must be enabled, and non-interactive approval must be `auto`. With the default `ask` approval it returns `approval-required`; with `never` it returns `approval-denied`.
+`plan` is the recommended first run, especially for S3 and OpenSearch-backed wikis. It emits a proposal rather than changing remote pages. `apply` is the default and can be made no-write with `dreamwikidryrun=true`. `reorg` remains explicitly guarded: structural reorganization must be enabled and non-interactive approval must be `auto`. With the default `ask` approval it returns `approval-required`; with `never` it returns `approval-denied`.
 
 ```bash
 # Inspect a MinIO/S3 wiki without modifying it
@@ -692,7 +710,7 @@ mini-a dream=true usewiki=true wikibackend=s3 \
 
 # Run a deliberately approved structural reorganization
 mini-a dream=true usewiki=true wikiroot=/shared/wiki \
-  dreamwikimode=reorg dreamwikiapply=true dreamwikireorg=true \
+  dreamwikimode=reorg dreamwikireorg=true \
   dreamwikiapproval=auto dreamreport=/var/log/mini-a/wiki-reorg.json
 ```
 

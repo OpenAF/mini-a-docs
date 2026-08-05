@@ -862,9 +862,9 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 | `dream` | `false` | Run in standalone dream-pass mode |
 | `dreammode` | - | Dream mode selector: `memory`, `wiki`, or `both` — controls which pass(es) run |
 | `dryrun` | `false` | Preview what would change without writing anything back |
-| `dreamwikimode` | `apply` | Wiki mode: `lint`, `plan`, `apply`, `reorg` |
+| `dreamwikimode` | `apply` | Wiki mode: `plan`, `apply`, `reorg` |
 | `dreammemorymode` | `apply` | Memory mode: `plan` or `apply` |
-| `dreamwikiapply` | `false` | Required write gate for wiki apply/reorg |
+| `dreamwikidryrun` | `false` | Propose wiki changes without writing (opt out of apply) |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
 | `dreamwikireorg` | `false` | Allow structural wiki reorg |
 | `dreamreport` | - | Optional JSON output report path |
@@ -896,11 +896,11 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 ### Wiki dream internals
 
 1. `usewiki=true` is required; `wikiaccess` is forced to `rw`.
-2. `dreamwikimode=plan` and `dryrun=true` currently run the same no-write proposal path.
+2. `dreamwikimode=plan`, `dryrun=true`, and `dreamwikidryrun=true` run the same no-write proposal path.
 3. Use `dreamwikimode=plan` for explicit mode selection; use `dryrun=true` when you want the generic safety flag (it also affects memory dreams).
 4. Proposal output includes `new_tree`, `move_table`, `indexes_to_create`, `indexes_to_update`, and lint before/after summaries.
-5. `dreamwikimode=apply` only performs safe non-structural index work and requires `dreamwikiapply=true`.
-6. `dreamwikimode=reorg` is structural, requires `dreamwikireorg=true`, `dreamwikiapply=true`, and `dreamwikiapproval=auto`.
+5. `dreamwikimode=apply` is the default and performs safe non-structural work; use `dreamwikidryrun=true` to opt out.
+6. `dreamwikimode=reorg` is structural and requires `dreamwikireorg=true` plus `dreamwikiapproval=auto`.
 7. A `MiniAWikiManager` exposes hierarchy-aware `tree`, `browse`, `backlinks`, `move`, and `lint()` operations.
 8. A full `MiniA` agent is spawned (default `maxsteps=60`, controlled by `dreammaxsteps`) with the following goal:
    - Discover the hierarchy with `tree`/`browse`, search related content, inspect backlinks, and list lint issues.
@@ -947,7 +947,7 @@ mini-a dream=true \
 # Non-interactive safe apply + JSON report
 mini-a dream=true \
   usewiki=true wikiroot=/shared/wiki \
-  dreamwikimode=apply dreamwikiapply=true \
+  dreamwikimode=apply \
   dreamreport=/var/log/mini-a/dream-wiki-apply.json \
   model='(type: anthropic, model: claude-sonnet-4-6)'
 
@@ -955,7 +955,7 @@ mini-a dream=true \
 mini-a dream=true \
   usewiki=true wikiroot=/shared/wiki \
   dreamwikimode=reorg dreamwikireorg=true \
-  dreamwikiapply=true dreamwikiapproval=auto \
+  dreamwikiapproval=auto \
   dreamreport=/var/log/mini-a/dream-wiki-reorg.json \
   model='(type: anthropic, model: claude-sonnet-4-6)'
 ```

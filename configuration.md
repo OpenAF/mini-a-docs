@@ -445,7 +445,7 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 | `usewiki` | `false` | Enable the wiki knowledge base |
 | `wikiaccess` | `ro` | Access mode: `ro` (read-only) or `rw` (read-write) |
 | `wikibackend` | `fs` | Backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |
-| `wikiroot` | `.` | Root directory for the `fs` backend |
+| `wikiroot` | `.` | Filesystem directory or local `.zip`/`.okt` archive for the `fs` backend; archives are always read-only |
 | `wikibucket` | - | S3 bucket name (`s3`/`s3fs` backend) |
 | `wikiprefix` | - | S3 key prefix (`s3`/`s3fs`); Elasticsearch index name for `es` (defaults to `mini_a_wiki`) |
 | `wikiurl` | - | S3-compatible endpoint URL (`s3`/`s3fs`); Elasticsearch/OpenSearch base URL for `es` |
@@ -455,11 +455,13 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 | `wikiuseversion1` | `false` | Use S3 path-style (v1) signing (`s3`/`s3fs` backend) |
 | `wikiignorecertcheck` | `false` | Skip TLS certificate validation (`s3`/`s3fs` backend) |
 | `wikiindexdir` | - | Override the local index/cache root used for non-filesystem wiki indexes |
+| `wikis3artifactprefix` | - | For an `s3` wiki, download a separately published Lucene/graph artifact tree into `wikiindexdir` at startup; read-only MCPs never publish artifacts back |
+| `wikirestrictprofile` | `tight` | `mcp-wiki-safe` restricted-retrieval profile: `tight`, `moderate`, `relaxed`, or explicit trusted-client escape hatch `off` |
 | `wikimetacache` | `true` | Enable the sharded wiki page metadata cache |
 | `wikilintstaleddays` | `90` | Days before a page without an `updated` field is marked stale in lint |
 | `wikilintstreamthreshold` | `2000` | Page count above which `lint` switches into streaming mode |
 | `wikilintmaxpairs` | `250000` | Max near-duplicate comparisons performed during streaming lint |
-| `wikimounts` | - | SLON/JSON array of read-only wiki mounts: `[{name: 'team', backend: 'fs', root: '/path'}]` — mounted pages appear as `@name/path.md` in all wiki operations |
+| `wikimounts` | - | SLON/JSON array of read-only wiki mounts: `[{name: 'team', backend: 'fs', root: '/path'}]`; an `fs` root may be a directory or local `.zip`/`.okt` archive — mounted pages appear as `@name/path.md` |
 
 When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps three starter pages: `AGENTS.md` (ingestion workflow and rules), `index.md` (entrypoint/catalog), and `log.md` (append-only journal of every write, delete, and move). `AGENTS.md` and `log.md` are protected and cannot be deleted.
 
@@ -469,6 +471,30 @@ Wiki operations available to the agent: `context`, `list`, `tree`, `browse`, `re
 Operations that require `wikiaccess=rw`: `write`, `move`, `init`, `reindex`.
 Console commands: `/wiki context`, `/wiki list [prefix]`, `/wiki tree [prefix]`, `/wiki browse [prefix]`, `/wiki read <page.md>`, `/wiki search <query>`, `/wiki backlinks <page.md>`, `/wiki lint`, `/wiki reindex`, `/wiki mounts`, `/wiki attach <name> [backend=fs] [root=path]`, `/wiki detach <name>`.
 Use `/stats wiki` to see per-operation counters for the current session.
+
+Archive roots and mounts require `index.md` and pages at the archive entry root. They can be searched and browsed but are never writable; if `usewikigraph=true`, Mini-A can consume an existing embedded `.mini-a-wiki-graph/graph.json` for read-only graph hints without rebuilding it.
+
+### Wiki ingestion
+
+`mini-a-ingest.yaml` turns a documentation folder, local/remote git repository, or web page into wiki pages. Discovery, filtering, chunking, the re-ingest ledger, writing, and finalization are deterministic; only per-source distillation uses the model.
+
+```bash
+ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=/tmp/wiki
+ojob mini-a-ingest.yaml ingestsource=https://github.com/OpenAF/mini-a wikiroot=/tmp/wiki ingestdryrun=true
+```
+
+The interactive equivalent (with `usewiki=true wikiaccess=rw`) is `/ingest <source> [section] [dryrun] [force]`. Sources larger than `ingestmaxfilekb` (default `512`) are skipped rather than truncated; large accepted sources are split at headings (`ingestchunkchars`, default `24000`). A ledger at `<indexRoot>/.mini-a-wiki-ingest/ledger.json` skips unchanged sources unless `ingestforce=true`; pages include `source`, `source_ref`, `source_hash`, and `ingested` provenance front matter.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `ingestsource` | - | Required folder, git repository path/URL, or page URL |
+| `ingesttype` | auto | `markdown`, `repo`, or `url` |
+| `ingestsection` | source name | Wiki section for generated pages |
+| `ingestinclude` / `ingestexclude` | - | Comma-separated path fragments to include or exclude |
+| `ingestchunkchars` / `ingestmaxfilekb` | `24000` / `512` | Chunk size and maximum accepted source size |
+| `ingestconcurrency` | `4` | Parallel source distillations |
+| `ingestdryrun` / `ingestforce` | `false` | Preview without writes / re-ingest unchanged sources |
+| `ingestledger` | `<indexRoot>/.mini-a-wiki-ingest/ledger.json` | Ledger path |
 
 ### Wiki Knowledge Graph
 
@@ -497,9 +523,9 @@ Console command: `/graph [build|query|neighbors|path|communities|surprise|export
 
 ### MCP deployment, storage, and search behavior
 
-Publish `mcp-wiki` to clients that only need discovery and retrieval: it is always read-only and exposes `context`, `search`, `read`, `browse`, `list`, `tree`, and `backlinks`. Deploy `mcp-wiki-ops` separately for trusted maintenance: it provides `context`, `lint`, `edit`, `maintain`, `reindex`, `graph_build`, and `graph_falkor`; it defaults to writable mode, and `wikiopsreadonly=true` disables mutations.
+Publish `mcp-wiki` to clients that only need discovery and retrieval: it is always read-only and exposes `context`, `search`, `read`, `browse`, `list`, `tree`, and `backlinks`. Deploy `mcp-wiki-ops` separately for trusted maintenance: it provides `context`, `lint`, `edit`, `maintain`, `reindex`, `graph_build`, and `graph_falkor`; it defaults to writable mode, and `wikiopsreadonly=true` disables mutations. For untrusted clients, use `mcp-wiki-safe`: it exposes only bounded `search` and single-use excerpt `read` operations using opaque references.
 
-For `s3` backends, the bucket and prefix contain the source Markdown pages. A local Lucene index may accelerate unscoped literal search, but it is not stored in S3 and is only built or refreshed by writable wiki operations such as `reindex`. Consequently, a fresh read-only `mcp-wiki` instance scans the S3 Markdown objects until a compatible local index already exists. Regex and path-scoped searches scan by design. `wikiindexdir` controls the non-filesystem local index/cache root for the core wiki runtime; use durable local storage when depending on that cache.
+For `s3` backends, the bucket and prefix contain the source Markdown pages. A local Lucene index may accelerate unscoped literal search, but it is not stored in S3 and is only built or refreshed by writable wiki operations such as `reindex`. A read-only server consumes an existing local index without taking its writer lock, otherwise it scans Markdown objects and creates nothing. Regex and path-scoped searches scan by design. `wikiindexdir` controls the non-filesystem local index/cache root; `wikis3artifactprefix` can hydrate a separately published Lucene/graph artifact tree into that directory at startup.
 
 The `es` backend stores wiki pages in Elasticsearch/OpenSearch, but it is not a native OpenSearch query interface: wiki search still follows the local-Lucene-or-page-scan path. Use `mcp-es-search` for native cluster queries. `s3fs` copies S3 pages into `wikiroot` on writable startup and then uses the filesystem backend; it is not bidirectional S3 synchronization.
 
@@ -518,9 +544,9 @@ An LLM-powered off-line consolidation pass over persistent memory and/or the wik
 | `dream` | `false` | Run in standalone dream-pass mode instead of a regular agent session |
 | `dreammode` | - | Dream mode selector: `memory`, `wiki`, or `both` — controls which pass(es) run |
 | `dryrun` | `false` | Preview what would change without writing anything back |
-| `dreamwikimode` | `apply` | Wiki dream mode: `lint`, `plan`, `apply`, `reorg` |
+| `dreamwikimode` | `apply` | Wiki dream mode: `plan`, `apply`, `reorg` |
 | `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
-| `dreamwikiapply` | `false` | Required write gate for wiki `apply` or `reorg` modes |
+| `dreamwikidryrun` | `false` | Propose wiki changes without writing; opt out of `apply` |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
 | `dreamwikireorg` | `false` | Allow structural reorg operations during wiki dream |
 | `dreamreport` | - | Optional file path to write JSON run report |

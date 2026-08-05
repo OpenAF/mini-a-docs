@@ -6,7 +6,7 @@ permalink: /mcp-catalog/
 
 **MCP (Model Context Protocol)** is an open standard that defines how LLMs discover and invoke external tools through a uniform interface. Instead of hard-coding integrations, mini-a connects to MCP servers that expose capabilities as callable tools. Each MCP server runs as a separate process (STDIO) or remote service (HTTP), and mini-a automatically discovers available tools at startup.
 
-mini-a ships with **29 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
+mini-a ships with **30 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
 
 ---
 
@@ -42,6 +42,7 @@ mini-a ships with **29 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-office` | Office document processing | STDIO | `readExcel`, `readWord`, `readPDF` |
 | `mcp-ollama-web-search` | Web search via Ollama API | STDIO/HTTP | `web-search` |
 | `mcp-wiki` | Read-only Markdown wiki discovery | STDIO/HTTP | `context`, `search`, `read`, `browse`, `list`, `tree`, `backlinks` |
+| `mcp-wiki-safe` | Restricted wiki retrieval for untrusted clients | STDIO/HTTP | `search`, `read` |
 | `mcp-wiki-ops` | Wiki maintenance, editing, and indexing | STDIO/HTTP | `context`, `lint`, `edit`, `maintain`, `reindex` |
 
 ---
@@ -464,6 +465,8 @@ ojob mcps/mcp-pass.yaml onport=9091 uri=/mcp \
 
 The downstream STDIO servers emit TOON tool results and `mcp-pass` forwards them verbatim to the client. For *remote* downstream MCPs, set the flag on those servers instead — `mcp-pass` does not re-encode content produced elsewhere.
 
+**Auditing tool calls:** Set `OJOB_MCP_AUDIT=true` before starting any built-in MCP to log every `tools/call` request through OpenAF's `log()` function, including tool name and arguments. It is off by default and works in both STDIO and HTTP modes. Custom MCP YAML files using OpenAF's `httpdMCP` or `stdioMCP` helpers inherit the same behavior; pass `audit=true` directly when configuring those helpers if an environment variable is not suitable.
+
 **When to choose `mcp-pass` vs `mcp-proxy`:**
 
 - Use `mcp-pass` when you want the merged tools to appear directly to the client.
@@ -568,7 +571,7 @@ Read-only discovery MCP for a Markdown wiki, backed by `MiniAWikiManager`. Use i
 | Argument | Description |
 |----------|-------------|
 | `wikibackend` | Backend type: `fs`, `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch; default: `fs`) |
-| `wikiroot` | Root directory for the `fs` backend (default: `.`) |
+| `wikiroot` | Filesystem directory or local read-only `.zip`/`.okt` archive for the `fs` backend (default: `.`) |
 | `wikibucket` | S3 bucket name (`s3` backend) |
 | `wikiprefix` | S3 key prefix (`s3`/`s3fs`) or Elasticsearch/OpenSearch index name (`es`) |
 | `wikiurl` | S3-compatible endpoint (`s3`/`s3fs`) or Elasticsearch/OpenSearch base URL (`es`) |
@@ -576,6 +579,7 @@ Read-only discovery MCP for a Markdown wiki, backed by `MiniAWikiManager`. Use i
 | `wikisecret` | S3 secret key or Elasticsearch/OpenSearch password |
 | `wikiregion` / `wikiuseversion1` / `wikiignorecertcheck` | S3 region, path-style/signature-v1 compatibility, and TLS-validation control |
 | `wikimounts` | SLON/JSON array of read-only wiki mounts: `[{name, backend, root|bucket|prefix|url|...}]` |
+| `wikis3artifactprefix` | Optional S3 prefix holding published Lucene/graph artifacts to hydrate into `wikiindexdir` at startup |
 | `usewikigraph` | Enable the wiki knowledge graph (auto-enabled when `wikigraphfalkorhost` is set); search transparently appends related-page hints |
 | `wikigraphsearchhints` | Append graph-related pages to search results when the wiki graph is enabled (default: `true`) |
 | `wikigraphhintcap` | Maximum graph-hint pages appended to search results (default: `5`) |
@@ -596,6 +600,26 @@ ojob mcps/mcp-wiki.yaml onport=8990 wikiroot=/shared/wiki label=TeamWiki
 ```
 
 **Tools:** `context`, `search`, `read`, `browse`, `list`, `tree`, `backlinks`.
+
+### mcp-wiki-safe
+
+`mcp-wiki-safe` is a read-only companion endpoint for an untrusted MCP client without direct backend access. It publishes only `search` and `read`: search returns bounded metadata and opaque, short-lived references; read consumes a reference once to return a bounded excerpt. This makes browsing and inventory collection difficult, but it is not DRM: clients can retain any text they are shown.
+
+```bash
+ojob mcps/mcp-wiki-safe.yaml onport=8888 label="Team wiki" wikiroot=./wiki \
+  wikirestrictstate=/var/lib/mcp-wiki/restriction-ledger.json
+```
+
+`wikirestrictprofile` selects the disclosure defaults. `tight` is the default; `moderate` and `relaxed` change only limits, while hard ceilings continue to apply (`searchlimit <= 10`, `readlines <= 100`, `readchars <= 16000`). Individual `wikirestrict*` arguments override the selected profile. The explicit `off` profile removes all restrictions and makes this endpoint behave as unrestricted read-only `mcp-wiki`, so use it only for clients you already trust.
+
+| Profile | Search results | Read lines | Read chars | Reference TTL | Searches / reads per hour |
+|---|---:|---:|---:|---:|---:|
+| `tight` (default) | 3 | 40 | 6000 | 120s | 30 / 15 |
+| `moderate` | 5 | 70 | 10000 | 300s | 60 / 30 |
+| `relaxed` | 10 | 100 | 16000 | 600s | 120 / 60 |
+| `off` | unbounded | unbounded | unbounded | — | unbounded |
+
+For multiple replicas, configure `wikirestrictrefch` with a concurrent shared OpenAF channel such as Redis or Mongo so a reference issued by one instance can be consumed by another. The default in-memory channel and `file` channel are suitable only for one writer. `wikirestrictstate`, which tracks usage budgets, is separate; use durable storage and protect it with ordinary filesystem permissions.
 
 ---
 
@@ -659,7 +683,7 @@ ojob mcps/mcp-wiki-ops.yaml onport=8991 \
   wikiregion=us-east-1 wikiuseversion1=true wikiaccess=rw label="Team wiki ops"
 ```
 
-Wiki search first tries the optional local Lucene index for ordinary, unscoped literal searches. That index is local to the MCP process host, not stored in S3. A read-only `mcp-wiki` server never creates or refreshes it; on a new host or a fresh S3 prefix it lists Markdown objects and scans their content instead. Run `mcp-wiki-ops` with `wikiaccess=rw` and call `reindex` after bulk imports or migrations when you want a local Lucene index. Keep the maintenance service's local index storage durable if you rely on it, and treat it as a cache: S3 remains the source of truth. Regex, path-scoped, and explicit scan searches also use the scan path.
+Wiki search first tries the optional local Lucene index for ordinary, unscoped literal searches. That index is local to the MCP process host, not stored in S3. A read-only `mcp-wiki` server consumes an existing index without taking the writer lock and never creates or refreshes it; on a new host or fresh prefix it scans Markdown objects without creating files. Set `wikis3artifactprefix` to hydrate a separately published Lucene/graph artifact tree into `wikiindexdir` at startup. Run `mcp-wiki-ops` with `wikiaccess=rw` and call `reindex` after bulk imports or migrations when you want a local Lucene index. Keep the maintenance service's local index storage durable if you rely on it, and treat it as a cache: S3 remains the source of truth. Regex, path-scoped, and explicit scan searches also use the scan path.
 
 `wikibackend=s3fs` is a bootstrap/cache mode, not bidirectional synchronization: in writable mode it first copies the S3 pages into `wikiroot`, then uses the local filesystem backend. Do not use it as a multi-writer S3 replication mechanism.
 
