@@ -14,7 +14,6 @@ minima:
     - getting-started.md
     - features.md
     - whats-new.md
-    - agent-plugins.md
     - examples.md
     - configuration.md
     - search.md

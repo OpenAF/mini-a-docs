@@ -762,7 +762,7 @@ When `adaptiverouting=false` (default), mini-a preserves legacy tool dispatch be
 
 ---
 
-## Agent Files
+## Agent Files and Plugins
 
 mini-a lets you package an entire agent configuration — model, capabilities, tools, rules, knowledge, and persona — into a single **markdown file with YAML frontmatter**. Reuse and share agent profiles across your team or project without repeating command-line flags.
 
@@ -771,6 +771,8 @@ mini-a agent=examples/changelog-gen.agent.md goal="generate changelog"
 ```
 
 See the [Agent Files]({{ '/agents' | relative_url }}) page for the complete reference: frontmatter keys, tool entry types, `mini-a:` overrides, relative file paths, precedence rules, and a full annotated example.
+
+For portable bundles of skills and MCP servers, use [Agent Plugins]({{ '/agent-plugins' | relative_url }}).
 
 ---
 
