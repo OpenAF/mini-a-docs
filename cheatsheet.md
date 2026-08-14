@@ -213,7 +213,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `toolfallback` | `false` | Fall back to action mode when malformed pseudo tool calls are emitted by the model |
 | `dream` | `false` | Run in standalone dream-pass mode (memory/wiki consolidation) instead of a regular session |
 | `dryrun` | `false` | Preview dream-pass changes without writing anything back |
-| `dreamwikimode` | `apply` | Wiki dream mode: `plan`, `apply`, `reorg` |
+| `dreamwikimode` | `apply` | Wiki dream mode: `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, `indexes` |
 | `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
 | `dreamwikidryrun` | `false` | Propose wiki changes without writing (opt out of apply) |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |

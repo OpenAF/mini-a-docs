@@ -32,6 +32,7 @@ export MINI_A_PARAM=value
 | `deescalate` | `3` | Consecutive successful steps required before switching back to the low-cost model after escalation |
 | `lcescalatedefer` | `true` | Defer LC-to-main escalation by one step when LC confidence remains high |
 | `lcbudget` | `0` | Maximum total LC token budget before permanently switching to the main model (`0` = unlimited) |
+| `lcjsonretries` | `1` | Extra same-step retries for invalid low-cost-model JSON before Mini-A falls back to the main model (`0` disables retries) |
 | `llmcomplexity` | `false` | Use a quick LC validation call for medium-complexity routing heuristics |
 | `modelstrategy` | `default` | Model orchestration profile: `default` (LC-first with escalation), `advisor` (LC executes, main model consulted selectively for difficult steps), or `delegate` (LC executes all steps including step 0) |
 | `advisorenable` | `true` | Enable main-model advisor consultations when `modelstrategy=advisor` |
@@ -83,6 +84,9 @@ export MINI_A_PARAM=value
 | `extracommands` | - | Comma-separated extra directories for custom slash command templates |
 | `extraskills` | - | Comma-separated extra directories for custom skills |
 | `extrahooks` | - | Comma-separated extra directories for hook definitions |
+| `plugins` | - | Comma-separated explicit [Agent Plugin]({{ '/agent-plugins' | relative_url }}) directories |
+| `pluginsroot` | `~/.openaf-mini-a/plugins` | Root whose immediate subdirectories are discovered as Agent Plugins |
+| `pluginsroots` | - | Comma-separated additional Agent Plugin roots |
 | `secpass` | - | Password used to open OpenAF sBucket model secrets |
 | `auditch` | - | SLON channel definition for agent interaction audit logs — see [Channels]({{ '/channels' | relative_url }}) for backend options and examples |
 | `toollog` | - | SLON channel definition for dedicated MCP tool input/output logs — see [Channels]({{ '/channels' | relative_url }}) for backend options and examples |
@@ -372,6 +376,8 @@ Enable a structured, scoped working memory subsystem that the agent maintains au
 | `memorymaxentries` | number | `500` | Hard cap on total entries across all sections. |
 | `memorycompactevery` | number | `8` | Number of append operations that trigger an automatic memory compaction pass. |
 | `memorydedup` | boolean | `true` | Suppress near-duplicate entries using an 85% word-overlap fingerprint. |
+| `memoryartifactttldays` | number | `7` | Retention period for normalized tool and network observations before expiration. |
+| `memoryindexttldays` | number | `1` | Retention period for list, search, and index observation snapshots before expiration. |
 | `memorypromote` | string | `""` | Comma-separated list of sections to auto-promote from session to global memory at session end. |
 | `memorystaledays` | number | `0` | Days without confirmation before a global entry is marked `stale` (cleared during compaction if section overflows). |
 | `memoryinject` | string | `summary` | Context injection style: `summary` injects only per-section counts and enables dynamic `memory_search`; `full` embeds the entire memory snapshot in every step's context. |
@@ -444,18 +450,28 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 |-----------|---------|-------------|
 | `usewiki` | `false` | Enable the wiki knowledge base |
 | `wikiaccess` | `ro` | Access mode: `ro` (read-only) or `rw` (read-write) |
-| `wikibackend` | `fs` | Backend: `fs` (filesystem), `s3`, `s3fs`, or `es` (Elasticsearch/OpenSearch) |
+| `wikibackend` | `fs` | Backend: `fs` (filesystem), `s3`, `s3fs`, `es` (Elasticsearch/OpenSearch), or read-only `http` (`https` is an alias) |
 | `wikiroot` | `.` | Filesystem directory or local `.zip`/`.okt` archive for the `fs` backend; archives are always read-only |
 | `wikibucket` | - | S3 bucket name (`s3`/`s3fs` backend) |
 | `wikiprefix` | - | S3 key prefix (`s3`/`s3fs`); Elasticsearch index name for `es` (defaults to `mini_a_wiki`) |
-| `wikiurl` | - | S3-compatible endpoint URL (`s3`/`s3fs`); Elasticsearch/OpenSearch base URL for `es` |
+| `wikiurl` | - | S3-compatible endpoint (`s3`/`s3fs`), Elasticsearch/OpenSearch base URL (`es`), or static page-server base URL (`http`) |
 | `wikiaccesskey` | - | S3 access key (`s3`/`s3fs`); Elasticsearch username for `es` |
 | `wikisecret` | - | S3 secret key (`s3`/`s3fs`); Elasticsearch password for `es` |
 | `wikiregion` | - | S3 region (`s3`/`s3fs` backend) |
 | `wikiuseversion1` | `false` | Use S3 path-style (v1) signing (`s3`/`s3fs` backend) |
 | `wikiignorecertcheck` | `false` | Skip TLS certificate validation (`s3`/`s3fs` backend) |
 | `wikiindexdir` | - | Override the local index/cache root used for non-filesystem wiki indexes |
-| `wikis3artifactprefix` | - | For an `s3` wiki, download a separately published Lucene/graph artifact tree into `wikiindexdir` at startup; read-only MCPs never publish artifacts back |
+| `wikis3artifactprefix` | - | For an `s3` wiki, download a separately published Lucene/graph artifact tree into `wikiindexdir`; read-only MCPs never publish artifacts back |
+| `s3artifactbundle` | `false` | Use one `mini-a-wiki-index.zip` bundle under `wikis3artifactprefix` |
+| `wikihttpindexurl` | `<wikiurl>/mini-a-wiki-index.zip` | Override the HTTP search/graph artifact-bundle URL |
+| `wikihttptimeout` | `30000` | HTTP wiki page and artifact request timeout, in milliseconds |
+| `wikiartifactrefreshsecs` | `0` | Seconds between HTTP/S3 artifact metadata refresh checks; `0` checks only at startup |
+| `wikilexical` | `{ language: "english" }` | Lucene lexical settings: language, synonyms, and opt-in shingles, n-grams, query expansion, and pseudo-relevance feedback |
+| `wikisearchscanbudget` | `1000` | Maximum pages read by scan-fallback search across all mounts |
+| `wikisearchscanmaxms` | `15000` | Scan-fallback wall-clock budget in milliseconds |
+| `wikisearchcache` | backend-dependent | Cache backend reads during scan fallback (`true` for `s3`/`http`/`es`; otherwise `false`) |
+| `wikisearchcachettlms` / `wikisearchcachemaxsize` | `15000` / `500` | Scan-fallback read-cache lifetime and maximum entries |
+| `wikisearchparallel` | `false` | Opt in to parallel backend reads during scan fallback |
 | `wikirestrictprofile` | `tight` | `mcp-wiki-safe` restricted-retrieval profile: `tight`, `moderate`, `relaxed`, or explicit trusted-client escape hatch `off` |
 | `wikimetacache` | `true` | Enable the sharded wiki page metadata cache |
 | `wikilintstaleddays` | `90` | Days before a page without an `updated` field is marked stale in lint |
@@ -473,6 +489,8 @@ Console commands: `/wiki context`, `/wiki list [prefix]`, `/wiki tree [prefix]`,
 Use `/stats wiki` to see per-operation counters for the current session.
 
 Archive roots and mounts require `index.md` and pages at the archive entry root. They can be searched and browsed but are never writable; if `usewikigraph=true`, Mini-A can consume an existing embedded `.mini-a-wiki-graph/graph.json` for read-only graph hints without rebuilding it.
+
+Static HTTP wikis are read-only. They fetch pages from `wikiurl`; listing, search, and graph hints use a published `mini-a-wiki-index.zip` containing Lucene state and, optionally, `.mini-a-wiki-graph/graph.json`. Set `wikiartifactrefreshsecs` for long-lived instances that must notice a newly published bundle. After changing `wikilexical`, run `/wiki reindex` on a writable publisher; read-only consumers retain ordinary Lucene retrieval and warn when their index contract does not match.
 
 ### Wiki ingestion
 
@@ -544,7 +562,7 @@ An LLM-powered off-line consolidation pass over persistent memory and/or the wik
 | `dream` | `false` | Run in standalone dream-pass mode instead of a regular agent session |
 | `dreammode` | - | Dream mode selector: `memory`, `wiki`, or `both` — controls which pass(es) run |
 | `dryrun` | `false` | Preview what would change without writing anything back |
-| `dreamwikimode` | `apply` | Wiki dream mode: `plan`, `apply`, `reorg` |
+| `dreamwikimode` | `apply` | Wiki dream mode: `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, or `indexes` |
 | `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
 | `dreamwikidryrun` | `false` | Propose wiki changes without writing; opt out of `apply` |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
@@ -554,6 +572,8 @@ An LLM-powered off-line consolidation pass over persistent memory and/or the wik
 | `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
 
 The `memorych`, `memorysessionch`, `memorysessionid`, `auditch`, `usewiki`, and `model` parameters are shared with the memory and wiki subsystems. See the [Advanced — Dreams]({{ '/advanced/' | relative_url }}#dreams-sleep-pass) page for full documentation and examples.
+
+`repair`, `reindex`, `graph`, and `indexes` are isolated maintenance operations: deterministic lint repair, search-index rebuild, graph-only rebuild (requires `usewikigraph=true`), and unconditional `index.md` regeneration respectively. They avoid the broader apply/reorganization flow.
 
 </div>
 

@@ -862,7 +862,7 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 | `dream` | `false` | Run in standalone dream-pass mode |
 | `dreammode` | - | Dream mode selector: `memory`, `wiki`, or `both` — controls which pass(es) run |
 | `dryrun` | `false` | Preview what would change without writing anything back |
-| `dreamwikimode` | `apply` | Wiki mode: `plan`, `apply`, `reorg` |
+| `dreamwikimode` | `apply` | Wiki mode: `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, `indexes` |
 | `dreammemorymode` | `apply` | Memory mode: `plan` or `apply` |
 | `dreamwikidryrun` | `false` | Propose wiki changes without writing (opt out of apply) |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |

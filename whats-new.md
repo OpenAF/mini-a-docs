@@ -8,6 +8,40 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Agent Plugins
+
+**Change**: Mini-A can now load [Agent Plugins]({{ '/agent-plugins' | relative_url }}) using the agent-plugins.org 1.0 directory format. A plugin may bundle skills and MCP server definitions in one portable folder.
+
+- Load explicit plugin folders with `plugins=`, or discover immediate children of `pluginsroot=` / `pluginsroots=`. The default root is `~/.openaf-mini-a/plugins`.
+- Plugin skills compose with `extraskills` and never shadow a built-in or user skill of the same name. Plugin MCP entries compose with `mcp=`.
+- Stdio servers receive managed `PLUGIN_ROOT` and `PLUGIN_DATA` paths. Paths and working directories are constrained to the plugin or its own data directory.
+- A malformed plugin or individual MCP server is skipped with a warning, without preventing other plugins, skills, or servers from loading.
+
+See [Agent Plugins]({{ '/agent-plugins' | relative_url }}) for the layout, supported transports, and compatibility limits.
+
+---
+
+### Focused wiki maintenance and resilient tool batches
+
+**Change**: Wiki dreams now offer small, deterministic maintenance modes alongside the existing plan, apply, and guarded reorganization flows.
+
+- `dreamwikimode=repair` applies only deterministic lint repairs; `reindex` rebuilds search; `graph` rebuilds the knowledge graph; and `indexes` regenerates directory indexes.
+- In `apply` and `reorg` flows, deterministic repair now runs in bounded passes before finalization. `apply`/`plan` can include semantic graph extraction when the graph is enabled, unless explicitly disabled.
+- If a parallel MCP batch times out partway through, missing results are surfaced as named, retryable tool failures. Completed calls are retained, rather than silently leaving an incomplete result slot.
+- The interactive console now uses the synchronous OpenAF shutdown-hook path on exit, ensuring Mini-A's resource cleanup runs before process termination.
+
+See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the new modes and search-artifact settings.
+
+---
+
+### Low-cost model JSON recovery and expiring observations
+
+**Change**: `lcjsonretries` controls how many same-step retries Mini-A makes when the low-cost model returns invalid JSON before escalating to the main model. It defaults to `1`; set `0` to disable it.
+
+Working memory now also gives short-lived tool and network observations explicit expiry controls: `memoryartifactttldays` defaults to 7 days and `memoryindexttldays` defaults to 1 day. This keeps cached operational observations useful without turning them into permanent facts.
+
+---
+
 ### Wiki ingestion, portable archives, and read-only artifacts
 
 **Change**: Mini-A can now turn existing documentation into a wiki through `mini-a-ingest.yaml` or `/ingest <source> [section] [dryrun] [force]`. Folders, local/remote git repositories, and web pages are supported. Discovery, filtering, chunking, change detection, writes, and finalization are deterministic; only per-source distillation uses the LLM.

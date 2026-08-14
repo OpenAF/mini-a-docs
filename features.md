@@ -676,11 +676,11 @@ mini-a ➤ /dream memory dryrun   # preview without writing
 mini-a ➤ /dream wiki
 ```
 
-Three dream execution modes (`plan`, `apply`, `reorg`) control exactly how changes are applied:
+Seven wiki dream execution modes control exactly how maintenance is applied:
 
 | Mode / Option | Setting | Description |
 |---|---|---|
-| **Explicit Modes** | `dreamwikimode` / `dreammemorymode` | Choose consolidation depth: `plan`, `apply`, or `reorg` |
+| **Explicit Modes** | `dreamwikimode` / `dreammemorymode` | Wiki: `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, or `indexes`; memory: `plan` or `apply` |
 | **No-write preview** | `dreamwikidryrun=true` | Opt out of writing during wiki `apply` |
 | **Structural Reorg** | `dreamwikireorg=true` | Allow structural directory and file moves |
 | **Reorg Approval** | **`dreamwikiapproval`** | Control structural approval flow (`auto`, `ask`, `never`) |
@@ -697,6 +697,10 @@ Wiki dreaming is a maintenance workflow for a writable primary wiki; it is not a
 | `plan` / `dryrun=true` | No | Produce a proposed tree, index changes, and lint summary | `usewiki=true` |
 | `apply` | Yes | Make safe, non-structural index and metadata improvements, then finalize indexes and graph | `usewiki=true` |
 | `reorg` | Yes | Run an agent-led structural reorganization, including high-confidence moves and index repair | `dreamwikireorg=true`, `dreamwikiapproval=auto` |
+| `repair` | Yes | Run deterministic lint repairs only | `usewiki=true` |
+| `reindex` | Yes | Rebuild the search index only | `usewiki=true` |
+| `graph` | Yes | Rebuild the knowledge graph only | `usewiki=true`, `usewikigraph=true` |
+| `indexes` | Yes | Regenerate all directory `index.md` pages only | `usewiki=true` |
 
 `plan` is the recommended first run, especially for S3 and OpenSearch-backed wikis. It emits a proposal rather than changing remote pages. `apply` is the default and can be made no-write with `dreamwikidryrun=true`. `reorg` remains explicitly guarded: structural reorganization must be enabled and non-interactive approval must be `auto`. With the default `ask` approval it returns `approval-required`; with `never` it returns `approval-denied`.
 

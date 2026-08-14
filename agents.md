@@ -6,6 +6,8 @@ permalink: /agents/
 
 Agent files let you package an entire mini-a configuration — model, capabilities, tools, rules, knowledge, and persona — into a single **portable markdown file**. Instead of passing dozens of flags on every run, you write a `.agent.md` file once and reuse it across sessions, projects, and teammates.
 
+For a distributable bundle of skills and MCP servers, see [Agent Plugins]({{ '/agent-plugins' | relative_url }}).
+
 ---
 
 ## Quick Start
