@@ -31,6 +31,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | Anthropic | `export OAF_MODEL="(type: anthropic, model: claude-sonnet-4-20250514, key: '...')"` |
 | Ollama | `export OAF_MODEL="(type: ollama, model: 'llama3', url: 'http://localhost:11434')"` |
 | Bedrock | `export OAF_MODEL="(type: bedrock, options: (region: eu-west-1, model: 'anthropic.claude-sonnet-4-20250514-v1:0'))"` |
+| Bedrock GPT-5.6 Luna | `export OAF_MODEL="(type: bedrock, options: (region: eu-west-1, model: global.openai.gpt-5.6-luna), timeout: 900000)"` |
 | GitHub | `export OAF_MODEL="(type: openai, url: 'https://models.github.ai/inference', model: openai/gpt-5, key: $(gh auth token), apiVersion: '')"` |
 
 ## Running mini-a
@@ -59,6 +60,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/reset` | Reset conversation |
 | `/last [md]` | Reprint last final answer (`md` for raw markdown) |
 | `/save <path>` | Save last final answer to a file |
+| `/edit [last]` | Compose the next goal (or revise the previous goal) in the configured editor |
 | `/stats [mode] [out=file.json]` | Usage statistics (`summary`, `detailed`, `tools`, `memory`, `wiki`) |
 | `/wiki context` | Compact wiki overview: page count, sections, mounts, recent log |
 | `/wiki list [prefix]` | List wiki pages (optionally filtered by prefix); add `--meta` for title+description |
@@ -131,6 +133,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `showseparator` | `true` | Show a separator line between interaction events (disable for compact view) |
 | `browsercontext` | - | Browser context configuration or `true` to auto-enable browser control for supported tools |
 | `showthinking` | `false` | Surface XML-tagged `<thinking>...</thinking>` blocks as thought logs |
+| `useeditor` | `false` | Open every console goal in `editor`, `$EDITOR`, or `vi` before submitting |
+| `editor` | - | Editor command used by `useeditor` and `/edit` (supports quoted arguments, e.g. `"vim -f"`) |
 | `promptprofile` | context-dependent | System prompt verbosity: `minimal`, `balanced`, or `verbose` (`minimal` in chatbot mode; `verbose` with `debug=true`; otherwise `balanced`) |
 | `systempromptbudget` | — | Max estimated tokens for the system prompt; drops lower-priority sections when exceeded |
 | `goalprefix` | — | Prefix automatically prepended to every goal before the agent sees it |
@@ -184,7 +188,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `memoryuser` | `false` | Convenience preset: file-backed global + session memory at `~/.openaf-mini-a/`, auto-promote `facts,decisions,summaries`, 30-day stale sweep |
 | `memoryusersession` | `false` | Convenience preset: enables `usememory`, session-only file-backed channel under `~/.openaf-mini-a/` |
 | `memoryscope` | `both` | Which store the agent reads from/writes to: `session`, `global`, or `both` |
-| `memorych` | - | SLON/JSON definition of an OpenAF channel to persist the global memory store |
+| `memorych` | - | SLON/JSON definition of an OpenAF channel to persist the global memory store (use `memorymd=true` to store its global records as Markdown) |
 | `memorysessionch` | - | SLON/JSON definition of a channel for session memory persistence (falls back to `memorych`) |
 | `memorysessionid` | `<agent-id>` | Session key used to namespace session memory in the channel |
 | `memorymaxpersection` | `80` | Maximum entries kept per section before compaction drops stale/old ones |
@@ -193,7 +197,11 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `memorydedup` | `true` | Suppress near-duplicate entries (85% word-overlap fingerprint) |
 | `memorypromote` | `""` | Auto-promote selected sections from session to global memory at session end |
 | `memorystaledays` | `0` | Mark unconfirmed global memory entries as `stale` after N days |
-| `memoryinject` | `summary` | Inject memory as section counts (`summary` with dynamic search) or full compact entries (`full`) |
+| `memoryinject` | `relevant` | Inject section counts (`summary`), a goal-relevant durable subset (`relevant`), or full compact entries (`full`) |
+| `memoryrelevantcap` | `8` | Maximum durable entries injected by `memoryinject=relevant` |
+| `usememorywrite` | `true` | Enable deliberate typed durable-memory writes by the model |
+| `memorywritemax` | `20` | Maximum `memory_write` calls per run |
+| `memorymd` | `false` | Store global memory as path-keyed Markdown records in `memorych` |
 | `memorysessionheader` | — | HTTP request header name used to derive the memory session ID in web mode (e.g. `X-User-Id`) |
 | `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
 | `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots — see [Channels]({{ '/channels' | relative_url }}) (note: backend options nest under `options:`, e.g. `(name: 'mini-a-metrics', type: 'mvs', options: (file: 'metrics.db'), period: 5000)`) |

@@ -8,6 +8,25 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Durable memory, Markdown persistence, and cache-token metrics
+
+**Change**: Working memory now supports deliberate, typed durable records and a human-readable Markdown store.
+
+- With `usememorywrite=true` (default), the model can call `memory_write` for `preference`, `environment`, `procedure`, `pitfall`, and `reference` records. A model-authored record only promotes from session to global scope after the same keyed record is confirmed in two separate runs.
+- `memoryinject=relevant` is now the enabled-memory default. It injects a bounded, goal-relevant durable subset once at startup; `summary` retains counts plus on-demand search, and `full` retains full injection.
+- `memorymd=true` stores global memory as editable, path-keyed Markdown records in `memorych`, with a generated `MEMORY.md` index. Session memory remains ordinary channel-backed or in-process records.
+- `/stats`, metrics exports, and console summaries now surface provider prompt-cache token figures separately from input/output totals, including per main, low-cost, and validation model tiers where available.
+
+### Cross-wiki graph traversal
+
+**Change**: Mounted wiki graphs can now provide query-time cross-wiki hints. `wikigraphcross=true` follows explicit `@name/` links and optionally joins shared tags, aliases, and semantic concepts; `/graph cross <path>` inspects the resulting connections. Traversal is directional, read-only, and never merges or writes graph data between wikis.
+
+### AWS query MCPs and console editor
+
+**Change**: `mcp-aws-athena` runs Athena queries synchronously or through asynchronous start/status/results calls. `mcp-s3` now includes `s3-select-object` for server-side SQL queries over CSV, JSON, and Parquet objects.
+
+The interactive console also supports `useeditor=true` for composing each goal externally, plus `/edit` (or `/editor`) for one goal and `/edit last` to revise the previous one. Mini-A resolves `editor=`, then `$EDITOR`, then `vi`; an unchanged editor buffer cancels the goal.
+
 ### Agent Plugins
 
 **Change**: Mini-A can now load [Agent Plugins]({{ '/agent-plugins' | relative_url }}) using the agent-plugins.org 1.0 directory format. A plugin may bundle skills and MCP server definitions in one portable folder.

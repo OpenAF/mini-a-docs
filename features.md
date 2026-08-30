@@ -479,7 +479,7 @@ How is memory presented to the LLM? Controlled by `memoryinject`:
 #### Full Context Mode (`memoryinject=full`)
 Embeds the entire, compact snapshot of all working memory entries directly in the system prompt on every step. While useful for short tasks, it can bloat context windows on long-running tasks.
 
-#### Dynamic Search Mode (`memoryinject=summary` - Default)
+#### Dynamic Search Mode (`memoryinject=summary`)
 Only injects per-section entry counts into the prompt (e.g., `workingMemory: { facts: 12, decisions: 3 }`), saving ~95% of context token overhead. 
 
 The agent is equipped with a built-in `memory_search` action. When it needs to recall past facts or decisions, it calls `memory_search` programmatically:
@@ -499,6 +499,26 @@ The agent is equipped with a built-in `memory_search` action. When it needs to r
 * **`query`** (string, required): Keyword string to match against entry content.
 * **`section`** (string, optional): Filter results to a specific section (e.g., `facts`, `decisions`).
 * **`limit`** (number, optional, default: `10`): Maximum results to return.
+
+#### Relevant Durable Memory (`memoryinject=relevant` - Default when enabled)
+Starts from the same compact counts as `summary`, then injects up to `memoryrelevantcap` (default `8`) non-stale durable entries that match the goal. This avoids repeatedly searching for established preferences and validated procedures without exposing transient tool observations on every run.
+
+### Deliberate durable memory
+
+With `usememorywrite=true` (the default), the model can use `memory_write` to save typed knowledge deliberately. It accepts a required `kind` (`preference`, `environment`, `procedure`, `pitfall`, or `reference`) and `value`, plus optional stable `key`, `tags`, and `ttlDays`.
+
+Writes remain session-scoped at first. A model-authored record only becomes global after the same keyed record is confirmed in two separate runs, protecting the durable store from one-off or untrusted content. Set `memorywritemax` (default `20`) to bound writes per run, or disable the action with `usememorywrite=false`.
+
+For a human-readable, versionable global store, set `memorymd=true` on `memorych`:
+
+```bash
+mini-a goal="capture repository conventions" usememory=true \
+  memorymd=true \
+  memorych="(name: mini_a_global, type: file, options: (file: './agent-memory.json'))" \
+  memorysessionch="(name: mini_a_session, type: file, options: (file: '/tmp/mini-a-session.json'))"
+```
+
+The channel contains a generated `MEMORY.md` index and one Markdown record per memory entry, including YAML front matter for metadata. Memory compaction removes evicted records too, so tune the normal memory limits for long-lived stores.
 
 ---
 
@@ -657,6 +677,10 @@ An ingest records source provenance (`source`, `source_ref`, `source_hash`, `ing
 Use both together: the agent reasons with memory during a session, then distils durable findings into wiki pages for future sessions and other agents.
 
 See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the full parameter reference.
+
+### Cross-wiki graph hints
+
+When a primary wiki mounts reference wikis and graph support is enabled, `wikigraphcross=true` (default) can extend graph hints across mounts at query time. It follows explicit `@name/path.md` links and can join pages with shared tags, aliases, or semantic concepts. The expansion is read-only and never merges or persists graph data between wikis; use `/graph cross <path>` to inspect the links for one page.
 
 ---
 
@@ -1046,6 +1070,7 @@ Track exactly how many tokens you are using and what they cost with built-in **m
 The `/stats` command displays:
 
 - **Token counts** — Input and output tokens for the current session
+- **Prompt-cache tokens** — Cache writes, reads, and cached-token figures reported by the provider, shown separately because providers account for them differently
 - **Cost estimates** — Estimated cost based on provider pricing
 - **Model usage** — Breakdown by main model vs. light model
 - **Request counts** — Number of API calls made

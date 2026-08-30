@@ -6,7 +6,7 @@ permalink: /mcp-catalog/
 
 **MCP (Model Context Protocol)** is an open standard that defines how LLMs discover and invoke external tools through a uniform interface. Instead of hard-coding integrations, mini-a connects to MCP servers that expose capabilities as callable tools. Each MCP server runs as a separate process (STDIO) or remote service (HTTP), and mini-a automatically discovers available tools at startup.
 
-mini-a ships with **30 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
+mini-a ships with **31 built-in MCP servers** covering a wide range of tasks. Load any combination of them with the `mcp` parameter, or aggregate them behind `mcpproxy=true` when you want to keep the exposed tool surface small.
 
 ---
 
@@ -20,7 +20,8 @@ mini-a ships with **30 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-web` | Web browsing, search, and HTTP requests | STDIO | `web-search`, `get-url`, `http-request` |
 | `mcp-shell` | Shell command execution | STDIO | `execute`, `script` |
 | `mcp-ssh` | Remote SSH operations | STDIO | `connect`, `execute`, `transfer` |
-| `mcp-s3` | AWS S3 operations | STDIO | `listBuckets`, `getObject`, `putObject` |
+| `mcp-s3` | AWS S3 operations and S3 Select | STDIO | `s3-list-buckets`, `s3-get-object`, `s3-select-object` |
+| `mcp-aws-athena` | AWS Athena SQL queries | STDIO/HTTP | `athena-query`, `athena-start-query-execution` |
 | `mcp-net` | Network utilities | STDIO | `ping`, `traceroute`, `dns`, `httpRequest` |
 | `mcp-fin` | Financial data | STDIO | `stockPrice`, `exchangeRate`, `cryptoPrice` |
 | `mcp-rss` | RSS feed reader | STDIO | `fetchFeed`, `listEntries` |
@@ -151,14 +152,14 @@ mini-a mcp="(cmd: 'ojob mcps/mcp-ssh.yaml')" goal='Connect to server1 and check 
 
 ### mcp-s3
 
-Interact with AWS S3-compatible object storage. List buckets, upload and download objects, and manage permissions.
+Interact with AWS S3-compatible object storage. List buckets, upload and download objects, manage objects, and run server-side S3 Select SQL queries against CSV, JSON, or Parquet data.
 
 **Configuration:**
 
 | Argument | Description |
 |----------|-------------|
 | `accessKey` | AWS access key ID |
-| `secretKey` | AWS secret access key |
+| `secret` | AWS secret access key |
 | `region` | AWS region (default: `us-east-1`) |
 
 **Usage:**
@@ -166,7 +167,28 @@ Interact with AWS S3-compatible object storage. List buckets, upload and downloa
 mini-a mcp="(cmd: 'ojob mcps/mcp-s3.yaml')" goal='List all buckets and show the 5 most recent objects in each'
 ```
 
-**Tools:** `listBuckets`, `listObjects`, `getObject`, `putObject`, `deleteObject`
+**Tools:** `s3-list-buckets`, `s3-list-objects`, `s3-get-object`, `s3-put-object`, `s3-delete-object`, `s3-presign-get`, `s3-select-object`.
+
+`s3-select-object` requires `key` and an S3 Select `sql` expression. Configure `inputSerialization` (`CSV`, `JSON`, or `PARQUET`) and optional `outputSerialization`; choose `encoding=json` when JSON Lines results should be returned as objects.
+
+---
+
+### mcp-aws-athena
+
+Run Amazon Athena SQL queries through the OpenAF AWS oPack. The synchronous helper waits for completion and returns results; the remaining tools support asynchronous start, status polling, and result retrieval.
+
+| Argument | Description |
+|----------|-------------|
+| `accessKey` / `secret` / `sessionToken` / `region` | AWS credentials and region; environment credentials or an instance role may be used when omitted |
+| `database` / `catalog` / `workGroup` / `outputLocation` | Athena defaults used when a tool call omits them |
+| `readwrite` | Enables cancelling queries and deleting their S3 result objects; `false` by default |
+
+```bash
+mini-a goal="how many orders were placed last month" \
+  mcp="(cmd: 'ojob mcps/mcp-aws-athena.yaml region=eu-west-1 database=sales workGroup=primary')"
+```
+
+**Tools:** `athena-query`, `athena-start-query-execution`, `athena-get-query-execution`, `athena-get-query-results`, `athena-list-query-executions`; `athena-stop-query-execution` and `athena-delete-query-results` require `readwrite=true`.
 
 ---
 
@@ -583,6 +605,8 @@ Read-only discovery MCP for a Markdown wiki, backed by `MiniAWikiManager`. Use i
 | `usewikigraph` | Enable the wiki knowledge graph (auto-enabled when `wikigraphfalkorhost` is set); search transparently appends related-page hints |
 | `wikigraphsearchhints` | Append graph-related pages to search results when the wiki graph is enabled (default: `true`) |
 | `wikigraphhintcap` | Maximum graph-hint pages appended to search results (default: `5`) |
+| `wikigraphcross` / `wikigraphcrossjoin` | Enable query-time mounted-graph traversal and select join kinds: `link,tag,alias,concept` (enabled by default) |
+| `wikigraphcrosscap` / `wikigraphcrossdepth` | Cap cross-wiki results (default: `5`) and traversal depth (default: `1`) |
 | `wikigraphfalkorhost` / `wikigraphfalkorport` / `wikigraphfalkorgraph` / `wikigraphfalkoruser` / `wikigraphfalkorpass` | FalkorDB connection settings for graph-backed wiki state/query |
 | `label` | Human-readable wiki label injected into tool descriptions |
 | `toolPrefix` | Optional prefix for tool names (e.g. `docs-` → `docs-list`, `docs-read`, …) |
@@ -599,7 +623,7 @@ mini-a usetools=true \
 ojob mcps/mcp-wiki.yaml onport=8990 wikiroot=/shared/wiki label=TeamWiki
 ```
 
-**Tools:** `context`, `search`, `read`, `browse`, `list`, `tree`, `backlinks`.
+**Tools:** `context`, `search`, `read`, `browse`, `list`, `tree`, `backlinks`. Graph-related discovery can include read-only cross-wiki hints from mounted graphs; it does not write or merge either wiki.
 
 ### mcp-wiki-safe
 

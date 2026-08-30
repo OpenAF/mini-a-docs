@@ -369,7 +369,7 @@ Enable a structured, scoped working memory subsystem that the agent maintains au
 | `memoryuser` | boolean | `false` | Convenience preset: enables `usememory`, creates `~/.openaf-mini-a/`, registers file-backed global + session channels, auto-promotes `facts,decisions,summaries`, and sets `memorystaledays=30`. |
 | `memoryusersession` | boolean | `false` | Convenience preset: enables `usememory`, creates `~/.openaf-mini-a/`, sets `memoryscope=session`, and registers a file-backed session channel. |
 | `memoryscope` | string | `both` | Which store the agent reads from and defaults writes to: `session` (current run), `global` (across sessions), or `both`. |
-| `memorych` | string | - | SLON/JSON definition of an OpenAF channel to persist global memory (e.g. file, Redis, jdbc). |
+| `memorych` | string | - | SLON/JSON definition of an OpenAF channel to persist global memory (e.g. file, Redis, jdbc). Set `memorymd=true` to store global records as Markdown in this channel. |
 | `memorysessionch` | string | - | SLON/JSON definition of a channel for session memory persistence (falls back to `memorych` if omitted). |
 | `memorysessionid` | string | `<agent-id>` | Session key namespace in the channel (defaults to `conversation` argument, otherwise falls back to internal agent ID). |
 | `memorymaxpersection` | number | `80` | Maximum entries kept per section before compaction prunes stale or old entries. |
@@ -380,7 +380,11 @@ Enable a structured, scoped working memory subsystem that the agent maintains au
 | `memoryindexttldays` | number | `1` | Retention period for list, search, and index observation snapshots before expiration. |
 | `memorypromote` | string | `""` | Comma-separated list of sections to auto-promote from session to global memory at session end. |
 | `memorystaledays` | number | `0` | Days without confirmation before a global entry is marked `stale` (cleared during compaction if section overflows). |
-| `memoryinject` | string | `summary` | Context injection style: `summary` injects only per-section counts and enables dynamic `memory_search`; `full` embeds the entire memory snapshot in every step's context. |
+| `memoryinject` | string | `relevant` when memory is enabled | Context injection style: `summary` injects only per-section counts; `relevant` also injects a bounded, goal-relevant durable-memory block; `full` embeds the entire memory snapshot in every step's context. |
+| `memoryrelevantcap` | number | `8` | Maximum durable entries automatically injected by `memoryinject=relevant`. |
+| `usememorywrite` | boolean | `true` | Enable the model's deliberate `memory_write` action for durable typed knowledge. |
+| `memorywritemax` | number | `20` | Maximum `memory_write` calls accepted in one run. |
+| `memorymd` | boolean | `false` | Store global memory as path-keyed Markdown records in `memorych`. |
 | `memorysessionheader` | string | - | HTTP header name used to derive `memorysessionid` in Web/Server UI mode (e.g., `X-User-Id`). |
 
 ### Memory Classification (Taxonomy)
@@ -391,7 +395,7 @@ Mini-A exposes one structured working-memory system. The common memory types are
 |-------------|--------------------------|-----------------|
 | **Working memory** | The live structured store the agent reads and writes during a run | `usememory`, `memoryinject`, `memorymaxpersection`, `memorymaxentries`, `memorycompactevery`, `memorydedup` |
 | **Episodic memory** | Session-scoped state for a specific conversation or run | `memorysessionid`, `memoryscope=session\|both`, `memorysessionch` |
-| **Semantic memory** | Durable knowledge the agent can reuse across runs | `memorych`, `memoryscope=global\|both`, `memorypromote`, `memorystaledays` |
+| **Semantic memory** | Durable knowledge the agent can reuse across runs | `memorych`, `memorymd=true` for Markdown records, `memoryscope=global\|both`, `memorypromote`, `memorystaledays`, `usememorywrite` |
 | **Procedural memory** | Instructions and workflow rules that tell Mini-A how to behave | `agent`, `mode`, skills, `AGENTS.md`, prompts (not a dedicated memory store) |
 
 `memoryuser=true` is the convenience preset for both global and session working memory. `memoryusersession=true` is the session-only version.
@@ -413,11 +417,22 @@ To avoid configuring channels manually, use one of the two convenience presets:
 1. **`memoryuser=true`**: Ideal for persistent local development. Automatically stores memory databases under `~/.openaf-mini-a/memory-global.json` and `~/.openaf-mini-a/memory-session.json`. At the end of a session, facts, decisions, and summaries are promoted to global memory, and any entry not verified in 30 days is swept.
 2. **`memoryusersession=true`**: Ideal for isolated, session-scoped runs where you still want local persistent history on the disk (saved under `~/.openaf-mini-a/memory-session.json`), but no information should leak into the shared global namespace.
 
-### Dynamic Context Injection (`memoryinject=summary`)
+### Durable Memory and Context Injection
 
-> [!TIP]
-> **Use the default `memoryinject=summary`** for complex or long-running tasks. Instead of injecting all memory entries into every step's prompt (which wastes thousands of tokens and causes model distraction), Mini-A only injects the counts (e.g., `workingMemory: { facts: 12, decisions: 3 }`). 
-> The agent is equipped with a `memory_search` action to retrieve specific facts or decisions *on demand* using keyword queries, saving up to 95% of context memory overhead.
+`memory_write` records intentional, typed knowledge rather than ordinary runtime observations. Its required `kind` is one of `preference`, `environment`, `procedure`, `pitfall`, or `reference`; optional `key`, `tags`, and `ttlDays` keep entries stable, searchable, and expiring when appropriate. Writes begin in session scope. Model-authored records only promote to global storage after the same keyed record is independently confirmed in two runs, which prevents a single untrusted tool response from becoming a durable fact.
+
+With memory enabled, `memoryinject=relevant` is the default: Mini-A injects up to `memoryrelevantcap` non-stale, goal-relevant durable records once at run start, while runtime bookkeeping stays out of the prompt. Use `summary` for counts plus on-demand `memory_search`, or `full` to embed all compact entries on every step.
+
+For a reviewable global store, set `memorymd=true` on a global channel:
+
+```bash
+mini-a goal="remember validated project conventions" usememory=true \
+  memorymd=true \
+  memorych="(name: mini_a_global, type: file, options: (file: './agent-memory.json'))" \
+  memorysessionch="(name: mini_a_session, type: file, options: (file: '/tmp/mini-a-session.json'))"
+```
+
+The channel contains path-keyed Markdown records, including a generated `MEMORY.md` index and one record per entry under section paths. Entry bodies can be hand-edited; malformed front matter is skipped with a warning. Normal compaction also removes evicted records, so raise the memory limits if this store is expected to retain more than the defaults.
 
 ### Configuration Examples
 
@@ -527,6 +542,10 @@ An optional knowledge-graph layer built on top of the wiki's pages. When enabled
 | `wikigraphmounts` | `true` | Include graph hints from attached wiki mounts when their cached graphs are available |
 | `wikigraphhintcap` | `5` | Maximum related graph hints returned per search |
 | `wikimountgraphttlms` | `60000` | TTL (ms) for cached mount `graph.json` loads |
+| `wikigraphcross` | `true` | Traverse mounted wiki graphs at query time through explicit `@name/` links and shared tags, aliases, or concepts. Requires `wikigraphmounts=true`. |
+| `wikigraphcrossjoin` | `link,tag,alias,concept` | Comma-separated cross-wiki join kinds to enable. |
+| `wikigraphcrosscap` / `wikigraphcrossdepth` | `5` / `1` | Maximum cross-wiki hints and traversal depth (`2` also includes related pages inside the mounted wiki). |
+| `wikigraphcrossmaxdf` / `wikigraphcrossminkeylen` | `0.25` / `3` | Skip overly common join keys and keys shorter than this length. |
 | `wikigraphautosave` | `always` | Graph autosave policy: `always`, `debounced`, or `off` |
 | `wikigraphsavedebouncems` | `5000` | Debounce interval (ms) when `wikigraphautosave=debounced` |
 | `wikigraphfalkorhost` | - | FalkorDB host for graph-backed wiki state/query; when set, FalkorDB is used instead of the local graph cache |
@@ -537,7 +556,7 @@ An optional knowledge-graph layer built on top of the wiki's pages. When enabled
 
 The local graph cache (when FalkorDB is not configured) lives under `.mini-a-wiki-graph/` inside the wiki root and, like the protected pages, is excluded from search indexing and listings — along with `AGENTS.md`, `index.md`, and `log.md`.
 
-Console command: `/graph [build|query|neighbors|path|communities|surprise|export|stats]`. `/stats wiki` includes wiki graph operation counters when the graph is enabled.
+Console command: `/graph [build|query|neighbors|path|communities|surprise|export|stats|cross]`. `/graph cross <path>` shows cross-wiki links for one page. Cross-wiki traversal is read-only and query-time only: no graphs are merged or written back. `/stats wiki` includes wiki graph operation counters when the graph is enabled.
 
 ### MCP deployment, storage, and search behavior
 
