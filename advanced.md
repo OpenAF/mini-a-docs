@@ -44,7 +44,8 @@ export OAF_LC_MODEL="(type: openai, model: gpt-5-mini, key: '...')"
 
 When the light model is not set, mini-a uses the main model for everything. Setting the light model is optional but recommended for cost-sensitive workloads.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S14 — Debug output showing model escalation]</div>
+<div id="player-s14" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s14-model-escalation.cast' | relative_url }}", document.getElementById('player-s14'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 ### Model Strategy Modes
 
@@ -208,7 +209,7 @@ OAF_FLAGS="(MCPSERVER: (answerInTOON: true))" ojob mcps/mcp-time.yaml onport=888
 
 Combined with `mcp-pass`, this turns a container into a drop-in gateway that converts existing MCPs' JSON output to TOON. See [Deploying MCP Servers in Docker & Kubernetes]({{ '/mcp-catalog' | relative_url }}#deploying-mcp-servers-in-docker--kubernetes) for Docker and Kubernetes recipes.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S15 — MCP proxy aggregation diagram]</div>
+<img src="{{ '/assets/images/screenshots/s15-mcp-proxy-diagram.svg' | relative_url }}" alt="MCP proxy aggregation diagram showing multiple MCP servers collapsed into a single proxy-dispatch tool" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3); width:100%;">
 
 ---
 

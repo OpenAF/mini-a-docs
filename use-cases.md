@@ -36,7 +36,8 @@ mini-a useshell=true mcp="(cmd: 'ojob mcps/mcp-file.yaml root=/var/log')" \
 
 The agent reads the log file, identifies distinct error categories (e.g., connection timeouts, null pointer exceptions, authentication failures), ranks them by frequency, and provides a summary report. Each error category includes a suggested fix or investigation path. The output is presented directly in the terminal.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S16 -- Log analysis terminal output]</div>
+<div id="player-s16" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s16-log-analysis.cast' | relative_url }}", document.getElementById('player-s16'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
@@ -68,7 +69,8 @@ mini-a useshell=true readonly=true \
 
 The agent produces a review organized by file and change. Each finding includes the file name, line number range, severity level (info, warning, error), and a description of the issue with a suggested improvement. The `readonly=true` flag guarantees the agent only inspects code without making any modifications.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S17 -- Code review output]</div>
+<div id="player-s17" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s17-code-review.cast' | relative_url }}", document.getElementById('player-s17'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
@@ -100,7 +102,8 @@ mini-a useshell=true readwrite=true \
 
 The agent produces a `docs/api.md` file containing a table of contents, function signatures with parameter descriptions, return value documentation, and usage examples derived from inline comments. The documentation follows standard markdown formatting suitable for rendering on GitHub or any documentation site.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S18 -- Generated documentation]</div>
+<div id="player-s18" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s18-generated-docs.cast' | relative_url }}", document.getElementById('player-s18'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
@@ -132,7 +135,8 @@ mini-a useshell=true useutils=true readwrite=true \
 
 The agent produces a clean CSV file with duplicates removed, consistent date formatting, and appended monthly total rows. It also prints a summary to the terminal showing how many duplicates were found, which date formats were corrected, and the computed monthly totals. The original file remains untouched.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S19 -- Data processing output]</div>
+<div id="player-s19" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s19-data-processing.cast' | relative_url }}", document.getElementById('player-s19'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
@@ -164,7 +168,8 @@ mini-a useshell=true readonly=true \
 
 The agent produces a structured security report listing each vulnerability with its location (file and line), OWASP category, severity rating, a description of the risk, and a concrete remediation suggestion. Dependencies with known CVEs are flagged with links to advisory details. The report concludes with a prioritized action plan.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S20 -- Security audit results]</div>
+<div id="player-s20" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s20-security-audit.cast' | relative_url }}", document.getElementById('player-s20'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
@@ -197,7 +202,8 @@ mini-a chatbotmode=true \
 
 The agent starts with an accessible explanation of what binary search trees are (using real-world analogies like a library card catalog), then progressively covers insertion, search, deletion, and balancing. It provides code examples in your preferred language, draws ASCII tree diagrams, and offers practice problems. The session continues interactively until you choose to end it.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S21 -- Interactive teaching session]</div>
+<div id="player-s21" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s21-interactive-teaching.cast' | relative_url }}", document.getElementById('player-s21'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
@@ -251,7 +257,8 @@ jobs:
 
 When triggered as part of a CI/CD pipeline (e.g., on pull request creation), the workflow automatically generates a code review report and a changelog entry. The review report is saved as a markdown file, and the changelog is printed to the pipeline output. Teams can extend this pattern with additional jobs for deployment checks, documentation updates, or notification steps.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S22 -- CI/CD pipeline output]</div>
+<div id="player-s22" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s22-cicd-pipeline.cast' | relative_url }}", document.getElementById('player-s22'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
@@ -284,7 +291,8 @@ mini-a useplanning=true planstyle=validate usedelegation=true \
 
 The final output contains grouped root causes (for example deploy regressions, infra saturation, and dependency outages), confidence levels, and a prioritized remediation queue with owners and suggested follow-up checks. Compared to fully serial triage, parallel delegation shortens time-to-report while keeping one coherent, centralized result.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S23 -- Delegation orchestration dashboard/report]</div>
+<div id="player-s23" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s23-delegation.cast' | relative_url }}", document.getElementById('player-s23'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 
@@ -353,7 +361,8 @@ Estimated Cost Savings: ~45% vs single-model deployment
 
 This visibility helps teams fine-tune their model selection and monitor spend over time.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S24 -- Metrics showing cost savings]</div>
+<div id="player-s24" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s24-cost-metrics.cast' | relative_url }}", document.getElementById('player-s24'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 </div>
 

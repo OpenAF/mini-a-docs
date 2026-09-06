@@ -96,7 +96,8 @@ Combine several MCP servers in a single session using the MCP proxy:
 mini-a mcpproxy=true mcp="[(cmd: 'ojob mcps/mcp-time.yaml'), (cmd: 'ojob mcps/mcp-web.yaml'), (cmd: 'ojob mcps/mcp-math.yaml')]" goal='What is the current time in UTC and calculate how many hours until midnight?'
 ```
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S12 — MCP proxy combining multiple servers]</div>
+<div id="player-s12" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s12-mcp-proxy.cast' | relative_url }}", document.getElementById('player-s12'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 ---
 
@@ -155,7 +156,8 @@ mini-a showthinking=true goal='Explain how the current build pipeline works'
 
 `showthinking=true` is useful for debugging prompt behavior, but it is not compatible with `usestream=true`.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S13 — Before/after auto-generated docs]</div>
+<div id="player-s13" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s13-doc-gen-before-after.cast' | relative_url }}", document.getElementById('player-s13'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 ---
 

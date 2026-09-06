@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 350" width="700" height="350">
+  <!-- Background -->
+  <rect width="700" height="350" fill="#1a202c"/>
+
+  <!-- Title -->
+  <text x="350" y="20" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="13" font-weight="700" fill="#68d391" letter-spacing="1.5">MCP PROXY AGGREGATION</text>
+
+  <!-- ===== ROW 1 — INDIVIDUAL MCP SERVERS ===== -->
+  <text x="350" y="38" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#4a5568" letter-spacing="1">MCP SERVERS (mcp=&quot;[...]&quot;)</text>
+
+  <rect x="20" y="46" width="150" height="52" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="95" y="65" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">mcp-time</text>
+  <text x="95" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">3 tools · STDIO</text>
+  <text x="95" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">ojob mcps/mcp-time.yaml</text>
+
+  <rect x="185" y="46" width="150" height="52" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="260" y="65" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">mcp-fin</text>
+  <text x="260" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">5 tools · STDIO</text>
+  <text x="260" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">ojob mcps/mcp-fin.yaml</text>
+
+  <rect x="350" y="46" width="150" height="52" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="425" y="65" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">mcp-file</text>
+  <text x="425" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">6 tools · STDIO</text>
+  <text x="425" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">ojob mcps/mcp-file.yaml</text>
+
+  <rect x="515" y="46" width="165" height="52" rx="6" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.7"/>
+  <text x="597" y="65" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" font-weight="700" fill="#68d391">HTTP / remote MCP</text>
+  <text x="597" y="80" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">N tools · HTTP-SSE</text>
+  <text x="597" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">mcpserver=&quot;http://...&quot;</text>
+
+  <!-- Arrows converging into proxy -->
+  <line x1="95" y1="98" x2="95" y2="112" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="260" y1="98" x2="260" y2="112" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="425" y1="98" x2="425" y2="112" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="597" y1="98" x2="597" y2="112" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="95" y1="112" x2="597" y2="112" stroke="#68d391" stroke-width="1" stroke-opacity="0.45"/>
+  <line x1="350" y1="112" x2="350" y2="126" stroke="#68d391" stroke-width="1.5" stroke-opacity="0.6"/>
+  <polygon points="350,128 346,123 354,123" fill="#68d391" opacity="0.6"/>
+
+  <!-- ===== ROW 2 — MCP PROXY ===== -->
+  <rect x="20" y="128" width="660" height="100" rx="8" fill="#2d3748" stroke="#68d391" stroke-width="1.5"/>
+  <text x="350" y="147" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#68d391" letter-spacing="0.5">MCP PROXY  —  mcpproxy=true</text>
+
+  <rect x="34" y="155" width="200" height="58" rx="5" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+  <text x="134" y="173" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#e2e8f0">Tool Collapsing</text>
+  <text x="134" y="188" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">14+ tools → 1 dispatcher</text>
+  <text x="134" y="201" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Reduces prompt bloat</text>
+
+  <rect x="250" y="155" width="200" height="58" rx="5" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+  <text x="350" y="173" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#e2e8f0">Payload Spilling</text>
+  <text x="350" y="188" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">argumentsFile · resultToFile</text>
+  <text x="350" y="201" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Keeps context small</text>
+
+  <rect x="466" y="155" width="200" height="58" rx="5" fill="#1a202c" stroke="#4a5568" stroke-width="1"/>
+  <text x="566" y="173" text-anchor="middle" font-family="system-ui,sans-serif" font-size="10" font-weight="600" fill="#e2e8f0">TOON Serialization</text>
+  <text x="566" y="188" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">mcpproxytoon=true</text>
+  <text x="566" y="201" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Compact, scannable output</text>
+
+  <!-- Arrow proxy -> agent -->
+  <line x1="350" y1="228" x2="350" y2="242" stroke="#68d391" stroke-width="1.5" stroke-opacity="0.6"/>
+  <polygon points="350,244 346,239 354,239" fill="#68d391" opacity="0.6"/>
+
+  <!-- ===== ROW 3 — AGENT ===== -->
+  <rect x="150" y="246" width="400" height="70" rx="8" fill="#2d3748" stroke="#68d391" stroke-width="1.2" stroke-opacity="0.85"/>
+  <text x="350" y="266" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#68d391">AGENT / LLM</text>
+  <rect x="165" y="274" width="370" height="30" rx="4" fill="#1a202c"/>
+  <text x="350" y="294" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#e2e8f0">sees ONE tool: proxy-dispatch(server, tool, args)</text>
+
+  <!-- Bottom label bar -->
+  <rect x="20" y="330" width="660" height="4" rx="2" fill="#68d391" opacity="0.2"/>
+  <text x="350" y="345" text-anchor="middle" font-family="system-ui,sans-serif" font-size="9" fill="#718096">Also available as mcpprogcall=true — scripts list/search/call tools programmatically over a localhost bridge</text>
+</svg>

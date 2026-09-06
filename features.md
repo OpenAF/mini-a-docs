@@ -74,7 +74,8 @@ Recent updates added dynamic escalation controls and per-run cost tracking so yo
 
 When both models are configured, mini-a can report separate token usage and cost estimates for each tier, so you can track exactly how much you are saving.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S8 — Token stats with dual-model cost breakdown]</div>
+<div id="player-s8" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s8-dual-model-stats.cast' | relative_url }}", document.getElementById('player-s8'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 ---
 
@@ -147,7 +148,8 @@ mini-a useshell=true usetools=true mcpprogcall=true \
 
 Useful controls include `mcpprogcallport`, `mcpprogcallmaxbytes`, `mcpprogcallresultttl`, `mcpprogcalltools`, and `mcpprogcallbatchmax`.
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S9 — MCP test console listing tools]</div>
+<div id="player-s9" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s9-mcp-test-console.cast' | relative_url }}", document.getElementById('player-s9'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 ---
 
@@ -225,7 +227,8 @@ The default mode. An interactive terminal session with tab completion, command h
 mini-a
 ```
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S11 — Console with tab completion]</div>
+<div id="player-s11" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
+<script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s11-tab-completion.cast' | relative_url }}", document.getElementById('player-s11'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
 
 ### Web UI
 
@@ -235,7 +238,7 @@ A browser-based interface with session management, conversation history, and str
 mini-a onport=8080
 ```
 
-<div class="screenshot-placeholder">[SCREENSHOT-PLACEHOLDER: S10 — Web UI with session management]</div>
+<img src="{{ '/assets/images/screenshots/s10-web-ui-sessions.png' | relative_url }}" alt="Web UI with conversation history sidebar showing session management" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
 
 ### Library (JavaScript API)
 
