@@ -8,6 +8,167 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### Wiki retrieval v2, bounded `retrieve`, and multi-wiki MCP selection
+
+**Change**: The wiki gains an opt-in, versioned passage engine and a bounded evidence-retrieval operation.
+
+- `wikiretrievalv2=true` builds a separate, derived passage index with immutable revision blocks. Markdown remains authoritative and the serving generation is rebuildable. It is off by default; the existing page engine keeps working (with compatible contract repairs) when the flag is off.
+- Build explicitly with `dreamwikimode=reindex`, `/wiki reindex`, the `mcp-wiki-ops` `reindex` tool, or `MiniAWikiManager.reindex()`. Readers never migrate or scan on their own: a missing build returns `v2-build-required`. Static HTTP and bundled S3 readers hydrate a published bundle that now includes the immutable serving generation. `wikiretrievalconfig` accepts a validated SLON/JSON object for passage size, cache, artifact and deadline bounds.
+- `wiki op="retrieve" query="..."` returns a bounded, cited evidence packet (ranked excerpts, line ranges, score components and used-versus-configured budgets) instead of whole pages. `expandGraph=true` opts into one-hop graph discovery, limited by `maxGraphExpansion` (default 5, max 10) and `maxGraphEdges` (default 256, max 4096).
+- Search results now expose `nativeScore` (engine relevance), `rankScore` (final ranking), `scoreComponents`, and `retrievalMethod`. The compatibility `score` is engine relevance on direct lexical adapters but final ranking on knowledge-ranked and v2 results, and is not a probability. Scan fallback never supplies a native score.
+- `mcp-wiki` accepts an optional `wiki` selector (`"*"`/omitted, `"primary"`, a mount name, or an array). Call `context()` first to discover mount names. `mcp-wiki-safe` deliberately exposes none of this topology and gains `wikiid`, a logical namespace for opaque references shared across replicas.
+- Retrieval telemetry is opt-in: `wikitelemetry=true` keeps aggregate counters only, with no query text by default.
+
+See [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}) and [Configuration → Wiki Knowledge Base]({{ '/configuration#c-wiki-knowledge-base' | relative_url }}).
+
+---
+
+### Safe repeated wiki ingestion
+
+**Change**: Re-running ingestion is now a non-destructive upsert with an explicit, scoped reconcile mode.
+
+- `ingestprune=false` (default) reports missing sources and preserves their pages. `ingestprune=true` removes only artifacts owned by the same destination, origin, and section, and only when discovery was complete. Individual URL sources reject prune because they are not a site inventory.
+- `ingestallowemptyprune=true` is an additional authorization for a completely observed empty folder. A missing or inaccessible folder is never treated as empty.
+- `ingestsourceid` gives a stable logical origin when a folder moves. `ingestforce=true` reprocesses present sources but never authorizes deletion, overwrites manual edits, bypasses read-only access, or waives budgets.
+- A versioned manifest is the applied-state authority, with a recovery journal for interrupted runs. Edited pages and legacy pages without provable ownership produce conflicts rather than silent overwrites. The old ledger is read only for conservative migration.
+- `ingestmode` selects `auto`, `normalize`, `distill`, or `raw`. Only distillation calls a model; `normalize` and `raw` never do. Dry-run reports `planned_writes`/`planned_removals` and creates no files.
+- Results carry `status` (`complete`, `noop`, `planned`, `partial`, `blocked`, `failed`), and the wrapper exits nonzero when requested work is unsuccessful. An explicit `wikiaccess=ro` is honored by every entry point.
+- `dreamwikimode=plan` is now strictly model-free: it reports requested semantic work separately (`semanticRequested`, `semanticExecuted: false`) and never creates or calls a model.
+
+```bash
+ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize ingestprune=true ingestdryrun=true
+```
+
+See [Configuration → Wiki ingestion]({{ '/configuration#wiki-ingestion' | relative_url }}) for all `ingest*` options.
+
+---
+
+### History VM and context virtualization
+
+**Change**: Long, tool-heavy conversations can keep exact history on disk and send the model only a bounded working set.
+
+- `historyvm=true` (with a writable `conversation=` path) writes append-only canonical events under `<conversation>.historyvm/` and replaces eligible old, large assistant/tool messages with small `HISTORY_VM_REFERENCE` entries. The model receives `history_search`, `history_get`, and `history_expand` to recover exact text in bounded pages. User messages, system/developer instructions, recent exchanges, and in-flight tool protocol data stay inline.
+- `historyvmshadow=true` captures events and estimates savings without changing provider requests, so you can measure before enabling.
+- `contextvirtualization=true` (Phase 2, requires `historyvm=true`) adds typed context objects, multi-resolution L0–L4 representations, hierarchical summaries, consumer-specific views for executor/planner/advisor/validator/delegates, and `context_search`, `context_get`, `context_expand`, `context_children`, `context_related`. `contextvirtualizationshadow=true` dry-runs the same projection. Shadow figures are projections, not provider-billed savings.
+- `/context vm` prints object-state and token-delta diagnostics in the console. `/clear` removes the owned sidecar; `/rewind` records a new branch.
+- With `usehistory=true` and `historys3bucket`, the web UI mirrors the conversation and a versioned canonical VM snapshot to S3 at each prompt and final-answer checkpoint, so a session can resume on another host. This supports one active writer per conversation.
+
+See [Advanced → History VM]({{ '/advanced#history-vm-and-context-virtualization' | relative_url }}) for policies, limits, and eval integration.
+
+---
+
+### Inter-agent communication (`agentcomms`)
+
+**Change**: Delegated agents can now coordinate live within one root goal, without a broker, parent HTTP listener, or extra model. It is opt-in; isolation stays the default.
+
+- Four composable profiles: `parent-relay`, `direct` (peer to peer via the runtime broker), `pubsub` (exact topic names), and `shared-state` (version-checked namespaces). Profiles do not grant access by themselves; explicit `send`/`receive`/`publish`/`subscribe`/`read`/`write` grants do, and both endpoints must permit a relationship.
+- Grants are not inherited: a child gets `none` unless the parent's `delegate` ceiling and the child's own declaration allow more. Existing tool policy can further deny operations.
+- The `agent-comms` (`send`, `publish`, `receive`) and `agent-state` (`get`, `put`, `delete`) tools appear only for granted actions. Received text is attributed external data, never a permission grant.
+- Remote workers advertise `agent-comms-v1` only when started with `apitoken` and an `agentcomms` ceiling; the parent polls the worker's authenticated `/comms` endpoint.
+- Limits are bounded by default (8 KiB values, 64 pending records per agent, 60 operations per agent per minute, 5-minute TTL), and `getMetrics().communication` plus `auditch` `comms` events record activity without payloads.
+
+See [Advanced → Inter-agent communication]({{ '/advanced#inter-agent-communication' | relative_url }}).
+
+---
+
+### Durable runs and unified trace events
+
+**Change**: `durable=true` gives a single run a stable ID, resumable state, safe checkpoints, and a redacted JSONL trace under `~/.openaf-mini-a/runs/<runid>/`.
+
+```bash
+mini-a goal="Review and update the implementation" durable=true runid=review-20260905
+mini-a goal="Review and update the implementation" resumerun=review-20260905
+mini-a runstatus=review-20260905
+```
+
+Existing `resume=true` conversation behavior is unchanged. The trace records lifecycle, planning, validation, replan, orchestration, model/tool/shell/wiki, and checkpoint events, and redacts secret-like fields, shell commands, tool arguments, and full prompts and responses. See [Advanced → Durable runs]({{ '/advanced#durable-runs-and-traces' | relative_url }}).
+
+---
+
+### Capability selection and centralized policies
+
+**Change**: Two opt-in controls for large tool surfaces and restricted environments.
+
+- `capabilityselection=true` normalizes MCP tools, skills, plugins, and workers into one registry and exposes only a deterministic, bounded relevant subset (`capabilitylimit`, default `8`). `mcpdynamic=true` behavior is unchanged.
+- `policy=` (SLON/JSON) or `policyfile=` (JSON) applies centralized rules before shell execution, MCP/plugin/proxy tool calls, delegation setup, and every mutating wiki operation. Rules include `shell: deny`, `delegation: deny`, `mcp: deny`, `wiki: (write: deny)`, `filesystem: (write: deny)`, `deniedTools: [...]`, and `network: (allowDomains: [...])`. The default remains allow-all for compatibility, and an `approval` result is fail-closed for non-interactive tool calls.
+
+See [Advanced → Capability selection and policies]({{ '/advanced#capability-selection-and-policies' | relative_url }}).
+
+---
+
+### Native evaluation suites and adaptive orchestration
+
+**Change**: Mini-A can evaluate itself, and can choose planning and validation strategy per goal.
+
+- `mini-a eval=true evalfile=evals/core.yaml` runs YAML/JSON scenarios with `goal`, `args`, `setup`, assertions, `llm_judge`, and `limits` (`cost`, `tokens`, `steps`, `time`). `evalout`, `evalwritebaseline`, and `evalbaseline` write reports and detect regressions. Scenarios can define `variants` (for example History VM Phase 1, Phase 2 shadow, and Phase 2 active) and are compared within the report.
+- Including `mini-a-eval.yaml` registers each scenario as an ordinary OpenAF test, so evals share counters and JUnit/Markdown/JSON reports with unit tests. See `examples/eval-ojob.yaml` upstream.
+- `orchestration=auto` applies deterministic goal-complexity and risk signals to the existing planning, advisor/model-strategy, and evidence-gate controls. `manual` remains the default, explicit flags always win, and each decision is emitted as a trace record with no extra LLM call.
+
+See [Advanced → Evaluation suites]({{ '/advanced#evaluation-suites' | relative_url }}) and [Advanced → Adaptive orchestration]({{ '/advanced#adaptive-orchestration' | relative_url }}).
+
+---
+
+### Virtual skill library
+
+**Change**: A wiki whose pages carry `type: skill` front matter can now serve as a skill library that scales to very large corpora without loading the catalog into context. An agent searches, opens one candidate cheaply, reads only the section it needs, and then acts.
+
+- `useskillwiki=true` exposes a `skillwiki` tool (`context`, `search`, `recommend`, `open`, `read`, `related`, `compose`, `resolve`) and `/skills search|recommend|open|read|related|compose|context` in the console. It reuses the `usewiki` wiki unless `skillwikibackend`/`skillwikiroot`/`skillwikimounts` define a dedicated library.
+- Consultation is bounded per run by `skillsmaxloaded` (3), `skillsmaxchars` (12000), and `skillsautolimit` (5). `skillsautosearch` is reserved for future planner-driven consultation.
+- `mcp-skills` and `mcp-skills-safe` publish the same library to external MCP clients; the safe variant uses opaque, single-use references.
+- Local `SKILL.md`/`SKILL.yaml` skills, `extraskills`, and Agent Plugins are unchanged.
+
+See [Virtual Skills]({{ '/virtual-skills' | relative_url }}).
+
+---
+
+### Low-cost reply recovery and predictable delegation limits
+
+**Change**: Recovery from malformed model replies and from stuck delegated tasks is more explicit.
+
+- `lcreplytool=true lcjsonretries=1` replaces the corrective text retry with a capture-only `submit_reply` MCP tool call on OpenAI-compatible (`type=openai`) and Ollama adapters. The isolated tool captures one validated single-action payload for the normal dispatcher; it never executes anything. Other adapters keep the text retry. New `getMetrics().llm_calls` counters: `lc_reply_tool_attempts` and `lc_reply_tool_successes`. It is opt-in, and live model recovery rates have not been measured.
+- Low-cost retries now accept already-parsed objects and arrays, send the corrective prompt to the main-model fallback, preserve the Ollama native-tools/JSON-mode restriction, and no longer alter literal text inside JSON strings during punctuation repair. Note that `modellock=lc` selects a tier for normal steps only: recovery can still call the main model.
+- `delegationtimeout` is the default foreground wait and initial stall timeout; activity extends execution unless `delegationhardtimeout` is set. `delegationmaxretries` counts total execution attempts for *confirmed* failures, including the first. A remote submission that loses its response is an unknown outcome and is not resubmitted, since the worker may already be running the goal. New delegation metrics: `remote_poll_retries`, `remote_outcome_unknown`, `remote_cancel_failures`.
+- Workers treat `defaulttimeout` and `maxtimeout` as total execution limits from the moment execution starts, and timed-out worker tasks report a failed A2A state with reason `timeout`.
+
+---
+
+### Web UI: activity groups, planning phase, full-screen diagrams
+
+**Change**: The browser UI is easier to follow during long runs.
+
+- Each answer's **Activity** section (thoughts, execution, skills, summarization, stop, and rate messages) stays expanded while work is in progress and collapses when the final answer completes, with or without streaming. Your expansion choice survives refreshes; reopened conversations start collapsed. A warning indicator can appear on the summary without exposing extra logs.
+- `/result` now reports a `phase` (`planning`, `execution`, `finished`), and SSE `planner_stream` events switch the UI to **Planning…** immediately, so `orchestration=auto` planning is visible even without token streaming. Child sub-agent tokens no longer leak into the parent's streaming buffer.
+- Mermaid diagrams have an **Open full screen** (⛶) viewer with pinch-zoom, drag-pan, mouse-wheel zoom, and recenter; close with **×** or **Escape**.
+- `usemaps` Leaflet markers accept an `icon` color: `default`, `red`, `green`, `blue`, `orange`, `yellow`, `violet`, `grey`, or `black`. Web Markdown answers are now guided to include verified photographs and images with captions and source links for photo requests.
+- The `web` and `webfull` mode presets were reworked: `web` now enables tools, diagrams, charts, maps, vectors, math, history, attachments, and MCP proxying. `webfull` inherits `web` and adds streaming, extended history retention, and expanded MCPs, with planning and ASCII sketches explicitly off.
+
+See [Configuration → Web Interface]({{ '/configuration#web-interface' | relative_url }}) for the `/result` `phase` field and the `/stream` SSE endpoint.
+
+---
+
+### Console: inline charts and command clean-up
+
+**Change**: `useasciiviz=true` renders `oafPrintChart` Markdown fences as terminal charts in answers, `/last`, and streamed output, and exposes `printChart` for interim charts. Supported types are `line`, `bars`, `printbars`, `sparkline`, `histogram`, `heatmap`, `bullet`, `scatter`, `boxplot`, `timeline`, and `statusmatrix`. Invalid blocks remain readable and saved Markdown keeps the original fence.
+
+The console reference now documents `/set`, `/toggle`, `/unset`, `/restore`, `/history`, `/models`, `/context vm`, and `/skills search|recommend|open|read|related`. `/reset` restores default parameters, while `/clear` resets the conversation and accumulated metrics.
+
+---
+
+### MCP catalog updates
+
+**Change**: `mcp-skills` and `mcp-skills-safe` join the catalog. `mcp-wiki` now lists `open`, `navigate`, `grep`, and `related`. `mcp-wiki-ops` gains `context`, `reindex`, `graph_build`, and `graph_falkor`. `mcp-random` adds `random-password`. The MCP tester's "Show mcp= parameter string" option prints the active connection as a SLON string ready to paste into `mini-a mcp="..."`.
+---
+
+### Corrections and default clarifications
+
+- `usestdutils` defaults to `false`. Standard aliases (`read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, `bash`) are enabled by presets such as `poweruser`, or by setting `usestdutils=true`. Earlier pages listed `true`.
+- `maxcontext` defaults to `0`: proactive threshold compaction is off, and Mini-A relies on provider overflow recovery or `contextguard=true` unless you set it (for example `maxcontext=50000`). Earlier release notes below describe a 50K automatic default that no longer applies.
+- `mcpproxynative` (native function calling for `proxy-dispatch`) defaults to `true`; set it to `false` for action-based JSON.
+- The Gemini low-cost model auto-enables `OAF_MINI_A_LCNOJSONPROMPT` when unset, the same way the main model already did.
+- When a skill and a custom command share a name, the skill takes precedence.
+
+---
+
 ### Durable memory, Markdown persistence, and cache-token metrics
 
 **Change**: Working memory now supports deliberate, typed durable records and a human-readable Markdown store.
@@ -49,7 +210,7 @@ See [Agent Plugins]({{ '/agent-plugins' | relative_url }}) for the layout, suppo
 - If a parallel MCP batch times out partway through, missing results are surfaced as named, retryable tool failures. Completed calls are retained, rather than silently leaving an incomplete result slot.
 - The interactive console now uses the synchronous OpenAF shutdown-hook path on exit, ensuring Mini-A's resource cleanup runs before process termination.
 
-See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the new modes and search-artifact settings.
+See [Configuration → Wiki Knowledge Base]({{ '/configuration#c-wiki-knowledge-base' | relative_url }}) for the new modes and search-artifact settings.
 
 ---
 
@@ -70,7 +231,7 @@ Working memory now also gives short-lived tool and network observations explicit
 - `wikiroot` and filesystem mounts now accept local `.zip` and `.okt` archives. Archives are always read-only and must contain `index.md` at their entry root.
 - Read-only wikis now consume existing Lucene indexes and graph data without taking a writer lock or creating metadata/cache files. `wikis3artifactprefix` can hydrate a separately published artifact tree into `wikiindexdir` for S3 deployments.
 
-See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the ingestion and archive options.
+See [Configuration → Wiki Knowledge Base]({{ '/configuration#c-wiki-knowledge-base' | relative_url }}) for the ingestion and archive options.
 
 ---
 
@@ -113,7 +274,7 @@ Every apply or reorganization now ends with a deterministic finalize pass: gener
 - On startup, Mini-A walks up from the current directory looking for the nearest `AGENTS.md` file.
 - If found, its content is appended to `rules` as a "Follow AGENTS.md instructions from `<path>`" entry.
 - Applied once per run; re-applying does not duplicate the injected rule.
-- This is unrelated to the wiki's protected `AGENTS.md` page (see [Wiki Knowledge Base](/configuration/#10c-wiki-knowledge-base)) — that page documents wiki ingestion conventions, while this feature loads project-level instructions for the agent itself.
+- This is unrelated to the wiki's protected `AGENTS.md` page (see [Wiki Knowledge Base](/configuration/#c-wiki-knowledge-base)) — that page documents wiki ingestion conventions, while this feature loads project-level instructions for the agent itself.
 - Set `noagentsmd=true` to disable this automatic discovery and injection.
 
 **Examples**:

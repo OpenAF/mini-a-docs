@@ -92,14 +92,16 @@ mini-a includes several **built-in optimizations** that reduce token consumption
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `maxcontext` | Maximum context window size (tokens) | Model default |
+| `maxcontext` | Approximate context budget (tokens). Deduplicates at 60% and summarizes at 80% of the budget; `0` leaves proactive compaction off (provider overflow recovery still applies) | `0` |
+| `contextguard` | Guardrails for large tool output when `maxcontext` is unset | `false` |
 | `maxtokens` | Maximum tokens per response | Model default |
-| Auto-compact | Automatically compact when context exceeds threshold | Enabled |
 
 ```bash
 # Example: constrain context and response size
 mini-a maxcontext=32000 maxtokens=4096
 ```
+
+For tool-heavy conversations where older output must stay exactly recoverable, [History VM]({{ '/advanced#history-vm-and-context-virtualization' | relative_url }}) (`historyvm=true`) keeps the full history on disk and sends the model only a bounded working set, with `history_search`, `history_get`, and `history_expand` to page exact text back in.
 
 ---
 
@@ -147,6 +149,8 @@ mini-a useshell=true usetools=true mcpprogcall=true \
 ```
 
 Useful controls include `mcpprogcallport`, `mcpprogcallmaxbytes`, `mcpprogcallresultttl`, `mcpprogcalltools`, and `mcpprogcallbatchmax`.
+
+To try an MCP server before wiring it into a goal, run the interactive tester with `mini-a mcptest=true mcp="(cmd: 'ojob mcps/mcp-time.yaml')"`. It lists tools, calls them through guided prompts, and its **Show mcp= parameter string** option prints the active connection as a SLON string that you can paste straight into `mini-a mcp="..."`.
 
 <div id="player-s9" style="border-radius:8px; overflow:hidden; border:1px solid rgba(160,174,192,0.3);"></div>
 <script>AsciinemaPlayer.create("{{ '/assets/images/screenshots/s9-mcp-test-console.cast' | relative_url }}", document.getElementById('player-s9'), { cols: 127, rows: 24, autoPlay: true, loop: true, fit: 'width' });</script>
@@ -232,7 +236,7 @@ mini-a
 
 ### Web UI
 
-A browser-based interface with session management, conversation history, and streaming output.
+A browser-based interface with session management, conversation history, and streaming output. Each answer groups its thoughts, tool work, and status messages in a collapsible **Activity** section that stays open while the agent works and collapses when the answer completes. When planning runs, the UI shows **Planning…** as soon as the planner starts streaming. Mermaid diagrams open in a full-screen viewer with pinch-zoom and pan, and `usemaps` renders Leaflet maps with colored markers.
 
 ```bash
 mini-a onport=8080
@@ -354,6 +358,14 @@ mini-a useplanning=true planstyle=legacy usedelegation=true \
   goal='Analyze this monorepo, group findings by domain, and produce one prioritized action plan'
 ```
 
+### Live Coordination Between Agents
+
+Delegated agents are isolated by default: they exchange only a goal and a result. With `agentcomms`, agents in one delegation tree can also relay early findings to a parent, message peers, publish to topics, or claim work through version-checked shared state, all without a broker or an extra model. Each capability needs an explicit grant, grants are never inherited, and remote workers must opt in with `apitoken` and their own ceiling. See [Advanced → Inter-agent communication]({{ '/advanced#inter-agent-communication' | relative_url }}).
+
+### Adaptive Orchestration
+
+`orchestration=auto` lets Mini-A choose planning, advisor/model strategy, and evidence-gating controls from deterministic goal-complexity and risk signals, with no extra LLM call. `manual` stays the default, explicit flags always win, and every automatic decision is recorded in the trace. See [Advanced → Adaptive orchestration]({{ '/advanced#adaptive-orchestration' | relative_url }}).
+
 ---
 
 ## Outer Loop Autonomous Coding
@@ -390,7 +402,27 @@ mini-a "Refactor the parser and keep iterating until validation passes" \
   outerloopmaxcycles=6
 ```
 
-See [Configuration → Outer Loop]({{ '/configuration#7a-outer-loop-autonomous-coding' | relative_url }}) for the full parameter reference.
+See [Configuration → Outer Loop]({{ '/configuration#a-outer-loop-autonomous-coding' | relative_url }}) for the full parameter reference.
+
+---
+
+## Durable Runs, Policies, and Evaluation
+
+Four opt-in controls for running Mini-A unattended, in restricted environments, or under test. Defaults leave existing behavior unchanged.
+
+| Capability | Turn it on | What it gives you |
+|------------|-----------|-------------------|
+| **Durable runs** | `durable=true` | Stable run ID, resumable state, safe checkpoints, and a redacted JSONL trace; resume with `resumerun=<runid>`, inspect with `runstatus=<runid>` |
+| **Capability selection** | `capabilityselection=true` | A normalized registry of MCP tools, skills, plugins, and workers, exposing only a deterministic, bounded relevant subset (`capabilitylimit`, default 8) |
+| **Central policy** | `policy=` / `policyfile=` | Traceable allow/deny rules for shell, MCP tools, delegation, wiki writes, filesystem writes, named tools, and allowed HTTP domains |
+| **Evaluation suites** | `eval=true evalfile=...` | YAML/JSON scenarios with assertions, cost/token/step/time limits, JSON reports, baselines, and regression detection; also usable as ordinary OpenAF tests |
+
+```bash
+mini-a goal="Inspect the repository" policy="(shell: deny, delegation: deny)" durable=true
+mini-a eval=true evalfile=evals/core.yaml evalbaseline=evals/baseline.json
+```
+
+See [Advanced]({{ '/advanced' | relative_url }}) for [durable runs]({{ '/advanced#durable-runs-and-traces' | relative_url }}), [capability selection and policies]({{ '/advanced#capability-selection-and-policies' | relative_url }}), and [evaluation suites]({{ '/advanced#evaluation-suites' | relative_url }}).
 
 ---
 
@@ -587,7 +619,7 @@ if (match) {
 var markedCount = agent._globalMemoryManager.sweepStale(30);
 ```
 
-See [Configuration → Working Memory]({{ '/configuration#10b-working-memory' | relative_url }}) for the full parameter reference.
+See [Configuration → Working Memory]({{ '/configuration#b-working-memory' | relative_url }}) for the full parameter reference.
 
 ---
 
@@ -624,6 +656,7 @@ Supported operations:
 | `list` | List all pages (optional prefix filter; add `withMeta=true` for title+description) |
 | `read` | Read a specific page |
 | `search` | Full-text search across all pages and mounts |
+| `retrieve` | Bounded, cited evidence packet (ranked excerpts, line ranges, budgets) instead of whole pages |
 | `lint` | Validate wiki health (broken links, orphans, stale pages, near-duplicates) |
 | `write` | Write or update a page (requires `wikiaccess=rw`) |
 | `mounts` | List active read-only mounts |
@@ -648,7 +681,15 @@ ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=/tmp/wiki ingestdryrun=true
 /ingest ./docs reference
 ```
 
-An ingest records source provenance (`source`, `source_ref`, `source_hash`, `ingested`) and skips unchanged sources through its ledger unless `ingestforce=true`. Oversized files are skipped, not truncated; accepted long sources are split at headings. See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the `ingest*` options.
+An ingest records source provenance (`source`, `source_ref`, `source_hash`, `ingested`) and skips unchanged sources unless `ingestforce=true`. Oversized files are skipped, not truncated; accepted long sources are split at headings.
+
+Repeated ingestion is a non-destructive **upsert**: sources that disappear are reported and their pages preserved unless you opt in to `ingestprune=true`, which removes only pages owned by the same destination, origin, and section, and only after complete discovery. Hand-edited pages and pages whose ownership cannot be proven become conflicts rather than being overwritten, and `ingestforce=true` never overrides that. Preview any run with `ingestdryrun=true`; `ingestmode=normalize` or `raw` guarantees no model is called.
+
+```bash
+ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize ingestprune=true ingestdryrun=true
+```
+
+See [Configuration → Wiki ingestion]({{ '/configuration#wiki-ingestion' | relative_url }}) for the `ingest*` options, manifest, recovery, and single-writer limits.
 
 ### Wiki Console Commands
 
@@ -679,11 +720,30 @@ An ingest records source provenance (`source`, `source_ref`, `source_hash`, `ing
 
 Use both together: the agent reasons with memory during a session, then distils durable findings into wiki pages for future sessions and other agents.
 
-See [Configuration → Wiki Knowledge Base]({{ '/configuration#10c-wiki-knowledge-base' | relative_url }}) for the full parameter reference.
+See [Configuration → Wiki Knowledge Base]({{ '/configuration#c-wiki-knowledge-base' | relative_url }}) for the full parameter reference.
 
 ### Cross-wiki graph hints
 
 When a primary wiki mounts reference wikis and graph support is enabled, `wikigraphcross=true` (default) can extend graph hints across mounts at query time. It follows explicit `@name/path.md` links and can join pages with shared tags, aliases, or semantic concepts. The expansion is read-only and never merges or persists graph data between wikis; use `/graph cross <path>` to inspect the links for one page.
+
+### Wiki retrieval v2 and bounded retrieval
+
+Wiki search works page by page by default. For larger wikis, two additions keep irrelevant Markdown out of the model's context:
+
+- **`retrieve`** is a bounded workflow (search, inspect, expand, prepare for synthesis) that returns compact evidence entries with citations, line ranges, ranking score components, and used-versus-configured budgets. It never returns whole pages and never writes an ungrounded answer. Tune it with `maxCandidates`, `maxInspected`, `maxGraphExpansion`, and `maxBytes`; add `expandGraph=true` to spend a separate budget on backlinks, graph neighbors, and eligible mounted wikis.
+- **`wikiretrievalv2=true`** (opt-in) switches search, `retrieve`, and context assembly to a shared, versioned passage engine. Markdown stays authoritative; a separate, rebuildable serving generation holds passages, reverse-link postings, and immutable evidence blocks.
+
+```bash
+# Build the v2 serving generation explicitly (writable wiki)
+ojob mini-a.yaml dream=true usewiki=true wikiroot=/path/to/wiki wikiaccess=rw wikiretrievalv2=true dreamwikimode=reindex
+
+# Readers set the same flag; a missing build reports v2-build-required instead of scanning
+mini-a usewiki=true wikiroot=/path/to/wiki wikiretrievalv2=true goal="..."
+```
+
+Results distinguish `nativeScore` (engine relevance) from `rankScore` (final ranking) and include `scoreComponents` and `retrievalMethod`; the compatibility `score` is neither a probability nor always native Lucene relevance, so prefer the explicit fields. Search returns the highest-ranked complete candidates that fit `maxBytes` (default 16000) and reports `outcome: partial` when it omits some. Every selected wiki needs its own compatible build, and HTTP/S3 readers consume a published bundle. With graph expansion, cross-wiki links and shared keys stay within the selected federation, honor the `wikigraphcross*` settings, and are re-validated against source revisions when disclosed. Retrieval telemetry (`wikitelemetry=true`) keeps aggregate counters only.
+
+Multi-wiki MCP clients call `context()` to discover mounts, then pass the optional `wiki` selector (`"*"`, `"primary"`, a mount name, or an array) to `mcp-wiki` tools. See [Configuration → Wiki retrieval v2]({{ '/configuration#wiki-retrieval-v2' | relative_url }}) for the tuning object and [MCP Catalog]({{ '/mcp-catalog#mcp-wiki' | relative_url }}) for server details. Skill libraries built on the same engine are covered in [Virtual Skills]({{ '/virtual-skills' | relative_url }}).
 
 ---
 
@@ -799,7 +859,7 @@ mini-a agent=examples/changelog-gen.agent.md goal="generate changelog"
 
 See the [Agent Files]({{ '/agents' | relative_url }}) page for the complete reference: frontmatter keys, tool entry types, `mini-a:` overrides, relative file paths, precedence rules, and a full annotated example.
 
-For portable bundles of skills and MCP servers, use [Agent Plugins]({{ '/agent-plugins' | relative_url }}).
+For portable bundles of skills and MCP servers, use [Agent Plugins]({{ '/agent-plugins' | relative_url }}). For skill collections too large to list eagerly, store them as wiki pages and use the [Virtual Skill Library]({{ '/virtual-skills' | relative_url }}) (`useskillwiki=true`), which searches, previews, and reads one section at a time.
 
 ---
 

@@ -27,12 +27,14 @@ export MINI_A_PARAM=value
 | `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5-mini, key: '...')`) |
 | `modellc` | - | Lighter model for simple tasks (dual-model); set via `OAF_LC_MODEL` env var |
 | `modelval` | - | Runtime override for the validation model configuration; same format as `OAF_VAL_MODEL` |
-| `modellock` | `auto` | Force model-tier selection: `main`, `lc`, or `auto` |
+| `modellock` | `auto` | Select the model tier for normal steps: `main`, `lc`, or `auto`. Recovery paths (such as invalid-JSON fallback) can still call the main model, so this is not a strict spending or provider-isolation boundary |
 | `lccontextlimit` | `0` | Escalate from low-cost model to main model when context tokens reach this threshold (`0` disables) |
 | `deescalate` | `3` | Consecutive successful steps required before switching back to the low-cost model after escalation |
 | `lcescalatedefer` | `true` | Defer LC-to-main escalation by one step when LC confidence remains high |
 | `lcbudget` | `0` | Maximum total LC token budget before permanently switching to the main model (`0` = unlimited) |
-| `lcjsonretries` | `1` | Extra same-step retries for invalid low-cost-model JSON before Mini-A falls back to the main model (`0` disables retries) |
+| `lcjsonretries` | `1` | Extra same-step retries for invalid low-cost-model JSON before Mini-A falls back to the main model (`0` disables retries). Retries cost tokens and provider calls and count toward `lcbudget`, but not `maxsteps` |
+| `lcreplytool` | `false` | Replace the corrective LC retry with a capture-only `submit_reply` MCP tool call on OpenAI-compatible and Ollama adapters. See [Advanced]({{ '/advanced#low-cost-json-recovery-lcjsonretries-lcreplytool' | relative_url }}) |
+| `orchestration` | `manual` | `auto` applies deterministic complexity and risk signals to the existing planning, advisor, and evidence-gate controls; explicit flags always win. See [Advanced]({{ '/advanced#adaptive-orchestration' | relative_url }}) |
 | `llmcomplexity` | `false` | Use a quick LC validation call for medium-complexity routing heuristics |
 | `modelstrategy` | `default` | Model orchestration profile: `default` (LC-first with escalation), `advisor` (LC executes, main model consulted selectively for difficult steps), or `delegate` (LC executes all steps including step 0) |
 | `advisorenable` | `true` | Enable main-model advisor consultations when `modelstrategy=advisor` |
@@ -101,7 +103,32 @@ export MINI_A_PARAM=value
 | `systempromptbudget` | - | Maximum estimated token size for the system prompt. When exceeded, lower-priority sections (examples, detailed tool guidance) are dropped to stay within budget |
 
 > [!NOTE]
-> **Automatic `AGENTS.md` loading**: on startup, Mini-A walks up from the current directory looking for the nearest project-level `AGENTS.md` file. If found, its content is automatically appended to `rules` as a "Follow AGENTS.md instructions from `<path>`" entry. This is the coding-agent convention (similar to `CLAUDE.md`) and is unrelated to the protected `AGENTS.md` page inside a [Wiki Knowledge Base](#10c-wiki-knowledge-base). Set `noagentsmd=true` to disable this automatic discovery and injection.
+> **Automatic `AGENTS.md` loading**: on startup, Mini-A walks up from the current directory looking for the nearest project-level `AGENTS.md` file. If found, its content is automatically appended to `rules` as a "Follow AGENTS.md instructions from `<path>`" entry. This is the coding-agent convention (similar to `CLAUDE.md`) and is unrelated to the protected `AGENTS.md` page inside a [Wiki Knowledge Base](#c-wiki-knowledge-base). Set `noagentsmd=true` to disable this automatic discovery and injection.
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## 2a. Durable Runs, Policy, and Evaluation
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `durable` | `false` | Persist a resumable run state and a redacted JSONL trace under `~/.openaf-mini-a/runs/<runid>/` |
+| `runid` | auto-generated | Stable identifier for a durable run |
+| `resumerun` | - | Resume an interrupted durable run by ID (does not change the existing `resume` option) |
+| `runstatus` | - | Print the persisted status of a durable run by ID |
+| `runroot` | `~/.openaf-mini-a/runs` | Durable-run storage root |
+| `capabilityselection` | `false` | Normalize MCP tools, skills, plugins, and workers into a registry and expose only a deterministic, bounded relevant subset |
+| `capabilitylimit` | `8` | Maximum capabilities exposed when `capabilityselection=true` |
+| `policy` | - | Centralized allow/deny rules as SLON/JSON, e.g. `(shell: deny, delegation: deny)` |
+| `policyfile` | - | JSON file containing the centralized policy |
+| `eval` | `false` | Run a native evaluation suite instead of a single goal (`goal` is not required) |
+| `evalfile` | - | Evaluation YAML/JSON file or directory; required when `eval=true` |
+| `evalout` | - | Write the full machine-readable evaluation report to this JSON path |
+| `evalbaseline` | - | Baseline JSON report to compare the current run against |
+| `evalwritebaseline` | - | Write the current report as a new baseline |
+
+The default policy is allow-all. Supported initial rules are `shell: deny`, `delegation: deny`, `mcp: deny`, `wiki: (write: deny)`, `filesystem: (write: deny)`, `deniedTools: [...]`, and `network: (allowDomains: [...])`. See [Advanced]({{ '/advanced' | relative_url }}) for [durable runs]({{ '/advanced#durable-runs-and-traces' | relative_url }}), [capability selection and policies]({{ '/advanced#capability-selection-and-policies' | relative_url }}), and [evaluation suites]({{ '/advanced#evaluation-suites' | relative_url }}).
 
 </div>
 
@@ -123,6 +150,7 @@ export MINI_A_PARAM=value
 | `mcpprogcallresultttl` | `600` | TTL (seconds) for oversized stored results served by the MCP bridge |
 | `mcpprogcalltools` | `""` | Optional comma-separated tool allowlist exposed by the MCP bridge |
 | `mcpprogcallbatchmax` | `10` | Maximum calls accepted by one bridge batch request |
+| `mcpproxynative` | `true` | Use native function calling for `proxy-dispatch`; set `false` for action-based JSON |
 | `mcpdynamic` | `false` | Allow dynamic MCP discovery |
 | `mcplazy` | `false` | Lazy-load MCP servers |
 | `mcpurl` | - | Remote MCP server URL |
@@ -137,8 +165,8 @@ export MINI_A_PARAM=value
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `useutils` | `false` | Enable Mini Utils Tool utilities. With `usestdutils=true` (default), exposes standard aliases: `read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, and `bash` (when `useshell=true`). Legacy names (`filesystemQuery`, `filesystemModify`, etc.) are used when `usestdutils=false`. |
-| `usestdutils` | `true` | When `useutils=true`, expose standard Mini Utils aliases (`read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, `bash`) instead of legacy Mini Utils internal names |
+| `useutils` | `false` | Enable Mini Utils Tool utilities. With `usestdutils=true`, exposes standard aliases: `read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, and `bash` (when `useshell=true`). Legacy names (`filesystemQuery`, `filesystemModify`, etc.) are used otherwise (the default). |
+| `usestdutils` | `false` | When `useutils=true`, expose standard Mini Utils aliases (`read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, `bash`) instead of legacy Mini Utils internal names. Presets such as `poweruser` enable it |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
 | `skillmaxautoload` | `1` | Maximum number of high-confidence matching skills to auto-load into bounded runtime context |
 | `skillcontextchars` | `8000` | Maximum characters read from each auto-loaded SKILL.md for runtime context |
@@ -163,10 +191,20 @@ export MINI_A_PARAM=value
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `maxcontext` | - | Maximum context window tokens |
+| `maxcontext` | `0` | Approximate context budget in tokens. `0` leaves proactive threshold compaction off, relying on provider overflow recovery or `contextguard`; set it (e.g. `50000`) for long sessions. Compaction dedupes at 60% of the budget and summarizes at 80% |
 | `maxcontent` | - | Alias for `maxcontext` |
 | `maxtokens` | - | Maximum response tokens |
-| `autocompact` | `true` | Auto-compact when context is full |
+| `contextguard` | `false` | Generic context and tool-output guardrails when `maxcontext` is unset |
+| `contextguardbudget` | `32000` | Assumed smallest context window used by `contextguard` when `maxcontext=0` |
+| `toolresultmaxinline` | `4096` with `contextguard` | Maximum inline bytes kept from large tool or `readresult` outputs before spill/truncation |
+| `readresultmaxmatches` | `20` with `contextguard` | Maximum matching regions returned by `proxy-dispatch` `readresult` `op='grep'` |
+| `historyvm` | `false` | Keep exact history in a conversation-owned journal and replace eligible old large messages with retrievable references. Requires a writable `conversation=` path |
+| `historyvmmode` | `safe` | History VM policy mode (`safe` is the only supported mode) |
+| `historyvmshadow` | `false` | Capture events and estimate savings without changing provider requests |
+| `contextvirtualization` | `false` | Phase 2 multi-resolution context objects and consumer-specific projection; requires `historyvm=true` |
+| `contextvirtualizationshadow` | `false` | Dry-run the Phase 2 projection while still sending the Phase 1 context; requires `historyvm=true contextvirtualization=true` |
+
+See [Advanced → History VM and Context Virtualization]({{ '/advanced#history-vm-and-context-virtualization' | relative_url }}) for policies, retrieval tools, and S3 mirroring.
 
 </div>
 
@@ -268,7 +306,8 @@ export MINI_A_PARAM=value
 |-----------|---------|-------------|
 | `useascii` | `false` | Enable ASCII art generation |
 | `usesvg` | `false` | Enable SVG generation for custom visuals and infographics |
-| `usemaps` | `false` | Enable map visualization |
+| `usemaps` | `false` | Enable map visualization. Leaflet markers accept `icon`: `default`, `red`, `green`, `blue`, `orange`, `yellow`, `violet`, `grey`, or `black` (unknown values use blue) |
+| `useasciiviz` | `false` | Console only: render `oafPrintChart` Markdown fences (`line`, `bars`, `sparkline`, `histogram`, `heatmap`, `scatter`, `boxplot`, `timeline`, ...) as terminal charts in answers and `/last`, and expose `printChart` for interim charts |
 | `usemath` | `false` | Enable LaTeX math guidance for KaTeX rendering in the web UI |
 | `usediagrams` | `false` | Enable diagram generation |
 | `usemermaid` | `false` | Alias for `usediagrams` |
@@ -298,10 +337,11 @@ export MINI_A_PARAM=value
 | `workerregurl` | - | Parent registration URLs used by workers for self-registration |
 | `workerreginterval` | `30000` | Worker heartbeat interval in milliseconds |
 | `delegationmaxdepth` | `3` | Maximum recursive delegation depth |
-| `delegationtimeout` | `300000` | Default foreground wait/delegation budget in milliseconds |
+| `delegationtimeout` | `300000` | Default foreground wait and initial stall timeout in milliseconds; activity extends execution unless a hard timeout is set |
 | `delegationstalltimeout` | `300000` | Idle time before a running delegated subtask is considered stalled; active tasks keep running |
 | `delegationhardtimeout` | - | Optional absolute delegated subtask timeout regardless of activity (ms) |
-| `delegationmaxretries` | `2` | Retry count for failed delegated subtasks |
+| `delegationmaxretries` | `2` | Maximum execution attempts for confirmed failures, including the first. An unknown remote outcome is never resubmitted |
+| `agentcomms` | - | Opt-in inter-agent communication declaration (profiles, grants, `delegate` ceiling, limits) as JSON/SLON. On a worker it sets the grant ceiling and requires `apitoken`. See [Advanced]({{ '/advanced#inter-agent-communication' | relative_url }}) |
 | `workermode` | `false` | Launch mini-a as a Worker API server |
 | `showdelegate` | `false` | Show delegate/subtask events as separate console lines |
 | `workerskills` | - | Comma-separated list (or JSON/SLON array) of A2A skill IDs this worker advertises (e.g. `"shell,time"`) |
@@ -310,8 +350,8 @@ export MINI_A_PARAM=value
 | `shellworker` | `false` | Convenience shorthand: sets `useshell=true` and auto-emits the `shell` A2A skill |
 | `apitoken` | - | Bearer token required to authenticate requests to the worker API server |
 | `apiallow` | - | Comma-separated IP allowlist for the worker API (e.g. `127.0.0.1,192.168.1.0/24`) |
-| `defaulttimeout` | `300000` | Default task deadline in milliseconds for delegated tasks |
-| `maxtimeout` | `600000` | Maximum allowed task deadline in milliseconds |
+| `defaulttimeout` | `300000` | Default total worker execution limit in milliseconds for delegated tasks |
+| `maxtimeout` | `600000` | Maximum accepted worker execution limit in milliseconds |
 | `taskretention` | `3600` | Seconds to keep completed task results before cleanup |
 | `subtasks` | - | Inline startup scout subtasks (pipe-separated goals) executed before the main loop |
 | `subtasksfile` | - | Path to a JSON/YAML file containing startup scout task definitions |
@@ -394,8 +434,8 @@ Mini-A exposes one structured working-memory system. The common memory types are
 | Memory type | What it means in Mini-A | Main parameters |
 |-------------|--------------------------|-----------------|
 | **Working memory** | The live structured store the agent reads and writes during a run | `usememory`, `memoryinject`, `memorymaxpersection`, `memorymaxentries`, `memorycompactevery`, `memorydedup` |
-| **Episodic memory** | Session-scoped state for a specific conversation or run | `memorysessionid`, `memoryscope=session\|both`, `memorysessionch` |
-| **Semantic memory** | Durable knowledge the agent can reuse across runs | `memorych`, `memorymd=true` for Markdown records, `memoryscope=global\|both`, `memorypromote`, `memorystaledays`, `usememorywrite` |
+| **Episodic memory** | Session-scoped state for a specific conversation or run | `memorysessionid`, `memoryscope=session|both`, `memorysessionch` |
+| **Semantic memory** | Durable knowledge the agent can reuse across runs | `memorych`, `memorymd=true` for Markdown records, `memoryscope=global|both`, `memorypromote`, `memorystaledays`, `usememorywrite` |
 | **Procedural memory** | Instructions and workflow rules that tell Mini-A how to behave | `agent`, `mode`, skills, `AGENTS.md`, prompts (not a dedicated memory store) |
 
 `memoryuser=true` is the convenience preset for both global and session working memory. `memoryusersession=true` is the session-only version.
@@ -468,7 +508,7 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 | `wikibackend` | `fs` | Backend: `fs` (filesystem), `s3`, `s3fs`, `es` (Elasticsearch/OpenSearch), or read-only `http` (`https` is an alias) |
 | `wikiroot` | `.` | Filesystem directory or local `.zip`/`.okt` archive for the `fs` backend; archives are always read-only |
 | `wikibucket` | - | S3 bucket name (`s3`/`s3fs` backend) |
-| `wikiprefix` | - | S3 key prefix (`s3`/`s3fs`); Elasticsearch index name for `es` (defaults to `mini_a_wiki`) |
+| `wikiprefix` | `wiki/` (S3) / `mini_a_wiki` (ES) | S3 key prefix (`s3`/`s3fs`); Elasticsearch index name for `es` |
 | `wikiurl` | - | S3-compatible endpoint (`s3`/`s3fs`), Elasticsearch/OpenSearch base URL (`es`), or static page-server base URL (`http`) |
 | `wikiaccesskey` | - | S3 access key (`s3`/`s3fs`); Elasticsearch username for `es` |
 | `wikisecret` | - | S3 secret key (`s3`/`s3fs`); Elasticsearch password for `es` |
@@ -492,13 +532,16 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 | `wikilintstaleddays` | `90` | Days before a page without an `updated` field is marked stale in lint |
 | `wikilintstreamthreshold` | `2000` | Page count above which `lint` switches into streaming mode |
 | `wikilintmaxpairs` | `250000` | Max near-duplicate comparisons performed during streaming lint |
-| `wikimounts` | - | SLON/JSON array of read-only wiki mounts: `[{name: 'team', backend: 'fs', root: '/path'}]`; an `fs` root may be a directory or local `.zip`/`.okt` archive — mounted pages appear as `@name/path.md` |
+| `wikimounts` | - | SLON/JSON array of read-only wiki mounts: `[{name: 'team', label: 'Team docs', description: '...', backend: 'fs', root: '/path'}]`; an `fs` root may be a directory or local `.zip`/`.okt` archive — mounted pages appear as `@name/path.md` |
+| `wikiretrievalv2` | off | Opt-in versioned passage retrieval. Requires an explicit writable reindex (local `fs`/`s3fs`) or a published bundle that contains compatible serving artifacts. Missing artifacts return `v2-build-required` rather than triggering a scan or migration |
+| `wikiretrievalconfig` | - | Validated SLON/JSON object for passage size, cache, artifact, deadline, and telemetry bounds (unknown keys and invalid values are rejected). Also settable via `OAF_MINI_A_WIKI_RETRIEVAL_V2` and `OAF_MINI_A_WIKI_RETRIEVAL_CONFIG`; explicit arguments win |
+| `wikitelemetry` | off | Record aggregate retrieval counters (no query text or hashes by default). Writable managers persist them; read-only managers keep them in memory |
 
 When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps three starter pages: `AGENTS.md` (ingestion workflow and rules), `index.md` (entrypoint/catalog), and `log.md` (append-only journal of every write, delete, and move). `AGENTS.md` and `log.md` are protected and cannot be deleted.
 
 Start each wiki session with `wiki op="context"` for a compact overview (page count, sections, mounts, recent log entries), then use `search` before reading any page.
 
-Wiki operations available to the agent: `context`, `list`, `tree`, `browse`, `read`, `search`, `backlinks`, `lint`, `write`, `move`, `init`, `reindex`, `mounts`, `attach`, `detach`.
+Wiki operations available to the agent: `context`, `list`, `tree`, `browse`, `read`, `search`, `retrieve`, `backlinks`, `lint`, `write`, `move`, `init`, `reindex`, `mounts`, `attach`, `detach`. `retrieve` returns a bounded, cited evidence packet; see [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}).
 Operations that require `wikiaccess=rw`: `write`, `move`, `init`, `reindex`.
 Console commands: `/wiki context`, `/wiki list [prefix]`, `/wiki tree [prefix]`, `/wiki browse [prefix]`, `/wiki read <page.md>`, `/wiki search <query>`, `/wiki backlinks <page.md>`, `/wiki lint`, `/wiki reindex`, `/wiki mounts`, `/wiki attach <name> [backend=fs] [root=path]`, `/wiki detach <name>`.
 Use `/stats wiki` to see per-operation counters for the current session.
@@ -509,25 +552,60 @@ Static HTTP wikis are read-only. They fetch pages from `wikiurl`; listing, searc
 
 ### Wiki ingestion
 
-`mini-a-ingest.yaml` turns a documentation folder, local/remote git repository, or web page into wiki pages. Discovery, filtering, chunking, the re-ingest ledger, writing, and finalization are deterministic; only per-source distillation uses the model.
+`mini-a-ingest.yaml` turns a documentation folder, local/remote git repository, or web page into wiki pages. Discovery, filtering, chunking, change detection, writing, and finalization are deterministic; only per-source distillation uses the model.
 
 ```bash
 ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=/tmp/wiki
 ojob mini-a-ingest.yaml ingestsource=https://github.com/OpenAF/mini-a wikiroot=/tmp/wiki ingestdryrun=true
 ```
 
-The interactive equivalent (with `usewiki=true wikiaccess=rw`) is `/ingest <source> [section] [dryrun] [force]`. Sources larger than `ingestmaxfilekb` (default `512`) are skipped rather than truncated; large accepted sources are split at headings (`ingestchunkchars`, default `24000`). A ledger at `<indexRoot>/.mini-a-wiki-ingest/ledger.json` skips unchanged sources unless `ingestforce=true`; pages include `source`, `source_ref`, `source_hash`, and `ingested` provenance front matter.
+The interactive equivalent (with `usewiki=true wikiaccess=rw`) is `/ingest <source> [section] [dryrun] [force]`. Sources larger than `ingestmaxfilekb` (default `512`) are skipped rather than truncated; large accepted sources are split at headings (`ingestchunkchars`, default `24000`). Pages include `source`, `source_ref`, `source_hash`, and `ingested` provenance front matter, and unchanged sources are skipped unless `ingestforce=true`.
+
+**Repeated ingestion is a non-destructive upsert.** By default (`ingestprune=false`) a source that disappears is reported and its page is preserved. A versioned manifest (`.mini-a-wiki-state/manifest.json` under the index root) is the authority for what has been applied; the old ledger is read only for conservative migration, with a copy kept at `.mini-a-wiki-ingest/pre-migration.json`. A journal records prepared operations so an interrupted run can be re-run safely.
+
+```bash
+# Preview, reconcile, then (only for a confirmed-empty folder) authorize an empty prune
+ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize ingestprune=true ingestdryrun=true
+ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize ingestprune=true
+ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize ingestprune=true ingestallowemptyprune=true
+```
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `ingestsource` | - | Required folder, git repository path/URL, or page URL |
 | `ingesttype` | auto | `markdown`, `repo`, or `url` |
-| `ingestsection` | source name | Wiki section for generated pages |
+| `ingestsection` | source name | Wiki section for generated pages. Keep it stable when moving a source |
+| `ingestsourceid` | - | Optional stable logical origin identity, independent of the physical path, so a moved folder keeps its pages. Repository commits are versions, not new origins |
+| `ingestmode` | `auto` | `auto`, `normalize`, `distill`, or `raw`. Only distillation calls the model; `normalize`, `raw`, and structured `auto` never do |
 | `ingestinclude` / `ingestexclude` | - | Comma-separated path fragments to include or exclude |
 | `ingestchunkchars` / `ingestmaxfilekb` | `24000` / `512` | Chunk size and maximum accepted source size |
 | `ingestconcurrency` | `4` | Parallel source distillations |
-| `ingestdryrun` / `ingestforce` | `false` | Preview without writes / re-ingest unchanged sources |
-| `ingestledger` | `<indexRoot>/.mini-a-wiki-ingest/ledger.json` | Ledger path |
+| `ingestdryrun` | `false` | Report `planned_writes`/`planned_removals`, conflicts, and budget estimates. Calls no model and creates no files |
+| `ingestforce` | `false` | Reprocess present sources. Never authorizes deletion, overwrites edited pages, bypasses `wikiaccess=ro`, or waives budgets |
+| `ingestprune` | `false` | Remove pages for verified-missing sources owned by the same destination, origin, and section. Rejected for individual URL sources |
+| `ingestallowemptyprune` | `false` | Extra authorization to prune when a folder was completely observed and is empty. A missing or inaccessible folder is never treated as empty |
+| `wikiaccess` | `rw` | An explicit `ro` is honored by every entry point |
+| `ingestledger` | `<indexRoot>/.mini-a-wiki-ingest/ledger.json` | Legacy ledger path, used only for migration |
+
+Discovery errors, changed filters or size limits, local edits, failed writes, and budget deferrals block prune. Excluded, oversized, empty, or unreadable files that are still present are preserved. Pages that were edited by hand, and legacy pages whose ownership cannot be proven, produce **conflicts** and are never silently overwritten: review and restore the last managed version, or preserve the edited page separately and remove the managed destination with the wiki tools before retrying. Never delete the manifest to bypass ownership protection, and do not run other wiki writers while an ingest runs (ingestion writers on the same local wiki are serialized, but ordinary wiki tools do not take the ingestion lock, and remote backends offer no distributed coordination).
+
+Results report `status` (`complete`, `noop`, `planned`, `partial`, `blocked`, `failed`), `ok`, `sync_complete`, missing sources, blocked prune, conflicts, deferrals, and recovery state. Wrappers exit nonzero when requested work is unsuccessful, and a dry run never claims applied synchronization.
+
+### Wiki retrieval v2
+
+`wikiretrievalv2=true` switches search, `retrieve`, and `assembleContext` to the shared passage engine described under [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}). Build its serving generation explicitly with `dreamwikimode=reindex`, `/wiki reindex`, the `mcp-wiki-ops` `reindex` tool, or `MiniAWikiManager.reindex()`. Readers use the same flag and never build on their own.
+
+| `wikiretrievalconfig` key | Default | Bound |
+|---------------------------|--------:|-------|
+| `passageChars` | `1400` | 64–16000 UTF-16 units; soft structural target |
+| `cacheBytes` | `8388608` | Shared payload cache; at most 268435456 bytes per manager |
+| `maxArtifactBytes` / `maxArtifactFiles` | `268435456` / `100000` | Expanded generation caps (at most 2147483647 bytes / 1000000 files) |
+| `maxMillis` | `15000` | Request deadline, at most 120000 ms |
+| `linkImmutableFiles` | `true` | Reuse immutable index files through hard links; `false` forces copies |
+| `sharedBlockStore` | `false` | Opt-in local immutable block store |
+| `telemetryFlushQueries` / `telemetryRetentionDays` | `16` / `30` | Aggregate flush batch (at most 1000) and retention (at most 365 days) |
+| `telemetrySampleQueries` | `false` | Opt in to at most 64 zero-result query samples of at most 256 characters each |
+| `bundlePath` | - | Trusted local ZIP destination for streaming export after publication |
 
 ### Wiki Knowledge Graph
 
@@ -560,7 +638,7 @@ Console command: `/graph [build|query|neighbors|path|communities|surprise|export
 
 ### MCP deployment, storage, and search behavior
 
-Publish `mcp-wiki` to clients that only need discovery and retrieval: it is always read-only and exposes `context`, `search`, `read`, `browse`, `list`, `tree`, and `backlinks`. Deploy `mcp-wiki-ops` separately for trusted maintenance: it provides `context`, `lint`, `edit`, `maintain`, `reindex`, `graph_build`, and `graph_falkor`; it defaults to writable mode, and `wikiopsreadonly=true` disables mutations. For untrusted clients, use `mcp-wiki-safe`: it exposes only bounded `search` and single-use excerpt `read` operations using opaque references.
+Publish `mcp-wiki` to clients that only need discovery and retrieval: it is always read-only and exposes `context`, `search`, `read`, `open`, `navigate`, `grep`, `related`, `browse`, `list`, `tree`, and `backlinks`. When mounts are configured, call `context()` once to discover them, then pass the optional `wiki` selector to route a call: omitted or `"*"` searches the primary wiki plus every mount, `"primary"` selects the main wiki, a mount name selects that source, and `["a","b"]` selects a subset (unknown, duplicate, ambiguous, or conflicting selectors are rejected). Deploy `mcp-wiki-ops` separately for trusted maintenance: it provides `context`, `lint`, `edit`, `maintain`, `reindex`, `graph_build`, and `graph_falkor`; it defaults to writable mode, and `wikiopsreadonly=true` disables mutations. For untrusted clients, use `mcp-wiki-safe`: it exposes only bounded `search` and single-use excerpt `read` operations using opaque references, and none of the mount topology. Behind several replicas, set `wikiid` (for example `wikiid=engineering`) on every replica of one wiki so a shared `wikirestrictrefch` channel namespaces their references and cooldowns; if omitted, Mini-A derives a deterministic `auto-...` ID from the backend identity.
 
 For `s3` backends, the bucket and prefix contain the source Markdown pages. A local Lucene index may accelerate unscoped literal search, but it is not stored in S3 and is only built or refreshed by writable wiki operations such as `reindex`. A read-only server consumes an existing local index without taking its writer lock, otherwise it scans Markdown objects and creates nothing. Regex and path-scoped searches scan by design. `wikiindexdir` controls the non-filesystem local index/cache root; `wikis3artifactprefix` can hydrate a separately published Lucene/graph artifact tree into that directory at startup.
 
@@ -593,6 +671,27 @@ An LLM-powered off-line consolidation pass over persistent memory and/or the wik
 The `memorych`, `memorysessionch`, `memorysessionid`, `auditch`, `usewiki`, and `model` parameters are shared with the memory and wiki subsystems. See the [Advanced — Dreams]({{ '/advanced/' | relative_url }}#dreams-sleep-pass) page for full documentation and examples.
 
 `repair`, `reindex`, `graph`, and `indexes` are isolated maintenance operations: deterministic lint repair, search-index rebuild, graph-only rebuild (requires `usewikigraph=true`), and unconditional `index.md` regeneration respectively. They avoid the broader apply/reorganization flow.
+
+`dreamwikimode=plan` is always model-free: it never creates or calls a model, even when semantic extraction would default on for `apply`. Its proposal reports the request separately (`semanticRequested`, `semanticExecuted: false`, `semanticOmissionReason: "model-free-dry-run"`) and includes only a structural graph preview. For opt-in retrieval v2, `dreamwikimode=reindex` is the supported unattended way to build the serving generation.
+
+</div>
+
+<div class="config-category" markdown="1">
+
+## 10c-2. Virtual Skill Library
+
+A wiki whose pages carry `type: skill` front matter can serve as a searchable skill library that never loads its catalog into context. See [Virtual Skills]({{ '/virtual-skills' | relative_url }}) for authoring, tools, and the MCP servers.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `useskillwiki` | `false` | Enable the virtual skill library: exposes the `skillwiki` tool and `/skills search|recommend|open|read|related|compose|context` |
+| `skillwikibackend` | - | Backend for a *dedicated* skill wiki (`fs`, `s3`, `s3fs`, `es`, `http`); omit to reuse the `usewiki` wiki |
+| `skillwikiroot` | - | Root directory for a dedicated `fs` skill wiki |
+| `skillwikimounts` | - | SLON/JSON read-only mounts for a dedicated skill wiki, same shape as `wikimounts` |
+| `skillsautosearch` | `false` | Reserved for opt-in automatic consultation during planning |
+| `skillsautolimit` | `5` | Maximum results per automatic skill search |
+| `skillsmaxloaded` | `3` | Maximum distinct skills that may be `open()`-ed per agent run |
+| `skillsmaxchars` | `12000` | Maximum skill-body characters `read()` may return per agent run |
 
 </div>
 
@@ -632,7 +731,8 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 | `historyretention` | `600` | Web history retention window in seconds |
 | `historykeepperiod` | - | Delete kept conversation history files older than this many minutes |
 | `historykeepcount` | - | Keep only the newest N kept conversation history files |
-| `historys3bucket` | - | S3 bucket used to mirror history files |
+| `historyvm` / `historyvmshadow` / `contextvirtualization` / `contextvirtualizationshadow` | `false` | [History VM]({{ '/advanced#history-vm-and-context-virtualization' | relative_url }}) options for web conversations. With `historyvm` or `historyvmshadow`, the conversation is journaled under `historypath` even when history listing is off |
+| `historys3bucket` | - | S3 bucket used to mirror history files, including canonical History VM snapshots (requires `usehistory=true`) |
 | `historys3prefix` | - | S3 key prefix for mirrored history files |
 | `historys3url` | - | S3 endpoint URL for history mirroring |
 | `historys3accesskey` | - | S3 access key for history mirroring |
@@ -641,6 +741,11 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 | `historys3useversion1` | `false` | Use S3 path-style (v1) signing for history mirroring |
 | `historys3ignorecertcheck` | `false` | Disable TLS certificate checks for history S3 access |
 | `useattach` | `false` | Enable file attachment support in web mode |
+| `usestream` | `false` | Stream tokens to the browser over Server-Sent Events (`GET /stream`) |
+
+Web mode reports progress in two complementary ways. `POST /result` includes a `phase` field (`planning`, `execution`, or `finished`), so the loading preview shows **Planning…** even when SSE is off or reconnecting. When `usestream=true`, `GET /stream?uuid=<uuid>[&token=<token>]` emits `ready`, `stream` (model tokens), `planner_stream` (planner tokens, which switch the UI to its planning state immediately), and `error` events, plus `: ping` heartbeat comments. Per-session queues are purged on completion or after `ssequeuetimeout`. Answer and planner tokens from delegated child agents are not mixed into the parent's stream.
+
+Each answer's **Activity** section groups the same thought, execution, skill, summarization, stop, and rate messages that were previously listed inline; it does not enable additional log messages. It stays open while work is in progress and collapses when the final answer completes, and `showexecs` still controls execution visibility. Mermaid diagrams offer an **Open full screen** (⛶) viewer with pinch/wheel zoom and drag-to-pan (close with **×** or **Escape**), and Markdown answers are guided to include verified photographs with captions and source links for photo requests.
 
 </div>
 
@@ -679,7 +784,9 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 | `OAF_LC_MODEL` | `modellc` |
 | `OAF_VAL_MODEL` | `modelval` — dedicated validation model for deep research scoring |
 | `OAF_MINI_A_NOJSONPROMPT` | Force text prompt mode for main model; Gemini main models auto-enable this behavior when unset |
-| `OAF_MINI_A_LCNOJSONPROMPT` | Force text prompt mode for low-cost model (set explicitly for Gemini low-cost models) |
+| `OAF_MINI_A_LCNOJSONPROMPT` | Force text prompt mode for low-cost model; Gemini low-cost models auto-enable this behavior when unset |
+| `OAF_MINI_A_WIKI_RETRIEVAL_V2` | Default for `wikiretrievalv2` (an explicit argument wins) |
+| `OAF_MINI_A_WIKI_RETRIEVAL_CONFIG` | Default for `wikiretrievalconfig` (an explicit argument wins) |
 | `OAF_MINI_A_CON_HIST_SIZE` | Maximum console history size (defaults to JLine's default) |
 | `OAF_MINI_A_LIBS` | Comma-separated library paths to load automatically at startup |
 | `OAF_FLAGS` | OpenAF runtime flags as a SLON/JSON map. Notable: `(MCPSERVER: (answerInTOON: true))` makes built-in MCP servers (STDIO and HTTP) return tool results in TOON instead of JSON — see [MCP Catalog deployment]({{ '/mcp-catalog' | relative_url }}#deploying-mcp-servers-in-docker--kubernetes); `(MD_DARKMODE: 'auto')` controls markdown dark mode |
@@ -701,14 +808,20 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 | `/models` | Show all configured model tiers (main, LC, validation) with provider and source |
 | `/compact [n]` | Compact older history while keeping up to latest `n` exchanges (default 6) |
 | `/summarize [n]` | Summarize older history while keeping up to latest `n` exchanges (default 6) |
-| `/context [llm|analyze]` | Show estimated or model-analyzed context token breakdown |
-| `/reset` | Reset conversation |
+| `/context [llm|analyze|vm]` | Show estimated or model-analyzed context token breakdown, or History VM diagnostics with `vm` |
+| `/show [prefix]` | Display parameters, optionally filtered by prefix |
+| `/set <key> <value>` | Update a Mini-A parameter (use `"""` for multi-line values) |
+| `/toggle <key>` | Toggle a boolean parameter |
+| `/unset <key>` | Clear a parameter |
+| `/reset` | Restore default parameters |
+| `/restore` | Restore a saved conversation, like `resume=true` |
 | `/last [md]` | Reprint the previous final answer (raw markdown with `md`) |
 | `/save <path>` | Save the previous final answer to a file |
-| `/stats [mode] [out=file.json]` | Show session metrics (`summary`/`detailed`/`tools`) and optionally export JSON |
+| `/stats [mode] [out=file.json]` | Show session metrics (`summary`/`detailed`/`tools`/`memory`/`wiki`) and optionally export JSON |
 | `/history [n]` | Show the latest user goals from conversation history |
+| `/skills [prefix]` | List discovered skills; with `useskillwiki=true`, also `search`, `recommend`, `open`, `read`, `related`, `compose`, `context` |
 | `/exit` | Exit mini-a |
-| `/clear` | Reset conversation history and accumulated metrics |
+| `/clear` | Reset the ongoing conversation and accumulated metrics |
 | `/cls` | Clear screen |
 
 </div>
@@ -720,16 +833,17 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 | Preset | Parameters Enabled |
 |--------|-------------------|
 | `shell` | `useshell=true` |
-| `shellrw` | `useshell=true useutils=true readwrite=true shellallowpipes=true shellbatch=true showexecs=true mini-a-docs=true` |
+| `shellrw` | `useshell=true useutils=true readwrite=true shellallowpipes=true shellbatch=true showexecs=true mini-a-docs=true` (includes `shell`) |
 | `utils` | `useutils=true mini-a-docs=true usetools=true` |
+| `shellutils` | `useshell=true useutils=true mini-a-docs=true usetools=true` (includes `shell`) |
 | `chatbot` | `chatbotmode=true usestream=true` |
-| `internet` | Internet-focused MCP/tool preset with docs-aware utils and proxy aggregation |
-| `news` | News-focused MCP preset (web + rss + time, proxy enabled) |
-| `poweruser` | Shell + utils + tools with proxy tuning, history retention, LC validation, and docs-aware defaults |
-| `web` | Browser UI preset with MCP tools enabled |
-| `webfull` | Full web UI preset with history/attachments, proxy tuning, charts/diagrams/maps, and richer rendering options |
+| `internet` | `usetools=true mini-a-docs=true mcpproxy=true` with the time, web, weather, and net MCPs |
+| `news` | Inherits `internet` with the time, web, and RSS MCPs (`mcpproxy=true`) |
+| `poweruser` | Shell read-write, utils, skills, streaming, MCP proxying, history retention, advisor strategy, delegation, and standard utils (`usestdutils=true`) |
+| `web` | Browser UI with tools, diagrams, charts, maps, vectors, math, history, attachments, and MCP proxying (`usetools=true usediagrams=true usecharts=true usemaps=true usevectors=true usemath=true usehistory=true useattach=true mcpproxy=true`) with the web, weather, time, and net MCPs |
+| `webfull` | Inherits `web`, adding streaming, extended history retention, complexity estimation, and the RSS, fin, oaf, and oafp MCPs; planning and ASCII sketches are explicitly off (`useplanning=false useascii=false`) |
 
-User custom presets can be defined in `~/.openaf-mini-a_modes.yaml`. They are merged with built-ins from `mini-a-modes.yaml`, and user definitions take precedence.
+Presets can `include` other presets and then override values. User custom presets can be defined in `~/.openaf-mini-a_modes.yaml` (or `~/.openaf-mini-a/modes.yaml`). They are merged with built-ins from `mini-a-modes.yaml`, and user definitions take precedence.
 
 </div>
 

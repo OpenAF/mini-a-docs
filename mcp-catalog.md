@@ -28,7 +28,7 @@ mini-a ships with **31 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-email` | Email operations | STDIO | `send`, `read`, `listInbox` |
 | `mcp-kube` | Kubernetes operations | STDIO | `getPods`, `getLogs`, `describe` |
 | `mcp-math` | Mathematical operations | STDIO | `calculate`, `statistics`, `convert` |
-| `mcp-random` | Random data generation | STDIO | `uuid`, `number`, `string`, `pick` |
+| `mcp-random` | Random data generation | STDIO | `random-integer`, `random-sequence`, `random-choice`, `random-password` |
 | `mcp-telco` | Telecom utilities | STDIO | `parseNumber`, `validate`, `lookup` |
 | `mcp-weather` | Weather information | STDIO | `current`, `forecast` |
 | `mcp-ch` | ClickHouse database | STDIO | `query`, `listTables` |
@@ -42,9 +42,11 @@ mini-a ships with **31 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-oaf-browse` | Generic browse over the oJob-common HTTP Browse API | STDIO/HTTP | `list`, `get`, `search` |
 | `mcp-office` | Office document processing | STDIO | `readExcel`, `readWord`, `readPDF` |
 | `mcp-ollama-web-search` | Web search via Ollama API | STDIO/HTTP | `web-search` |
-| `mcp-wiki` | Read-only Markdown wiki discovery | STDIO/HTTP | `context`, `search`, `read`, `browse`, `list`, `tree`, `backlinks` |
+| `mcp-wiki` | Read-only Markdown wiki discovery (multi-wiki `wiki` selector) | STDIO/HTTP | `context`, `search`, `read`, `open`, `navigate`, `grep`, `related`, `browse`, `list`, `tree`, `backlinks` |
 | `mcp-wiki-safe` | Restricted wiki retrieval for untrusted clients | STDIO/HTTP | `search`, `read` |
-| `mcp-wiki-ops` | Wiki maintenance, editing, and indexing | STDIO/HTTP | `context`, `lint`, `edit`, `maintain`, `reindex` |
+| `mcp-wiki-ops` | Wiki maintenance, editing, and indexing | STDIO/HTTP | `context`, `lint`, `edit`, `maintain`, `reindex`, `graph_build`, `graph_falkor` |
+| `mcp-skills` | Virtual skill library over a wiki of skill documents | STDIO/HTTP | `context`, `search`, `recommend`, `open`, `read`, `related`, `compose` |
+| `mcp-skills-safe` | Skill library restricted to opaque single-use references | STDIO/HTTP | `search`, `open`, `read`, `related` |
 
 ---
 
@@ -293,10 +295,10 @@ Generate random data including UUIDs, numbers, strings, and selections from list
 
 **Usage:**
 ```bash
-mini-a mcp="(cmd: 'ojob mcps/mcp-random.yaml')" goal='Generate 5 UUIDs and 3 random passwords of 16 characters'
+mini-a mcp="(cmd: 'ojob mcps/mcp-random.yaml')" goal='Generate 3 random passwords of 16 characters and pick 2 items from a list'
 ```
 
-**Tools:** `uuid`, `number`, `string`, `pick`, `shuffle`
+**Tools:** `random-integer`, `random-sequence`, `random-integer-set`, `gaussian-sample`, `random-fraction`, `random-choice`, `random-boolean`, `random-hex`, `random-password` (secure passwords with configurable length and character sets). All tools accept an optional numeric `seed` for deterministic output.
 
 ---
 
@@ -602,6 +604,8 @@ Read-only discovery MCP for a Markdown wiki, backed by `MiniAWikiManager`. Use i
 | `wikiregion` / `wikiuseversion1` / `wikiignorecertcheck` | S3 region, path-style/signature-v1 compatibility, and TLS-validation control |
 | `wikimounts` | SLON/JSON array of read-only wiki mounts: `[{name, backend, root|bucket|prefix|url|...}]` |
 | `wikis3artifactprefix` | Optional S3 prefix holding published Lucene/graph artifacts to hydrate into `wikiindexdir` at startup |
+| `wikiretrievalv2` / `wikiretrievalconfig` | Opt-in versioned passage retrieval and its validated tuning object; requires a compatible build |
+| `wikitelemetry` | Record aggregate retrieval counters (in memory for read-only servers; no query text by default) |
 | `usewikigraph` | Enable the wiki knowledge graph (auto-enabled when `wikigraphfalkorhost` is set); search transparently appends related-page hints |
 | `wikigraphsearchhints` | Append graph-related pages to search results when the wiki graph is enabled (default: `true`) |
 | `wikigraphhintcap` | Maximum graph-hint pages appended to search results (default: `5`) |
@@ -623,7 +627,11 @@ mini-a usetools=true \
 ojob mcps/mcp-wiki.yaml onport=8990 wikiroot=/shared/wiki label=TeamWiki
 ```
 
-**Tools:** `context`, `search`, `read`, `browse`, `list`, `tree`, `backlinks`. Graph-related discovery can include read-only cross-wiki hints from mounted graphs; it does not write or merge either wiki.
+**Tools:** `context` (compact overview and mount catalog), `search`, `read`, `open` (structure: front matter, headings, links, line ranges, no body), `navigate` (directory or heading neighbors), `grep` (bounded matching lines in one page or directory), `related` (backlinks and graph neighbors), `browse`, `list`, `tree`, `backlinks`. Graph-related discovery can include read-only cross-wiki hints from mounted graphs; it does not write or merge either wiki.
+
+**Multi-wiki selection.** Call `context()` once to discover the compact `wikis` catalog, then use the optional `wiki` argument: omitted or `"*"` searches the primary wiki plus every mount, `"primary"` selects the main wiki, a mount name selects that source, and `["linux", "kubernetes"]` selects a subset. `{query: "OIDC", wiki: "kubernetes"}` routes only to that mounted wiki, and a selected mount accepts mount-local paths (`{wiki: "reference", path: "guides/setup.md"}`) as well as the legacy `@reference/guides/setup.md` form. Unknown, duplicate, ambiguous, and conflicting selectors are rejected. Give each mount a `label` and `description` in `wikimounts` so clients can choose well.
+
+**Retrieval v2.** With `wikiretrievalv2=true` (and a compatible build from `mcp-wiki-ops` `reindex`), search uses the passage engine and results carry `nativeScore`, `rankScore`, and `retrievalMethod`. See [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}).
 
 ### mcp-wiki-safe
 
@@ -643,7 +651,7 @@ ojob mcps/mcp-wiki-safe.yaml onport=8888 label="Team wiki" wikiroot=./wiki \
 | `relaxed` | 10 | 100 | 16000 | 600s | 120 / 60 |
 | `off` | unbounded | unbounded | unbounded | — | unbounded |
 
-For multiple replicas, configure `wikirestrictrefch` with a concurrent shared OpenAF channel such as Redis or Mongo so a reference issued by one instance can be consumed by another. The default in-memory channel and `file` channel are suitable only for one writer. `wikirestrictstate`, which tracks usage budgets, is separate; use durable storage and protect it with ordinary filesystem permissions.
+For multiple replicas, configure `wikirestrictrefch` with a concurrent shared OpenAF channel such as Redis or Mongo so a reference issued by one instance can be consumed by another, and set `wikiid` to a logical wiki namespace (for example `wikiid=engineering`) on every replica of that wiki. A separate deployment such as `wikiid=customer-acme` can share the same Redis without sharing opaque references or page cooldowns; expired-entry sweeping only touches the current namespace. If `wikiid` is omitted, Mini-A derives a deterministic `auto-...` identifier from safe backend identity (such as the canonical filesystem root or S3 bucket/prefix), so single-wiki setups keep working, though an explicit ID is recommended for replicated production deployments. References written by older versions without a namespace are not consumed and simply expire. The default in-memory channel and `file` channel are suitable only for one writer. `wikirestrictstate`, which tracks usage budgets, is separate; use durable storage and protect it with ordinary filesystem permissions.
 
 ---
 
@@ -681,7 +689,30 @@ mini-a usetools=true \
 ojob mcps/mcp-wiki-ops.yaml onport=8991 wikiroot=/shared/wiki wikiaccess=rw label=TeamWikiOps
 ```
 
-**Tools:** `lint`, `edit`, `maintain`, `reindex` (`reindex` requires `wikiaccess=rw` and `wikiopsreadonly=false`), `graph_build` (build the wiki graph; structural always, semantic when `semantic=true`; syncs FalkorDB when configured), `graph_falkor` (query the wiki graph in FalkorDB, or resync when called without a `query`)
+**Tools:** `context`, `lint`, `edit`, `maintain`, `reindex` (`reindex` requires `wikiaccess=rw` and `wikiopsreadonly=false`), `graph_build` (build the wiki graph; structural always, semantic when `semantic=true`; syncs FalkorDB when configured), `graph_falkor` (query the wiki graph in FalkorDB, or resync when called without a `query`)
+
+### mcp-skills
+
+Publishes a [virtual skill library]({{ '/virtual-skills' | relative_url }}) (a wiki whose pages carry `type: skill` front matter) to any MCP client such as Codex, Claude Code, or OpenCode. The tool surface stays the same regardless of corpus size, and only `read` returns skill text, limited to the requested section or range.
+
+**Configuration:** the same backend, mount, graph, and retrieval arguments as `mcp-wiki` (`wikibackend`, `wikiroot`, `wikibucket`, `wikiprefix`, `wikiurl`, `wikimounts`, `usewikigraph`, `wikiretrievalv2`, ...), plus `label`, `toolPrefix`, `audit`, and `onport`.
+
+**Usage:**
+```bash
+ojob mcps/mcp-skills.yaml onport=8890 label="Engineering Skill Library" wikiroot=./skills
+```
+
+**Tools:** `context`, `search`, `recommend`, `open` (metadata and headings, no body), `read` (one section or range), `related`, `compose` (compact metadata for a bounded, one-level set of `depends_on` prerequisites; it never reads their bodies or grants what they require).
+
+### mcp-skills-safe
+
+The restricted variant for public or untrusted clients. It reuses the `mcp-wiki-safe` restricted-retrieval engine (opaque references, per-window budgets, page cooldowns, optional shared `wikirestrictrefch` channel, `wikiid` namespace) and exposes only `search`, `open`, `read`, and `related`. Each operation consumes the reference it is given and returns a fresh single-use reference for the next step, so a stale or reused reference fails with `invalid-or-expired-reference`.
+
+```bash
+ojob mcps/mcp-skills-safe.yaml label="Public Skill Library" wikiroot=./skills wikirestrictprofile=moderate
+```
+
+`wikirestrictprofile=off` removes all restrictions and logs a startup warning; use it only for trusted clients.
 
 ### Wiki storage, indexing, and graph deployment
 

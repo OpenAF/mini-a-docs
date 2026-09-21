@@ -50,14 +50,21 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | Command | Action |
 |---------|--------|
 | `/help` | Show commands |
-| `/model [main\|lc\|val]` | Choose a model definition for a slot (`/model` opens an interactive slot picker) |
+| `/model [main|lc|val]` | Choose a model definition for a slot (`/model` opens an interactive slot picker) |
 | `/models` | Show all configured model tiers (main, LC, validation) with provider and source |
 | `/show [prefix]` | Show active parameters |
+| `/set <key> <value>` | Update a parameter (use `"""` for multi-line values) |
+| `/toggle <key>` | Toggle a boolean parameter |
+| `/unset <key>` | Clear a parameter |
+| `/reset` | Restore default parameters |
+| `/restore` | Restore a saved conversation like `resume=true` |
 | `/skills [prefix]` | List discovered skills |
+| `/skills search|recommend <text>` | Search a [virtual skill library]({{ '/virtual-skills' | relative_url }}) (with `useskillwiki=true`) |
+| `/skills open|read|related|compose <ref>` | Inspect, read a section of, or relate a library skill |
 | `/compact [n]` | Compact older history, keep up to latest `n` exchanges (default 6) |
 | `/summarize [n]` | Summarize older history, keep up to latest `n` exchanges (default 6) |
 | `/context` | Show token/context breakdown |
-| `/reset` | Reset conversation |
+| `/context vm` | Show History VM object state and token-delta diagnostics |
 | `/last [md]` | Reprint last final answer (`md` for raw markdown) |
 | `/save <path>` | Save last final answer to a file |
 | `/edit [last]` | Compose the next goal (or revise the previous goal) in the configured editor |
@@ -78,7 +85,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/wiki detach <name>` | Unmount a wiki |
 | `/ingest <source> [section] [dryrun] [force]` | Distil a docs folder, repository, or URL into wiki pages (requires `wikiaccess=rw`) |
 | `/rewind [n]` | Undo the last `n` user+assistant exchanges (default 1); cancels any active subtasks |
-| `/dream [memory\|wiki] [plan\|apply\|reorg\|dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
+| `/dream [memory|wiki] [plan|apply|reorg|dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
 | `/history [n]` | Show recent user goals from conversation history |
 | `/exit` | Exit mini-a |
 | `/clear` | Reset conversation history and accumulated metrics |
@@ -95,8 +102,9 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `readwrite` | `false` | Allow file writes |
 | `chatbotmode` | `false` | Chat-only mode |
 | `maxsteps` | `15` | Max agent steps |
-| `maxcontext` | - | Max context tokens |
+| `maxcontext` | `0` | Max context tokens; `0` leaves proactive compaction off (set e.g. `50000` for long sessions) |
 | `maxcontent` | - | Alias for `maxcontext` |
+| `contextguard` | `false` | Context and tool-output guardrails when `maxcontext` is unset |
 | `maxtokens` | - | Max output tokens |
 | `deepresearch` | `false` | Enable iterative research/validation cycles |
 | `validationgoal` | - | Quality criteria for deep research |
@@ -107,8 +115,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `validationthreshold` | `PASS` | Validation verdict/score required to stop |
 | `persistlearnings` | `true` | Carry learnings forward between cycles |
 | `useplanning` | `false` | Enable planning |
-| `useutils` | `false` | Built-in utilities; with `usestdutils=true` (default) exposes `read`, `glob`, `grep`, `webfetch`, etc. |
-| `usestdutils` | `true` | Expose standard tool aliases instead of legacy Mini Utils names (requires `useutils=true`) |
+| `useutils` | `false` | Built-in utilities; with `usestdutils=true` exposes `read`, `glob`, `grep`, `webfetch`, etc. |
+| `usestdutils` | `false` | Expose standard tool aliases instead of legacy Mini Utils names (requires `useutils=true`; `poweruser` enables it) |
 | `mini-a-docs` | `false` | Docs-aware Mini Utils root (`markdownFiles`) when `utilsroot` is unset |
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
 | `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
@@ -161,7 +169,10 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `maxpromptchars` | `120000` | Max accepted prompt size for incoming web prompts |
 | `lccontextlimit` | `0` | Escalate to main model when low-cost model context gets too large |
 | `deescalate` | `3` | Successful steps before returning from main model to low-cost model |
-| `modellock` | `auto` | Force model tier: `main`, `lc`, or `auto` |
+| `modellock` | `auto` | Select model tier for normal steps: `main`, `lc`, or `auto` (recovery can still use the main model) |
+| `lcjsonretries` | `1` | Extra same-step low-cost retries on invalid reply JSON before main-model fallback (`0` disables) |
+| `lcreplytool` | `false` | Capture-only `submit_reply` MCP tool for LC recovery (OpenAI-compatible and Ollama adapters) |
+| `orchestration` | `manual` | `auto` selects planning/advisor/evidence-gate controls from deterministic complexity and risk signals |
 | `modelstrategy` | `default` | Model orchestration profile: `default` (adaptive LC-first), `advisor` (LC executor + main as selective advisor), or `delegate` (LC runs all steps including step 0) |
 | `advisorenable` | `true` | Enable advisor consultations when `modelstrategy=advisor` |
 | `advisormaxuses` | `2` | Max advisor consultations per run when `modelstrategy=advisor` |
@@ -184,6 +195,11 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `wikimounts` | - | Read-only wiki mounts (SLON/JSON array): `[{name: 'team', backend: 'fs', root: '/path'}]` |
 | `wikis3artifactprefix` | - | S3 prefix containing published Lucene/graph artifacts to hydrate into `wikiindexdir` |
 | `wikirestrictprofile` | `tight` | `mcp-wiki-safe` profile: `tight`, `moderate`, `relaxed`, or trusted-client `off` |
+| `wikiretrievalv2` | off | Opt-in versioned passage retrieval; build explicitly with `dreamwikimode=reindex` or `/wiki reindex` |
+| `wikiretrievalconfig` | - | Validated SLON/JSON passage, cache, and artifact budgets for v2 |
+| `wikitelemetry` | off | Aggregate retrieval counters only (no query text by default) |
+| `useskillwiki` | `false` | Virtual skill library (`skillwiki` tool, `/skills search`); reuses the `usewiki` wiki unless `skillwikiroot`/`skillwikibackend` is set |
+| `skillsmaxloaded` / `skillsmaxchars` | `3` / `12000` | Per-run bounds: distinct skills opened and skill-body characters read |
 | `usememory` | `false` | Enable the working memory subsystem |
 | `memoryuser` | `false` | Convenience preset: file-backed global + session memory at `~/.openaf-mini-a/`, auto-promote `facts,decisions,summaries`, 30-day stale sweep |
 | `memoryusersession` | `false` | Convenience preset: enables `usememory`, session-only file-backed channel under `~/.openaf-mini-a/` |
@@ -206,6 +222,9 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
 | `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots — see [Channels]({{ '/channels' | relative_url }}) (note: backend options nest under `options:`, e.g. `(name: 'mini-a-metrics', type: 'mvs', options: (file: 'metrics.db'), period: 5000)`) |
 | `usedelegation` | `false` | Agent delegation |
+| `delegationtimeout` / `delegationhardtimeout` | `300000` / - | Foreground wait and initial stall timeout (activity extends it) / optional absolute limit, in ms |
+| `delegationmaxretries` | `2` | Maximum execution attempts for confirmed failures (unknown remote outcomes are never resubmitted) |
+| `agentcomms` | - | Opt-in inter-agent communication (profiles `parent-relay`, `direct`, `pubsub`, `shared-state`; explicit grants) |
 | `workers` | - | Remote worker URLs for delegation |
 | `workertags` | — | Comma-separated tags appended to the default worker skill in the AgentCard |
 | `usea2a` | `false` | Use A2A HTTP+JSON endpoints for remote worker delegation |
@@ -240,7 +259,9 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `historyretention` | `600` | Web history retention window in seconds |
 | `historykeepperiod` | - | Delete kept conversation files older than this many minutes |
 | `historykeepcount` | - | Keep only the newest N kept conversation files |
-| `historys3bucket` | - | S3 bucket used to mirror history files |
+| `historyvm` / `historyvmshadow` | `false` | History VM: journal exact history and swap old large messages for retrievable references (needs a writable `conversation=`); shadow only measures |
+| `contextvirtualization` / `contextvirtualizationshadow` | `false` | Phase 2 multi-resolution context (requires `historyvm=true`); shadow dry-runs the projection |
+| `historys3bucket` | - | S3 bucket used to mirror history files, including History VM snapshots (requires `usehistory=true`) |
 | `historys3prefix` | - | S3 key prefix for mirrored history files |
 | `historys3url` | - | S3 endpoint URL for history mirroring |
 | `historys3accesskey` | - | S3 access key for history mirroring |
@@ -249,6 +270,38 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `historys3useversion1` | `false` | Use S3 path-style (v1) signing for history mirroring |
 | `historys3ignorecertcheck` | `false` | Disable TLS certificate checks for history S3 access |
 | `homedir` | — | Override the home directory used to locate the `.openaf-mini-a` folder |
+
+## Runs, Policy, Evaluation, and Ingestion
+
+```bash
+# Durable, resumable run with a redacted JSONL trace
+mini-a goal="..." durable=true runid=my-run
+mini-a goal="..." resumerun=my-run
+mini-a runstatus=my-run
+
+# Bounded tool surface and centralized restrictions
+mini-a goal="..." usetools=true capabilityselection=true capabilitylimit=4
+mini-a goal="..." policy="(shell: deny, delegation: deny)"
+
+# Automatic planning / advisor / evidence-gate selection
+mini-a goal="..." orchestration=auto
+
+# Evaluation suites (YAML/JSON) with reports and baselines
+mini-a eval=true evalfile=evals/core.yaml evalout=/tmp/eval.json
+mini-a eval=true evalfile=evals/core.yaml evalbaseline=evals/baseline.json
+
+# Long conversations: exact history on disk, bounded working set in context
+mini-a conversation=chat.json historyvm=true goal="..."
+
+# Wiki: the agent can call wiki op="retrieve" for a bounded, cited evidence packet;
+# wikiretrievalv2=true (after an explicit reindex) opts in to the passage engine
+mini-a usewiki=true wikiretrievalv2=true goal="..."
+
+# Safe repeated ingestion: preview scoped removals
+ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize ingestprune=true ingestdryrun=true
+```
+
+See [Advanced]({{ '/advanced' | relative_url }}) for details on each, and [Virtual Skills]({{ '/virtual-skills' | relative_url }}) for skill libraries.
 
 ## Agent Files
 
@@ -292,12 +345,13 @@ mini-a useutils=true goal='@data.csv Analyze it'
 | `shell` | Read-only shell access (`useshell=true`) |
 | `shellrw` | Shell + write access + non-interactive shell approvals |
 | `utils` | Mini Utils Tool preset (`useutils=true mini-a-docs=true usetools=true`) |
-| `chatbot` | Chat-only mode |
-| `internet` | Internet-focused MCP/tool mode with docs-aware utils |
-| `news` | Internet + RSS news-focused MCP mode |
-| `poweruser` | High-capability preset with shell, utils, proxy tuning, and docs-aware defaults |
-| `web` | Browser UI preset with MCP tools enabled |
-| `webfull` | Full web UI preset with history, attachments, proxying, and richer rendering modes |
+| `shellutils` | Shell + Mini Utils Tool (`useshell=true useutils=true mini-a-docs=true usetools=true`) |
+| `chatbot` | Chat-only mode with streaming (`chatbotmode=true usestream=true`) |
+| `internet` | Internet-focused MCP/tool mode (time, web, weather, net) with proxying and docs-aware utils |
+| `news` | Inherits `internet`; time, web, and RSS MCPs |
+| `poweruser` | Shell read-write, utils, skills, streaming, proxying, history retention, advisor strategy, delegation, and standard utils |
+| `web` | Browser UI with tools, diagrams, charts, maps, vectors, math, history, attachments, and proxying |
+| `webfull` | Inherits `web`; adds streaming, longer history retention, complexity estimation, and more MCPs (planning and ASCII sketches off) |
 
 Custom modes: create `~/.openaf-mini-a_modes.yaml` with a `modes:` map. Custom definitions are merged with built-ins and override duplicates.
 

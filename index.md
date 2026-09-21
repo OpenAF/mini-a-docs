@@ -86,6 +86,14 @@ permalink: /
     <p>Enable delegation to split goals into subtasks and run them across local child agents, remote workers, or self-registering worker pools.</p>
   </div>
   <div class="feature-card">
+    <h3>Knowledge That Scales</h3>
+    <p>Share a Markdown wiki across agents, retrieve bounded cited evidence, and search huge <a href="{{ '/virtual-skills' | relative_url }}">skill libraries</a> without loading them into context.</p>
+  </div>
+  <div class="feature-card">
+    <h3>Built for Unattended Runs</h3>
+    <p>Durable resumable runs, centralized policies, agent-to-agent coordination, and native evaluation suites with baselines.</p>
+  </div>
+  <div class="feature-card">
     <h3>40-60% Fewer Tokens</h3>
     <p>Automatic context optimization, conversation compaction, and smart summarization keep costs low.</p>
   </div>
