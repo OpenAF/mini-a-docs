@@ -104,14 +104,14 @@ Skill-to-skill relationships use the ordinary wiki mechanisms: shared `tags`, `a
 
 ## Using it from Mini-A
 
-Opt in with `useskillwiki=true`. With no further settings it reuses the wiki configured through `usewiki`, so one wiki can hold ordinary knowledge pages and skill pages side by side. Point it at a separate skill-only library with `skillwikibackend`, `skillwikiroot`, and `skillwikimounts`.
+Enable `useskillswiki=true` explicitly. To reuse the main wiki and its mounts, also set `usewiki=true` and omit all three source settings: `skillwikibackend`, `skillwikiroot`, and `skillwikimounts`. Supplying any one creates a dedicated library (default backend `fs`, root `.`); prefer an absolute root. Dedicated remote libraries use the normal `wiki*` connection and artifact parameters. `useskills` controls the separate local skills tool and does not enable virtual skills.
 
 ```bash
 # Reuse an existing wiki as the skill library
-mini-a useskillwiki=true usewiki=true wikiroot=./team-wiki goal="..."
+mini-a useskillswiki=true usewiki=true wikiroot=./team-wiki goal="..."
 
 # Dedicated skill-only library
-mini-a useskillwiki=true skillwikiroot=./skills goal="..."
+mini-a useskillswiki=true skillwikiroot=./skills goal="..."
 ```
 
 This exposes a `skillwiki` tool to the model with the operations `context`, `search`, `recommend`, `open`, `read`, `related`, `compose`, and `resolve`, through the same in-process mechanism as the `wiki` and `graph` tools (no MCP loopback). Consultation is bounded for each agent run:
@@ -120,7 +120,7 @@ This exposes a `skillwiki` tool to the model with the operations `context`, `sea
 |-----------|---------|-------|
 | `skillsmaxloaded` | `3` | Distinct skills that may be `open`-ed |
 | `skillsmaxchars` | `12000` | Total skill-body characters `read` may return |
-| `skillsautolimit` | `5` | Results per automatic search |
+| `skillsautolimit` | `5` | Reserved limit for future automatic search; not implemented |
 | `skillsautosearch` | `false` | Reserved for opt-in, planner-driven consultation; today the model can call the tool directly at any time, bounded the same way |
 
 From the interactive console:
@@ -174,9 +174,17 @@ Skill libraries use ordinary wiki mounts. The `wiki` parameter of `search` and `
 
 Results are ranked by a fixed weighted sum of lexical score and name, title, intent, tag, applies-to, compatibility, and graph signals. There is no vector or embedding search yet: `recommend` builds a lexical query from the task, environment, and capabilities. Only counters are tracked (searches, opens, reads, sections read, characters returned), and skill body content is never logged.
 
-Lucene-backed search stays fast regardless of corpus size. The skill count and un-queried tag browsing rely on the wiki's per-page metadata cache, which is cheap when warm but takes real time on the first touch of a very large, cold corpus.
+Indexed search avoids loading the library into the prompt; latency still depends on corpus size, cache state and retrieval budgets. The skill count and un-queried tag browsing rely on the wiki's per-page metadata cache, which is cheap when warm but takes real time on the first touch of a very large, cold corpus.
 
 With [wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}), `wikiretrievalv2` and `wikiretrievalconfig` also reach a dedicated skill manager. Build its serving generation with a writable wiki manager before using that read-only library.
+
+## Checking configuration and importing skills
+
+Run `/skills context` or call `skillwiki` with `operation: "context"` to check the active library, then search and use the exact returned reference (including a mount prefix) for open/read. Plain `/skills` and the local `skills=0` count describe local templates, not the wiki library. Enabling virtual skills makes the tool available; it does not guarantee model consultation for every goal. Ask the model to search and read a relevant skill when that is required.
+
+New pages should have `type: skill` and a nonempty `name`; a `schema` beginning with `mini-a.skill/` is also recognized. To import a local `SKILL.yaml`, convert it to a Markdown page with skill front matter and a procedure in the body. Keep supporting files as linked wiki pages; local embedded references are not automatically expanded.
+
+`compose` returns bounded, one-level prerequisite metadata from `depends_on` (`dependsOn`/`dependencies` are aliases). It never reads prerequisite bodies, recursively expands dependencies, executes tools, or grants the declared capabilities.
 
 ## Not yet included
 

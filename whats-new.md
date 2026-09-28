@@ -8,18 +8,20 @@ permalink: /whats-new/
 
 ## Recent Updates
 
-### Wiki retrieval v2, bounded `retrieve`, and multi-wiki MCP selection
+### September 29, 2026 — Wiki federation, absorption and WorkIQ
 
-**Change**: The wiki gains an opt-in, versioned passage engine and a bounded evidence-retrieval operation.
+Synchronized with Mini-A through `e10edb1`.
 
-- `wikiretrievalv2=true` builds a separate, derived passage index with immutable revision blocks. Markdown remains authoritative and the serving generation is rebuildable. It is off by default; the existing page engine keeps working (with compatible contract repairs) when the flag is off.
-- Build explicitly with `dreamwikimode=reindex`, `/wiki reindex`, the `mcp-wiki-ops` `reindex` tool, or `MiniAWikiManager.reindex()`. Readers never migrate or scan on their own: a missing build returns `v2-build-required`. Static HTTP and bundled S3 readers hydrate a published bundle that now includes the immutable serving generation. `wikiretrievalconfig` accepts a validated SLON/JSON object for passage size, cache, artifact and deadline bounds.
-- `wiki op="retrieve" query="..."` returns a bounded, cited evidence packet (ranked excerpts, line ranges, score components and used-versus-configured budgets) instead of whole pages. `expandGraph=true` opts into one-hop graph discovery, limited by `maxGraphExpansion` (default 5, max 10) and `maxGraphEdges` (default 256, max 4096).
-- Search results now expose `nativeScore` (engine relevance), `rankScore` (final ranking), `scoreComponents`, and `retrievalMethod`. The compatibility `score` is engine relevance on direct lexical adapters but final ranking on knowledge-ranked and v2 results, and is not a probability. Scan fallback never supplies a native score.
-- `mcp-wiki` accepts an optional `wiki` selector (`"*"`/omitted, `"primary"`, a mount name, or an array). Call `context()` first to discover mount names. `mcp-wiki-safe` deliberately exposes none of this topology and gains `wikiid`, a logical namespace for opaque references shared across replicas.
-- Retrieval telemetry is opt-in: `wikitelemetry=true` keeps aggregate counters only, with no query text by default.
-
-See [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}) and [Configuration → Wiki Knowledge Base]({{ '/configuration#c-wiki-knowledge-base' | relative_url }}).
+- **Wiki retrieval V2 is now enabled by default.** Published wikis use the passage engine; unpublished wikis retain legacy retrieval with a warning until explicit writable reindexing. Corrupt or incompatible published artifacts remain errors. Read-only readers adopt each published generation's index analysis by default (`readPolicy=auto`); use `strict` to require a configuration match.
+- **Federated discovery shares budgets and ranks results globally.** Searches include the primary and mounts unless narrowed with `wiki`. Mounts-only configurations provide a generated read-only catalog. Weak lexical coverage can trigger bounded graph hints; `expandGraph=false` disables them. Native agent output includes up to five compact candidates and coverage warnings. See [wiki retrieval]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}).
+- **[Wiki Absorption]({{ '/wiki-absorption' | relative_url }})** plans selected knowledge from several local wikis, saves reviewable differences, and applies exact edits without another model call. JSON/YAML/SLON specifications, source provenance, repeat runs, conflict detection and journal recovery are supported.
+- **[Ingestion formats and recovery]({{ '/configuration#ingestion-formats-and-recovery' | relative_url }})** cover Office/PDF files, images and passive structured formats. `/ingest recovery` offers explicit resume/discard choices; independent ingestion preserves pending journals and their reserved pages.
+- **[WorkIQ MCP]({{ '/mcp-catalog#mcp-workiq' | relative_url }})** adds delegated Microsoft sign-in, encrypted persistent credentials, STDIO/local HTTP serving and a read-only tool policy by default. The descriptor runs independently of Mini-A with a compatible OpenAF runtime.
+- **Virtual skills use `useskillswiki=true`.** Local `useskills` remains separate. The [guide]({{ '/virtual-skills' | relative_url }}) now clarifies shared versus dedicated libraries, context checks, prerequisite composition and import limits. Automatic consultation remains unimplemented.
+- **Document and image tools** are available with `useutils=true`: `readDocument` extracts bounded text through Tika and `inspectImage` uses the main model's vision interface. See [built-in utilities]({{ '/features#reading-documents-and-images' | relative_url }}).
+- **Mode composition and tool dispatch:** `mode=shell,utils` merges presets left to right; CLI flags win. `webini` supplies the common web preset with History VM, context virtualization and automatic orchestration. `usejsontool` selects the JSON action loop and disables native tools; it is auto-enabled for GPT-OSS or tools-plus-proxy unless overridden.
+- **Console and web consistency:** quote paths with spaces, including `/wiki move "old path.md" "new path.md"` and `/skills read "wiki:my skill.md" "Usage examples"`. Web sessions reject overlapping prompts, clear and history-load requests with `session busy`; stop remains available. `goalprefix` is applied once per submitted goal. Model-manager imports no longer select the imported model, and renaming onto an existing name is rejected.
+- **[Maintenance utilities]({{ '/advanced#wiki-maintenance-utilities' | relative_url }})** add offline V2 compaction and a self-contained HTML graph export. Index statistics expose serving generations, lineage and persisted retrieval telemetry.
 
 ---
 
@@ -112,7 +114,7 @@ See [Advanced → Evaluation suites]({{ '/advanced#evaluation-suites' | relative
 
 **Change**: A wiki whose pages carry `type: skill` front matter can now serve as a skill library that scales to very large corpora without loading the catalog into context. An agent searches, opens one candidate cheaply, reads only the section it needs, and then acts.
 
-- `useskillwiki=true` exposes a `skillwiki` tool (`context`, `search`, `recommend`, `open`, `read`, `related`, `compose`, `resolve`) and `/skills search|recommend|open|read|related|compose|context` in the console. It reuses the `usewiki` wiki unless `skillwikibackend`/`skillwikiroot`/`skillwikimounts` define a dedicated library.
+- `useskillswiki=true` exposes a `skillwiki` tool (`context`, `search`, `recommend`, `open`, `read`, `related`, `compose`, `resolve`) and `/skills search|recommend|open|read|related|compose|context` in the console. It reuses the `usewiki` wiki unless `skillwikibackend`/`skillwikiroot`/`skillwikimounts` define a dedicated library.
 - Consultation is bounded per run by `skillsmaxloaded` (3), `skillsmaxchars` (12000), and `skillsautolimit` (5). `skillsautosearch` is reserved for future planner-driven consultation.
 - `mcp-skills` and `mcp-skills-safe` publish the same library to external MCP clients; the safe variant uses opaque, single-use references.
 - Local `SKILL.md`/`SKILL.yaml` skills, `extraskills`, and Agent Plugins are unchanged.

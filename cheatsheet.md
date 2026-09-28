@@ -59,8 +59,8 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/reset` | Restore default parameters |
 | `/restore` | Restore a saved conversation like `resume=true` |
 | `/skills [prefix]` | List discovered skills |
-| `/skills search|recommend <text>` | Search a [virtual skill library]({{ '/virtual-skills' | relative_url }}) (with `useskillwiki=true`) |
-| `/skills open|read|related|compose <ref>` | Inspect, read a section of, or relate a library skill |
+| `/skills search\|recommend <text>` | Search a [virtual skill library]({{ '/virtual-skills' | relative_url }}) (with `useskillswiki=true`) |
+| `/skills open\|read\|related\|compose <ref>` | Inspect, read a section of, or relate a library skill |
 | `/compact [n]` | Compact older history, keep up to latest `n` exchanges (default 6) |
 | `/summarize [n]` | Summarize older history, keep up to latest `n` exchanges (default 6) |
 | `/context` | Show token/context breakdown |
@@ -84,6 +84,9 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `/wiki attach <name> [backend=fs] [root=path]` | Mount a read-only wiki |
 | `/wiki detach <name>` | Unmount a wiki |
 | `/ingest <source> [section] [dryrun] [force]` | Distil a docs folder, repository, or URL into wiki pages (requires `wikiaccess=rw`) |
+| `/ingest recovery` | Inspect pending journals; `resume <id>` or explicitly `discard <id>` |
+| `/absorb plan <spec>` | Plan selected knowledge from local wikis; then `show`, `apply`, `status`, `resume`, or `delete` |
+| `/wiki compact [offline=true]` | Preview local V2 cleanup; apply only after stopping other readers/writers |
 | `/rewind [n]` | Undo the last `n` user+assistant exchanges (default 1); cancels any active subtasks |
 | `/dream [memory|wiki] [plan|apply|reorg|dryrun]` | Run memory and/or wiki dream consolidation pass (shown when `memorych` or `usewiki=true` is set) |
 | `/history [n]` | Show recent user goals from conversation history |
@@ -125,7 +128,7 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `skillmanifestchars` | `1536` | Approximate character budget for skill descriptions in the system prompt manifest |
 | `usetools` | `false` | Enable tool use |
 | `usetoolslc` | `false` | Register MCP tools only on the low-cost model; main model stays in prompt/action mode |
-| `usejsontool` | `false` | Compatibility `json` tool for some tool-calling models |
+| `usejsontool` | `false` | JSON action loop; disables native tools. Auto-enabled for GPT-OSS or tools + proxy unless explicitly overridden |
 | `toollog` | - | JSSLON channel for MCP tool call logs (input/output) |
 | `auditch` | - | Channel for agent activity audit log (tool calls, shell commands, goal events) |
 | `debugch` | - | Channel for main-model LLM request/response payloads |
@@ -195,10 +198,10 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `wikimounts` | - | Read-only wiki mounts (SLON/JSON array): `[{name: 'team', backend: 'fs', root: '/path'}]` |
 | `wikis3artifactprefix` | - | S3 prefix containing published Lucene/graph artifacts to hydrate into `wikiindexdir` |
 | `wikirestrictprofile` | `tight` | `mcp-wiki-safe` profile: `tight`, `moderate`, `relaxed`, or trusted-client `off` |
-| `wikiretrievalv2` | off | Opt-in versioned passage retrieval; build explicitly with `dreamwikimode=reindex` or `/wiki reindex` |
+| `wikiretrievalv2` | `true` | Published passage retrieval; unpublished wikis retain legacy retrieval until `/wiki reindex`. Invalid published artifacts remain errors |
 | `wikiretrievalconfig` | - | Validated SLON/JSON passage, cache, and artifact budgets for v2 |
 | `wikitelemetry` | off | Aggregate retrieval counters only (no query text by default) |
-| `useskillwiki` | `false` | Virtual skill library (`skillwiki` tool, `/skills search`); reuses the `usewiki` wiki unless `skillwikiroot`/`skillwikibackend` is set |
+| `useskillswiki` | `false` | Virtual skill library (`skillwiki` tool, `/skills search`); reuses the `usewiki` wiki unless `skillwikiroot`, `skillwikibackend`, or `skillwikimounts` is set |
 | `skillsmaxloaded` / `skillsmaxchars` | `3` / `12000` | Per-run bounds: distinct skills opened and skill-body characters read |
 | `usememory` | `false` | Enable the working memory subsystem |
 | `memoryuser` | `false` | Convenience preset: file-backed global + session memory at `~/.openaf-mini-a/`, auto-promote `facts,decisions,summaries`, 30-day stale sweep |
@@ -294,7 +297,7 @@ mini-a eval=true evalfile=evals/core.yaml evalbaseline=evals/baseline.json
 mini-a conversation=chat.json historyvm=true goal="..."
 
 # Wiki: the agent can call wiki op="retrieve" for a bounded, cited evidence packet;
-# wikiretrievalv2=true (after an explicit reindex) opts in to the passage engine
+# V2 is enabled by default; explicitly reindex to publish its serving artifacts
 mini-a usewiki=true wikiretrievalv2=true goal="..."
 
 # Safe repeated ingestion: preview scoped removals
@@ -340,6 +343,8 @@ mini-a useutils=true goal='@data.csv Analyze it'
 
 ## Mode Presets
 
+Combine presets with `mode=shell,utils` (also accepted by `OAF_MINI_A_MODE`). Names are case-insensitive; later presets override earlier values, including inherited values, and explicit CLI flags win. If any preset or include cannot be resolved, none of the list is applied.
+
 | Mode | Enables |
 |------|---------|
 | `shell` | Read-only shell access (`useshell=true`) |
@@ -350,8 +355,9 @@ mini-a useutils=true goal='@data.csv Analyze it'
 | `internet` | Internet-focused MCP/tool mode (time, web, weather, net) with proxying and docs-aware utils |
 | `news` | Inherits `internet`; time, web, and RSS MCPs |
 | `poweruser` | Shell read-write, utils, skills, streaming, proxying, history retention, advisor strategy, delegation, and standard utils |
-| `web` | Browser UI with tools, diagrams, charts, maps, vectors, math, history, attachments, and proxying |
-| `webfull` | Inherits `web`; adds streaming, longer history retention, complexity estimation, and more MCPs (planning and ASCII sketches off) |
+| `webini` | Tools, visual Markdown, attachments, proxying, streaming, History VM, context virtualization, delegation, context guard, and automatic orchestration |
+| `web` | Inherits `webini`; adds history and web, weather, time, and net MCPs |
+| `webfull` | Inherits `web`; adds streaming, longer history retention, complexity estimation, and more MCPs (ASCII sketches off) |
 
 Custom modes: create `~/.openaf-mini-a_modes.yaml` with a `modes:` map. Custom definitions are merged with built-ins and override duplicates.
 

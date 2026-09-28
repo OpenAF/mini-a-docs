@@ -193,6 +193,8 @@ This reads the contents of `README.md` and sends it along with your instruction 
 
 ## Mode Presets
 
+Combine presets with `mode=shell,utils` (also accepted by `OAF_MINI_A_MODE`). Names are case-insensitive; later presets override earlier values, including inherited values, and explicit CLI flags win. If any preset or include cannot be resolved, none of the list is applied.
+
 mini-a provides reusable mode presets that quickly configure related flags.
 Built-ins come from `mini-a-modes.yaml`, and you can extend/override them with `~/.openaf-mini-a_modes.yaml` (custom modes win over built-ins).
 

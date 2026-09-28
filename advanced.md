@@ -1481,3 +1481,31 @@ This displays token counts, model call counts, cost estimates, and elapsed time 
 - **[Cheatsheet]({{ '/cheatsheet' | relative_url }})** — Quick reference card for daily use
 - **[Examples]({{ '/examples' | relative_url }})** — Practical examples and recipes
 - **[Getting Started]({{ '/getting-started' | relative_url }})** — Installation and first steps
+
+## Wiki maintenance utilities
+
+Local Retrieval V2 compaction rebuilds the active serving index as a base generation and reclaims unreachable serving artifacts. Preview first; stop other processes reading or writing the wiki before applying. With `wikiaccess=rw` and V2 enabled:
+
+```text
+/wiki compact
+/wiki compact offline=true
+```
+
+The standalone, model-free equivalent runs from the Mini-A package directory:
+
+```bash
+ojob utils/wikiCompact.yaml dir=/path/to/wiki
+ojob utils/wikiCompact.yaml dir=/path/to/wiki apply=true offline=true
+```
+
+Use the publisher's `wikilexical` and `wikiretrievalconfig` settings. `offline=true` confirms other readers/writers have stopped; publication locking cannot track readers in other processes. Local writable wikis only are supported. Pending or corrupt ingestion journals block compaction. Check `ok: true` before reopening read-only.
+
+Compaction preserves Markdown, graph, metadata, knowledge/ingestion state, legacy indexes and bundle caches, plus the previous generation and its dependency lineage. It is not a general hidden-folder purge or Lucene force-merge. Collection can fail after a new index has already been activated; report and retry the failed cleanup.
+
+For a self-contained offline graph visualization:
+
+```bash
+ojob utils/wikiGraph.yaml dir=/path/to/wiki output=/tmp/atlas.html title="Team wiki"
+```
+
+The exporter uses an existing `.mini-a-wiki-graph/graph.json` or scans Markdown links without creating indexes; it needs no model or server. `utils/indexStats.yaml` also accepts V2 serving-only roots and reports pointers, parser/schema versions, contracts, artifact sizes, lineage and persisted telemetry. These are offline snapshots: a present manifest does not prove integrity or compatibility, and missing telemetry does not mean zero queries.

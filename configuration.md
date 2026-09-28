@@ -176,7 +176,7 @@ The default policy is allow-all. Supported initial rules are `shell: deny`, `del
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
 | `usetools` | `false` | Enable native tool calling on the active model (main or LC) |
 | `usetoolslc` | `false` | Register MCP tools natively only on the low-cost model; the main model continues using prompt/action-based tool guidance. Use when you want the cheaper model to call tools directly without enabling native tool calling on the main model |
-| `usejsontool` | `false` | Register a compatibility `json` tool for models that sometimes emit `json` tool calls |
+| `usejsontool` | `false` | Use the JSON action loop and disable native tools on both model tiers, including native proxy mode. Auto-enabled for GPT-OSS and `usetools=true mcpproxy=true` unless explicitly overridden; `false` keeps native behavior |
 | `libs` | - | Additional library paths to load |
 | `toolcachettl` | `600000` | Default cache TTL in milliseconds for MCP tool results |
 | `toolfallback` | `false` | Fall back to action mode when the model emits malformed pseudo tool calls |
@@ -415,7 +415,7 @@ Enable a structured, scoped working memory subsystem that the agent maintains au
 | `memorymaxpersection` | number | `80` | Maximum entries kept per section before compaction prunes stale or old entries. |
 | `memorymaxentries` | number | `500` | Hard cap on total entries across all sections. |
 | `memorycompactevery` | number | `8` | Number of append operations that trigger an automatic memory compaction pass. |
-| `memorydedup` | boolean | `true` | Suppress near-duplicate entries using an 85% word-overlap fingerprint. |
+| `memorydedup` | boolean | `true` | Suppress near-duplicate unexpired entries using an 85% word-overlap fingerprint. Snapshot restore preserves distinct IDs, keys and scopes even when text matches. |
 | `memoryartifactttldays` | number | `7` | Retention period for normalized tool and network observations before expiration. |
 | `memoryindexttldays` | number | `1` | Retention period for list, search, and index observation snapshots before expiration. |
 | `memorypromote` | string | `""` | Comma-separated list of sections to auto-promote from session to global memory at session end. |
@@ -533,8 +533,8 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 | `wikilintstreamthreshold` | `2000` | Page count above which `lint` switches into streaming mode |
 | `wikilintmaxpairs` | `250000` | Max near-duplicate comparisons performed during streaming lint |
 | `wikimounts` | - | SLON/JSON array of read-only wiki mounts: `[{name: 'team', label: 'Team docs', description: '...', backend: 'fs', root: '/path'}]`; an `fs` root may be a directory or local `.zip`/`.okt` archive — mounted pages appear as `@name/path.md` |
-| `wikiretrievalv2` | off | Opt-in versioned passage retrieval. Requires an explicit writable reindex (local `fs`/`s3fs`) or a published bundle that contains compatible serving artifacts. Missing artifacts return `v2-build-required` rather than triggering a scan or migration |
-| `wikiretrievalconfig` | - | Validated SLON/JSON object for passage size, cache, artifact, deadline, and telemetry bounds (unknown keys and invalid values are rejected). Also settable via `OAF_MINI_A_WIKI_RETRIEVAL_V2` and `OAF_MINI_A_WIKI_RETRIEVAL_CONFIG`; explicit arguments win |
+| `wikiretrievalv2` | `true` | Use versioned passage retrieval when published artifacts exist. Unpublished wikis retain legacy retrieval with a warning until explicit writable reindexing; incompatible or corrupt published artifacts remain errors. Set `false` for legacy retrieval |
+| `wikiretrievalconfig` | - | Validated SLON/JSON object for passage size, cache, artifact, deadline, and telemetry bounds (unknown keys and invalid values are rejected). Settable via `OAF_MINI_A_WIKI_RETRIEVAL_CONFIG`; `OAF_MINI_A_WIKI_RETRIEVAL_V2` controls the enable flag. Explicit arguments win |
 | `wikitelemetry` | off | Record aggregate retrieval counters (no query text or hashes by default). Writable managers persist them; read-only managers keep them in memory |
 
 When a new empty wiki is opened with `wikiaccess=rw`, Mini-A bootstraps three starter pages: `AGENTS.md` (ingestion workflow and rules), `index.md` (entrypoint/catalog), and `log.md` (append-only journal of every write, delete, and move). `AGENTS.md` and `log.md` are protected and cannot be deleted.
@@ -550,9 +550,11 @@ Archive roots and mounts require `index.md` and pages at the archive entry root.
 
 Static HTTP wikis are read-only. They fetch pages from `wikiurl`; listing, search, and graph hints use a published `mini-a-wiki-index.zip` containing Lucene state and, optionally, `.mini-a-wiki-graph/graph.json`. Set `wikiartifactrefreshsecs` for long-lived instances that must notice a newly published bundle. After changing `wikilexical`, run `/wiki reindex` on a writable publisher; read-only consumers retain ordinary Lucene retrieval and warn when their index contract does not match.
 
+When nonempty `wikimounts` are configured without a nonblank `wikiroot`, the default filesystem primary becomes an in-memory read-only catalog. Set `wikiroot=.` explicitly to keep persistent primary storage in the current directory. The catalog has no primary serving index or graph and rejects maintenance/writes even with `wikiaccess=rw`.
+
 ### Wiki ingestion
 
-`mini-a-ingest.yaml` turns a documentation folder, local/remote git repository, or web page into wiki pages. Discovery, filtering, chunking, change detection, writing, and finalization are deterministic; only per-source distillation uses the model.
+`mini-a-ingest.yaml` turns a documentation folder, local/remote git repository, or web page into wiki pages. Discovery, filtering, chunking, change detection, writing, and finalization are deterministic; distillation and image descriptions use the model.
 
 ```bash
 ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=/tmp/wiki
@@ -581,6 +583,7 @@ ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize
 | `ingestchunkchars` / `ingestmaxfilekb` | `24000` / `512` | Chunk size and maximum accepted source size |
 | `ingestconcurrency` | `4` | Parallel source distillations |
 | `ingestdryrun` | `false` | Report `planned_writes`/`planned_removals`, conflicts, and budget estimates. Calls no model and creates no files |
+| `ingestindependent` | `false` | Allow disjoint ingestion while preserving pending recovery and its reserved pages |
 | `ingestforce` | `false` | Reprocess present sources. Never authorizes deletion, overwrites edited pages, bypasses `wikiaccess=ro`, or waives budgets |
 | `ingestprune` | `false` | Remove pages for verified-missing sources owned by the same destination, origin, and section. Rejected for individual URL sources |
 | `ingestallowemptyprune` | `false` | Extra authorization to prune when a folder was completely observed and is empty. A missing or inaccessible folder is never treated as empty |
@@ -591,12 +594,41 @@ Discovery errors, changed filters or size limits, local edits, failed writes, an
 
 Results report `status` (`complete`, `noop`, `planned`, `partial`, `blocked`, `failed`), `ok`, `sync_complete`, missing sources, blocked prune, conflicts, deferrals, and recovery state. Wrappers exit nonzero when requested work is unsuccessful, and a dry run never claims applied synchronization.
 
+### Ingestion formats and recovery
+
+Folders and repositories accept Markdown, text, HTML, Office documents (DOCX/DOC, XLSX/XLS, PPTX/PPT), PDF, PNG and JPEG. Passive structured formats supported by the installed oafp, such as JSON, YAML, CSV and NDJSON, are normalized into fenced JSON pages. NDJSON/NDSLON preserve every record; executable and service-query inputs are excluded. Office/PDF extraction uses Tika; scanned PDFs need OCR, which is disabled. Images require a vision-capable main model. Empty or truncated extraction fails the source without publishing a partial page. The default 512 KiB source limit also applies to documents and images.
+
+Use `/ingest` or `/ingest recovery` to inspect pending journals, source/section information, affected pages and exact resume commands:
+
+```text
+/ingest recovery resume <id>
+/ingest recovery discard <id>
+/ingest "/path/New Docs" "New Section" independent
+```
+
+Resume replays saved work and finalizes indexes without repeating source distillation. Discard requires typing `discard <id>` and archives the journal; it does not undo applied pages or mark unfinished work synchronized. Independent ingestion preserves pending journals and refuses changes to their reserved pages. Read-only sessions can inspect recovery; resume/discard require write access and are blocked in dry-run. Do not delete journals manually. V2 finalization normally publishes incrementally; an incompatible parser or lexical contract triggers a rebuild from current Markdown, while other publication failures keep recovery pending.
+
+### Wiki absorption
+
+Absorption combines selected knowledge from multiple local filesystem wikis through a saved, reviewable plan. See [Wiki Absorption]({{ '/wiki-absorption' | relative_url }}) for specification examples, apply/resume, conflicts and ownership.
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `absorbop` | `status` | `plan`, `show`, `apply`, `status`, `resume`, `delete`, or `cancel` (alias for delete) |
+| `absorbspec` | - | JSON/YAML/SLON file, inline JSON/SLON map, or source array |
+| `absorbplan` | - | Saved plan ID for show/apply/resume/delete |
+| `absorboutput` | destination plan directory | External plan/report directory; use the same path across operations |
+| `wikiaccess` | `ro` for absorption | Explicit `rw` required for apply/resume/delete; read-only planning requires external `absorboutput` |
+| `absorbmaxpages` | `100` | Maximum selected source pages |
+| `absorbmaxtokens` | `100000` | Aggregate estimated input tokens (characters / 4), not billed usage |
+
 ### Wiki retrieval v2
 
-`wikiretrievalv2=true` switches search, `retrieve`, and `assembleContext` to the shared passage engine described under [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}). Build its serving generation explicitly with `dreamwikimode=reindex`, `/wiki reindex`, the `mcp-wiki-ops` `reindex` tool, or `MiniAWikiManager.reindex()`. Readers use the same flag and never build on their own.
+`wikiretrievalv2=true` (the default) switches search, `retrieve`, and `assembleContext` to the shared passage engine described under [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}). Build its serving generation explicitly with `dreamwikimode=reindex`, `/wiki reindex`, the `mcp-wiki-ops` `reindex` tool, or `MiniAWikiManager.reindex()`. Readers use the same flag and never build on their own.
 
 | `wikiretrievalconfig` key | Default | Bound |
 |---------------------------|--------:|-------|
+| `readPolicy` | `auto` | Read-only readers adopt published index analysis; `strict` requires configured analysis to match. Writable builds always use configured settings |
 | `passageChars` | `1400` | 64–16000 UTF-16 units; soft structural target |
 | `cacheBytes` | `8388608` | Shared payload cache; at most 268435456 bytes per manager |
 | `maxArtifactBytes` / `maxArtifactFiles` | `268435456` / `100000` | Expanded generation caps (at most 2147483647 bytes / 1000000 files) |
@@ -606,6 +638,10 @@ Results report `status` (`complete`, `noop`, `planned`, `partial`, `blocked`, `f
 | `telemetryFlushQueries` / `telemetryRetentionDays` | `16` / `30` | Aggregate flush batch (at most 1000) and retention (at most 365 days) |
 | `telemetrySampleQueries` | `false` | Opt in to at most 64 zero-result query samples of at most 256 characters each |
 | `bundlePath` | - | Trusted local ZIP destination for streaming export after publication |
+
+Read-only `readPolicy=auto` adopts each generation's language/analyzer, accent folding, shingles and character n-gram settings, including sizes. Synonyms, query expansion, relevance feedback and resource budgets remain reader-controlled. Mounts inherit the retrieval configuration unless they supply their own `wikiretrievalconfig` object. Integrity, parser/format and Lucene compatibility checks still apply; auto adoption does not repair an unsupported generation. `context().retrieval.analysis` reports the policy, generation, effective settings and differing fields. Strict mismatches return `incompatible-generation`.
+
+Search without a `wiki` selector includes the primary and all mounts. V2 sources share one request budget and global ranking; mixed V1/V2 selections keep their source engines and merge results before the display limit. Trusted search accepts `maxQueries`, `maxCandidates`, `maxInspected`, `maxMillis`, and `maxBytes`. Check source coverage and warnings before treating an empty or partial result as absence. See [Features → Wiki retrieval]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}).
 
 ### Wiki Knowledge Graph
 
@@ -684,12 +720,12 @@ A wiki whose pages carry `type: skill` front matter can serve as a searchable sk
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `useskillwiki` | `false` | Enable the virtual skill library: exposes the `skillwiki` tool and `/skills search|recommend|open|read|related|compose|context` |
-| `skillwikibackend` | - | Backend for a *dedicated* skill wiki (`fs`, `s3`, `s3fs`, `es`, `http`); omit to reuse the `usewiki` wiki |
-| `skillwikiroot` | - | Root directory for a dedicated `fs` skill wiki |
+| `useskillswiki` | `false` | Enable the virtual skill library: exposes the `skillwiki` tool and `/skills search\|recommend\|open\|read\|related\|compose\|context` |
+| `skillwikibackend` | `fs` for dedicated libraries | Backend for a *dedicated* skill wiki (`fs`, `s3`, `s3fs`, `es`, `http`); omit all three skill source settings to reuse the `usewiki` wiki |
+| `skillwikiroot` | `.` for dedicated libraries | Root directory for a dedicated `fs` skill wiki |
 | `skillwikimounts` | - | SLON/JSON read-only mounts for a dedicated skill wiki, same shape as `wikimounts` |
 | `skillsautosearch` | `false` | Reserved for opt-in automatic consultation during planning |
-| `skillsautolimit` | `5` | Maximum results per automatic skill search |
+| `skillsautolimit` | `5` | Reserved limit for future automatic search; not implemented |
 | `skillsmaxloaded` | `3` | Maximum distinct skills that may be `open()`-ed per agent run |
 | `skillsmaxchars` | `12000` | Maximum skill-body characters `read()` may return per agent run |
 
@@ -718,6 +754,8 @@ Route selection is based on intent hints (read/write, payload size, latency sens
 <div class="config-category" markdown="1">
 
 ## 11. Web Interface
+
+Each session UUID runs one prompt at a time. Overlapping prompts, clear and history-load requests return `session busy`; stop remains available. `goalprefix` is applied once per submitted goal. Later turns refresh goal-relevant memory and tool contracts while preserving conversation and tool results; idle clear/expiry closes agent resources even when history is retained.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -819,7 +857,7 @@ Each answer's **Activity** section groups the same thought, execution, skill, su
 | `/save <path>` | Save the previous final answer to a file |
 | `/stats [mode] [out=file.json]` | Show session metrics (`summary`/`detailed`/`tools`/`memory`/`wiki`) and optionally export JSON |
 | `/history [n]` | Show the latest user goals from conversation history |
-| `/skills [prefix]` | List discovered skills; with `useskillwiki=true`, also `search`, `recommend`, `open`, `read`, `related`, `compose`, `context` |
+| `/skills [prefix]` | List discovered skills; with `useskillswiki=true`, also `search`, `recommend`, `open`, `read`, `related`, `compose`, `context` |
 | `/exit` | Exit mini-a |
 | `/clear` | Reset the ongoing conversation and accumulated metrics |
 | `/cls` | Clear screen |
@@ -829,6 +867,8 @@ Each answer's **Activity** section groups the same thought, execution, skill, su
 <div class="config-category" markdown="1">
 
 ## 16. Mode Presets
+
+Combine presets with `mode=shell,utils` (also accepted by `OAF_MINI_A_MODE`). Names are case-insensitive; later presets override earlier values, including inherited values, and explicit CLI flags win. If any preset or include cannot be resolved, none of the list is applied.
 
 | Preset | Parameters Enabled |
 |--------|-------------------|
@@ -840,8 +880,9 @@ Each answer's **Activity** section groups the same thought, execution, skill, su
 | `internet` | `usetools=true mini-a-docs=true mcpproxy=true` with the time, web, weather, and net MCPs |
 | `news` | Inherits `internet` with the time, web, and RSS MCPs (`mcpproxy=true`) |
 | `poweruser` | Shell read-write, utils, skills, streaming, MCP proxying, history retention, advisor strategy, delegation, and standard utils (`usestdutils=true`) |
-| `web` | Browser UI with tools, diagrams, charts, maps, vectors, math, history, attachments, and MCP proxying (`usetools=true usediagrams=true usecharts=true usemaps=true usevectors=true usemath=true usehistory=true useattach=true mcpproxy=true`) with the web, weather, time, and net MCPs |
-| `webfull` | Inherits `web`, adding streaming, extended history retention, complexity estimation, and the RSS, fin, oaf, and oafp MCPs; planning and ASCII sketches are explicitly off (`useplanning=false useascii=false`) |
+| `webini` | Tools, visual Markdown, attachments, proxying, streaming, History VM, context virtualization, delegation, standard utils, context guard, and `orchestration=auto` |
+| `web` | Inherits `webini`, adding history and the web, weather, time, and net MCPs |
+| `webfull` | Inherits `web`, adding extended history retention, complexity estimation, and the RSS, fin, oaf, and oafp MCPs; ASCII sketches are off (`useascii=false`) |
 
 Presets can `include` other presets and then override values. User custom presets can be defined in `~/.openaf-mini-a_modes.yaml` (or `~/.openaf-mini-a/modes.yaml`). They are merged with built-ins from `mini-a-modes.yaml`, and user definitions take precedence.
 

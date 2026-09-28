@@ -47,6 +47,7 @@ mini-a ships with **31 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-wiki-ops` | Wiki maintenance, editing, and indexing | STDIO/HTTP | `context`, `lint`, `edit`, `maintain`, `reindex`, `graph_build`, `graph_falkor` |
 | `mcp-skills` | Virtual skill library over a wiki of skill documents | STDIO/HTTP | `context`, `search`, `recommend`, `open`, `read`, `related`, `compose` |
 | `mcp-skills-safe` | Skill library restricted to opaque single-use references | STDIO/HTTP | `search`, `open`, `read`, `related` |
+| `mcp-workiq` | Microsoft WorkIQ with persistent delegated sign-in; read-only tool policy by default | STDIO/HTTP (loopback) | `workiq` |
 
 ---
 
@@ -604,7 +605,7 @@ Read-only discovery MCP for a Markdown wiki, backed by `MiniAWikiManager`. Use i
 | `wikiregion` / `wikiuseversion1` / `wikiignorecertcheck` | S3 region, path-style/signature-v1 compatibility, and TLS-validation control |
 | `wikimounts` | SLON/JSON array of read-only wiki mounts: `[{name, backend, root|bucket|prefix|url|...}]` |
 | `wikis3artifactprefix` | Optional S3 prefix holding published Lucene/graph artifacts to hydrate into `wikiindexdir` at startup |
-| `wikiretrievalv2` / `wikiretrievalconfig` | Opt-in versioned passage retrieval and its validated tuning object; requires a compatible build |
+| `wikiretrievalv2` / `wikiretrievalconfig` | Versioned passage retrieval (enabled by default) and its tuning object, including `readPolicy=auto`; unpublished wikis keep legacy retrieval, while invalid published artifacts remain errors |
 | `wikitelemetry` | Record aggregate retrieval counters (in memory for read-only servers; no query text by default) |
 | `usewikigraph` | Enable the wiki knowledge graph (auto-enabled when `wikigraphfalkorhost` is set); search transparently appends related-page hints |
 | `wikigraphsearchhints` | Append graph-related pages to search results when the wiki graph is enabled (default: `true`) |
@@ -631,7 +632,7 @@ ojob mcps/mcp-wiki.yaml onport=8990 wikiroot=/shared/wiki label=TeamWiki
 
 **Multi-wiki selection.** Call `context()` once to discover the compact `wikis` catalog, then use the optional `wiki` argument: omitted or `"*"` searches the primary wiki plus every mount, `"primary"` selects the main wiki, a mount name selects that source, and `["linux", "kubernetes"]` selects a subset. `{query: "OIDC", wiki: "kubernetes"}` routes only to that mounted wiki, and a selected mount accepts mount-local paths (`{wiki: "reference", path: "guides/setup.md"}`) as well as the legacy `@reference/guides/setup.md` form. Unknown, duplicate, ambiguous, and conflicting selectors are rejected. Give each mount a `label` and `description` in `wikimounts` so clients can choose well.
 
-**Retrieval v2.** With `wikiretrievalv2=true` (and a compatible build from `mcp-wiki-ops` `reindex`), search uses the passage engine and results carry `nativeScore`, `rankScore`, and `retrievalMethod`. See [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}).
+**Retrieval v2.** With `wikiretrievalv2=true` (the default) and a compatible build from `mcp-wiki-ops` `reindex`, search uses the passage engine and results carry `nativeScore`, `rankScore`, and `retrievalMethod`. See [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}).
 
 ### mcp-wiki-safe
 
@@ -991,3 +992,34 @@ For examples and reference implementations, see the [mini-a repository](https://
     <a href="{{ '/configuration' | relative_url }}" class="btn btn-secondary">Configuration Reference</a>
   </div>
 </div>
+
+### mcp-workiq
+
+Connect to Microsoft WorkIQ using delegated sign-in. The standalone `mcps/mcp-workiq.yaml` descriptor needs OpenAF and oJob-common; it can run without Mini-A or a JavaScript helper. OpenAF must support `$mcp.authenticate()`, `getAuthStatus()`, `clearAuth()`, `auth.callback`, `auth.tokenStore`, and MCP STDIO `rawToolResults`. The connector does not upgrade an older runtime automatically.
+
+From the Mini-A package directory:
+
+```bash
+ojob mcps/mcp-workiq.yaml op=login
+mini-a mcp="(cmd: 'ojob mcps/mcp-workiq.yaml', pwd: '$(pwd)')" useshell=false goal="List my upcoming meetings"
+ojob mcps/mcp-workiq.yaml op=status
+ojob mcps/mcp-workiq.yaml op=logout
+```
+
+Login opens a browser and waits up to five minutes. Normal serving reuses encrypted OpenAF SBucket credentials and refreshes them without prompting; missing or revoked sessions need another explicit login. Microsoft tenant consent and service eligibility are required. Logout removes the selected local record, not Microsoft-side consent.
+
+| Parameter | Default | Purpose |
+|-----------|---------|---------|
+| `op` | `serve` | `login`, `status`, `logout`, or normal serving |
+| `profile` | `default` | Independent credential profile; reuse across login and serving |
+| `tenant` | `organizations` | Tenant override; also `WORKIQ_TENANT` |
+| `clientid` / `redirecturi` | Built-in public client / `http://127.0.0.1:12798/` | Use your own registered client/callback when needed |
+| `secrepo` / `secbucket` | `mini-a-workiq` / `default` | Encrypted credential store; `secfile` selects another file |
+| `timeout` | `300000` | Request/login timeout in milliseconds |
+| `onport` | unset | Local HTTP transport on `127.0.0.1`, endpoint `/mcp`; otherwise STDIO |
+| `readwrite` | `false` | Explicitly expose the full discovered upstream tool catalog |
+| `auth` | `oauth2` | `token` uses `WORKIQ_ACCESS_TOKEN` without persistence or refresh |
+
+Repeat the same tenant, client and store settings across operations. Profiles are bound to endpoint/authority/client/scope; use a separate profile when changing these. File locking coordinates credential refresh across processes. HTTP represents one user's credentials and is intended for local clients.
+
+**Tool:** `workiq`. Call `{"action":"list"}` to inspect permitted upstream names and schemas, then `{"action":"call","tool":"<listed-name>","arguments":{...}}` using that tool's schema. The default policy allows documented query/read names only and blocks custom `ask.agentId` routing and unknown names. `readwrite=true` on the connector exposes create/update/delete/action tools too; it is not a tool-call argument. Microsoft permissions still apply. Results retain MCP content and error status, and failed calls are not replayed.

@@ -196,6 +196,19 @@ For docs-aware workflows, enable:
 mini-a useutils=true mini-a-docs=true
 ```
 
+#### Reading documents and images
+
+`useutils=true` exposes `readDocument` and `inspectImage` in both ordinary and standard utility catalogs. They honor `utilsroot`, `utilsallow`, and `utilsdeny`; shell or write access is not required.
+
+```bash
+mini-a useutils=true utilsroot=/path/to/files goal="Summarize report.docx and budget.xlsx"
+mini-a useutils=true utilsroot=/path/to/files goal="Inspect diagram.png and explain its labels"
+```
+
+`readDocument({path, maxChars?, maxBytes?})` extracts text and metadata using the Tika oPack, installed lazily unless preinstalled. Defaults are 30,000 extracted characters and 20 MiB input. Check `truncated` before treating the result as complete. OCR and embedded-attachment extraction are disabled; spreadsheet text does not promise formula evaluation or cell layout. These size limits do not bound parser memory or execution time.
+
+`inspectImage({path, prompt?, detail?, maxBytes?})` sends PNG/JPEG to the main model's `promptImage` interface. The default input limit is 10 MiB with a fixed 25-megapixel ceiling; `detail` defaults to `high`. It requires a vision-capable model and adapter and does not switch models on failure. Only the textual result enters agent history.
+
 ### 3. MCP Tools
 
 Extensible tools provided by MCP servers — both built-in and custom.
@@ -224,6 +237,8 @@ All three can be combined. When the agent receives a goal, it selects the approp
 mini-a can be used through **four distinct interfaces**, each suited to different workflows.
 
 ### Console (Interactive REPL)
+
+Quote paths with spaces in multi-operand commands: `/wiki move "old path.md" "new path.md"`, `/ingest "/path/My Docs" "Team Reference" dryrun`, and `/skills read "wiki:my skill.md" "Usage examples"`. Attachments also accept `@"/path/My Document.md"`. Quote shell arguments at startup, but pass JSON/YAML tool paths as ordinary strings without extra literal quotes.
 
 The default mode. An interactive terminal session with tab completion, command history, and real-time streaming.
 
@@ -671,7 +686,7 @@ The filesystem backend also accepts local `.zip` and `.okt` archives as roots or
 
 ### Wiki ingestion
 
-Use `mini-a-ingest.yaml` to turn a documentation folder, a local or remote git repository, or a web page into distilled wiki pages. Discovery, filtering, chunking, change detection, writing, and finalization are deterministic; only the per-source distillation calls the model.
+Use `mini-a-ingest.yaml` to turn a documentation folder, a local or remote git repository, or a web page into distilled wiki pages. Discovery, filtering, chunking, change detection, writing, and finalization are deterministic; distillation and image descriptions call the model.
 
 ```bash
 # Preview a documentation ingest
@@ -689,7 +704,7 @@ Repeated ingestion is a non-destructive **upsert**: sources that disappear are r
 ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize ingestprune=true ingestdryrun=true
 ```
 
-See [Configuration → Wiki ingestion]({{ '/configuration#wiki-ingestion' | relative_url }}) for the `ingest*` options, manifest, recovery, and single-writer limits.
+Office/PDF extraction, image descriptions and passive structured-file ingestion are also supported. Use `/ingest recovery` to inspect interrupted work, then explicitly resume, discard, or start an independent ingestion of disjoint pages. See [Configuration → Wiki ingestion]({{ '/configuration#wiki-ingestion' | relative_url }}) for the `ingest*` options, manifest, recovery, and single-writer limits.
 
 ### Wiki Console Commands
 
@@ -726,22 +741,34 @@ See [Configuration → Wiki Knowledge Base]({{ '/configuration#c-wiki-knowledge-
 
 When a primary wiki mounts reference wikis and graph support is enabled, `wikigraphcross=true` (default) can extend graph hints across mounts at query time. It follows explicit `@name/path.md` links and can join pages with shared tags, aliases, or semantic concepts. The expansion is read-only and never merges or persists graph data between wikis; use `/graph cross <path>` to inspect the links for one page.
 
+### Wiki absorption and maintenance
+
+[Wiki Absorption]({{ '/wiki-absorption' | relative_url }}) proposes destination-organized knowledge from multiple local wikis. Select pages, sections, tags or topics, review a saved plan, then apply its exact changes. Planning may use a model; apply and resume do not. Repeat runs preserve provenance and flag destination edits as conflicts.
+
+Mounts can also be used without a persistent primary: supply nonempty `wikimounts` and omit `wikiroot` to get a generated read-only catalog. Its `index.md` links to attached mounts; navigation, federation and per-mount graph statistics remain available. It creates no primary index or graph and rejects writes and maintenance even with `wikiaccess=rw`.
+
+For offline V2 cleanup and an exportable graph view, see [Advanced → Wiki maintenance utilities]({{ '/advanced#wiki-maintenance-utilities' | relative_url }}).
+
 ### Wiki retrieval v2 and bounded retrieval
 
-Wiki search works page by page by default. For larger wikis, two additions keep irrelevant Markdown out of the model's context:
+Wiki retrieval V2 is enabled by default. Published wikis use a versioned passage index; unpublished wikis retain legacy retrieval with a warning until an explicit writable reindex. Invalid or incompatible published artifacts remain errors.
 
-- **`retrieve`** is a bounded workflow (search, inspect, expand, prepare for synthesis) that returns compact evidence entries with citations, line ranges, ranking score components, and used-versus-configured budgets. It never returns whole pages and never writes an ungrounded answer. Tune it with `maxCandidates`, `maxInspected`, `maxGraphExpansion`, and `maxBytes`; add `expandGraph=true` to spend a separate budget on backlinks, graph neighbors, and eligible mounted wikis.
-- **`wikiretrievalv2=true`** (opt-in) switches search, `retrieve`, and context assembly to a shared, versioned passage engine. Markdown stays authoritative; a separate, rebuildable serving generation holds passages, reverse-link postings, and immutable evidence blocks.
+- **`retrieve`** is a bounded workflow (search, inspect, expand, prepare for synthesis) that returns compact evidence entries with citations, line ranges, ranking score components, and used-versus-configured budgets. It never returns whole pages and never writes an ungrounded answer. Tune it with `maxCandidates`, `maxInspected`, `maxGraphExpansion`, and `maxBytes`; use `expandGraph=true` to request bounded graph expansion or `expandGraph=false` to disable it. With graph hints enabled, weak lexical coverage can trigger bounded expansion automatically.
+- **`wikiretrievalv2=true`** (default) switches search, `retrieve`, and context assembly to a shared, versioned passage engine. Markdown stays authoritative; a separate, rebuildable serving generation holds passages, reverse-link postings, and immutable evidence blocks.
 
 ```bash
 # Build the v2 serving generation explicitly (writable wiki)
 ojob mini-a.yaml dream=true usewiki=true wikiroot=/path/to/wiki wikiaccess=rw wikiretrievalv2=true dreamwikimode=reindex
 
-# Readers set the same flag; a missing build reports v2-build-required instead of scanning
+# Readers consume the published generation without building or migrating it
 mini-a usewiki=true wikiroot=/path/to/wiki wikiretrievalv2=true goal="..."
 ```
 
-Results distinguish `nativeScore` (engine relevance) from `rankScore` (final ranking) and include `scoreComponents` and `retrievalMethod`; the compatibility `score` is neither a probability nor always native Lucene relevance, so prefer the explicit fields. Search returns the highest-ranked complete candidates that fit `maxBytes` (default 16000) and reports `outcome: partial` when it omits some. Every selected wiki needs its own compatible build, and HTTP/S3 readers consume a published bundle. With graph expansion, cross-wiki links and shared keys stay within the selected federation, honor the `wikigraphcross*` settings, and are re-validated against source revisions when disclosed. Retrieval telemetry (`wikitelemetry=true`) keeps aggregate counters only.
+Results distinguish `nativeScore` (engine relevance) from `rankScore` (final ranking) and include `scoreComponents` and `retrievalMethod`; the compatibility `score` is neither a probability nor always native Lucene relevance, so prefer the explicit fields. Search returns the highest-ranked complete candidates that fit `maxBytes` (default 16000) and reports `outcome: partial` when it omits some. Each V2 source needs its own compatible build, and HTTP/S3 readers consume a published bundle. Read-only readers adopt the published index analysis by default (`readPolicy=auto`); `readPolicy=strict` requires a configuration match. With graph expansion, cross-wiki links and shared keys stay within the selected federation, honor the `wikigraphcross*` settings, and are re-validated against source revisions when disclosed. Retrieval telemetry (`wikitelemetry=true`) keeps aggregate counters only.
+
+Search automatically spans the selected federation, including mounts-only catalogs, with shared V2 budgets and global ranking. Mixed V1/V2 searches retain each source's engine. Native agent search presents up to five candidates within 4,000 serialized characters, including coverage warnings; programmatic results retain detailed scores and diagnostics. Partial coverage does not establish that a topic or feature is absent.
+
+Graph indexing derives bounded title/source-identifier joins during a writable rebuild. These use the `alias` join switch and existing revision and permission checks; they do not write cross-wiki links. Expansion defaults to at most five candidates and 256 inspected edges, with maxima of ten and 4096.
 
 Multi-wiki MCP clients call `context()` to discover mounts, then pass the optional `wiki` selector (`"*"`, `"primary"`, a mount name, or an array) to `mcp-wiki` tools. See [Configuration → Wiki retrieval v2]({{ '/configuration#wiki-retrieval-v2' | relative_url }}) for the tuning object and [MCP Catalog]({{ '/mcp-catalog#mcp-wiki' | relative_url }}) for server details. Skill libraries built on the same engine are covered in [Virtual Skills]({{ '/virtual-skills' | relative_url }}).
 
@@ -859,7 +886,7 @@ mini-a agent=examples/changelog-gen.agent.md goal="generate changelog"
 
 See the [Agent Files]({{ '/agents' | relative_url }}) page for the complete reference: frontmatter keys, tool entry types, `mini-a:` overrides, relative file paths, precedence rules, and a full annotated example.
 
-For portable bundles of skills and MCP servers, use [Agent Plugins]({{ '/agent-plugins' | relative_url }}). For skill collections too large to list eagerly, store them as wiki pages and use the [Virtual Skill Library]({{ '/virtual-skills' | relative_url }}) (`useskillwiki=true`), which searches, previews, and reads one section at a time.
+For portable bundles of skills and MCP servers, use [Agent Plugins]({{ '/agent-plugins' | relative_url }}). For skill collections too large to list eagerly, store them as wiki pages and use the [Virtual Skill Library]({{ '/virtual-skills' | relative_url }}) (`useskillswiki=true`), which searches, previews, and reads one section at a time.
 
 ---
 
