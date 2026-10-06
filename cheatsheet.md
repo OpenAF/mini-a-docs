@@ -45,6 +45,17 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `mini-a modelman=true` | Model manager |
 | `mini-a --skills` | Starter self-contained `SKILL.yaml` template |
 
+```bash
+# Authenticated Advanced console; prints/opens a generated-token access URL
+mini-a onport=8888 webadvanced=true useattach=true usestream=true
+# Standalone wiki operations manager (read-only inspection)
+mini-a wikiman=true wikiroot=./wiki
+# Model-free auto-maintenance preview
+mini-a dream=true dreammode=wiki dreamwikimode=auto usewiki=true wikiroot=./wiki dryrun=true
+```
+
+See [Advanced web, attachments and local history]({{ '/advanced#web-interface-advanced' | relative_url }}).
+
 ## Console Commands
 
 | Command | Action |
@@ -243,20 +254,26 @@ If alias setup is not available, run commands as `opack exec mini-a [...]`.
 | `toolfallback` | `false` | Fall back to action mode when malformed pseudo tool calls are emitted by the model |
 | `dream` | `false` | Run in standalone dream-pass mode (memory/wiki consolidation) instead of a regular session |
 | `dryrun` | `false` | Preview dream-pass changes without writing anything back |
-| `dreamwikimode` | `apply` | Wiki dream mode: `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, `indexes` |
+| `dreamwikimode` | `apply` | Wiki dream mode: `auto`, `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, `indexes` |
 | `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
 | `dreamwikidryrun` | `false` | Propose wiki changes without writing (opt out of apply) |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
 | `dreamwikireorg` | `false` | Allow structural wiki reorg |
 | `dreamreport` | — | Optional JSON output report path |
-| `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
+| `dreammaxsteps` | `40` | Total model-step cap for wiki auto/reorg |
 | `maxauditrecords` | `200` | Maximum audit log entries included in the memory dream consolidation prompt |
-| `onport` | - | Web UI port |
+| `onport` | `8888` | Default web port when web mode is selected |
 | `maxpromptchars` | `120000` | Max accepted prompt size for incoming web prompts |
 | `ssequeuetimeout` | `120` | Web SSE stream queue timeout in seconds |
 | `logpromptheaders` | - | Comma-separated HTTP request header names to log alongside incoming web prompts |
 | `usehistory` | `false` | Enable conversation history persistence in web mode |
-| `useattach` | `false` | Enable file attachment support in web mode |
+| `webadvanced` | `false` | Enable authenticated Advanced console alongside Simple chat |
+| `webadvancedpath` | `~/.openaf-mini-a/web` | Advanced journals, settings and presets |
+| `webtoken` | - | Shared authentication token; generated per run if Advanced is enabled and omitted |
+| `wikiman` | `false` | Standalone guided wiki operations manager |
+| `dreamwikillm` | `true` | Model proposals for auto maintenance; false keeps deterministic repairs |
+| `dreamwikiinstructions` | - | Extra guidance for the restricted reorg goal |
+| `useattach` | `false` | Text, PNG/JPEG, Office/PDF uploads; binary: four files, 20 MiB combined |
 | `historykeep` | `false` | Keep finished web conversation history files instead of discarding them |
 | `historypath` | - | Directory path used to store web conversation history files |
 | `historyretention` | `600` | Web history retention window in seconds |

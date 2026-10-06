@@ -8,6 +8,16 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### October 6, 2026 — Advanced web console and verified wiki maintenance
+
+Documentation synchronized from `e10edb1` through Mini-A source commit `d7230d1`.
+
+- **Advanced web console:** generated/fixed token authentication, shared Simple/Advanced conversations and slash commands, operation panels, settings/presets, answer readers, saved result snapshots, statistics charts, disk-backed Debug and live Subtasks. Reconnect preserves work; restarts report interrupted jobs. See [startup and storage]({{ '/advanced#web-interface-advanced' | relative_url }}).
+- **Input tools:** full-screen composer in both views, structured JSON/SLON editor, and PNG/JPEG, Office and PDF attachments with bounded read-only processing. See [attachment limits]({{ '/advanced#attachments-in-both-views' | relative_url }}) and [settings editor]({{ '/advanced#settings-and-structured-data-editor' | relative_url }}).
+- **Wiki operations:** standalone `wikiman=true` manager and on-demand `dreamwikimode=auto` with explicit write authorization, backups, journal reconciliation, ownership protection and fresh verification. See [manager]({{ '/advanced#wiki-maintenance-utilities' | relative_url }}) and [auto maintenance]({{ '/advanced#automatic-wiki-maintenance' | relative_url }}).
+- **Retrieval and context corrections:** generation-aware analysis diagnostics, explicit source reads for control pages, compact search with partial-coverage warnings, and bounded History VM emergency projection/working-note recovery. See [retrieval]({{ '/features#published-analysis-and-source-reads' | relative_url }}) and [context-budget recovery]({{ '/advanced#context-budget-recovery' | relative_url }}).
+- **Deployment guidance:** corrected built-in token authentication, SSE proxy configuration and 29 MiB attachment request allowance; runtime defaults are reflected in [Configuration]({{ '/configuration' | relative_url }}) and [Cheatsheet]({{ '/cheatsheet' | relative_url }}).
+
 ### September 29, 2026 — Wiki federation, absorption and WorkIQ
 
 Synchronized with Mini-A through `e10edb1`.

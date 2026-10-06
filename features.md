@@ -259,6 +259,12 @@ mini-a onport=8080
 
 <img src="{{ '/assets/images/screenshots/s10-web-ui-sessions.png' | relative_url }}" alt="Web UI with conversation history sidebar showing session management" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
 
+#### Advanced console and attachments
+
+Add `webadvanced=true` for authenticated console commands, operation panels, settings/presets, structured JSON/SLON editing, statistics, debug traces and live subtasks. Without a fixed `webtoken`, startup generates a token, prints an access URL and tries to open the browser. Simple and Advanced share the conversation, with reload/reconnect preserving running work. Both provide a full-screen composer and text/image/Office/PDF attachments when `useattach=true`.
+
+See [Advanced web guide]({{ '/advanced#web-interface-advanced' | relative_url }}) for trusted-token authority, local history/storage, cancellation and attachment limits.
+
 ### Library (JavaScript API)
 
 Use mini-a programmatically from your own OpenAF scripts.
@@ -749,6 +755,10 @@ Mounts can also be used without a persistent primary: supply nonempty `wikimount
 
 For offline V2 cleanup and an exportable graph view, see [Advanced → Wiki maintenance utilities]({{ '/advanced#wiki-maintenance-utilities' | relative_url }}).
 
+### Wiki operations manager
+
+`mini-a wikiman=true wikiroot=./wiki` opens guided inspection without a model; add explicit `wikiaccess=rw` for reviewed writes and maintenance. Menus cover pages, lint, indexes, compaction, graphs, Dream, ingestion and absorption recovery. Mounts remain read-only. See [guided manager and replay commands]({{ '/advanced#wiki-maintenance-utilities' | relative_url }}).
+
 ### Wiki retrieval v2 and bounded retrieval
 
 Wiki retrieval V2 is enabled by default. Published wikis use a versioned passage index; unpublished wikis retain legacy retrieval with a warning until an explicit writable reindex. Invalid or incompatible published artifacts remain errors.
@@ -772,6 +782,16 @@ Graph indexing derives bounded title/source-identifier joins during a writable r
 
 Multi-wiki MCP clients call `context()` to discover mounts, then pass the optional `wiki` selector (`"*"`, `"primary"`, a mount name, or an array) to `mcp-wiki` tools. See [Configuration → Wiki retrieval v2]({{ '/configuration#wiki-retrieval-v2' | relative_url }}) for the tuning object and [MCP Catalog]({{ '/mcp-catalog#mcp-wiki' | relative_url }}) for server details. Skill libraries built on the same engine are covered in [Virtual Skills]({{ '/virtual-skills' | relative_url }}).
 
+#### Published analysis and source reads
+
+Read-only V2 readers default to `wikiretrievalconfig='(readPolicy: auto)'`: each mount adopts its published generation's index analysis settings. Synonyms, query expansion, relevance feedback and budgets stay reader-controlled. `readPolicy: strict` requires a match and reports `incompatible-generation` with differing fields. Writable builds still use configured settings and need explicit reindexing to change the contract.
+
+`wiki op="context"` exposes `retrieval.analysis`; search/retrieve source diagnostics include policy, generation, source (`generation` or `configured`), effective settings and `differingFields`. Tight output budgets can report `analysisOmitted: "output-budget"`; use context for the full analysis. Native agent search supplies at most five compact candidates in a 4,000-character envelope, preserving partial-coverage warnings. Partial coverage cannot establish absence.
+
+Control pages (`AGENTS.md`, `index.md`, `log.md`, including section-local copies) stay excluded from passage search. Explicit open/navigate/read/grep uses bounded source reads with section/range selection, mount routing and revision-checked continuations. Ordinary content pages still need valid V2 serving bindings; corrupt artifacts remain errors. Published outline, frontmatter metadata, title and description are checked against the source page. `page-metadata-binding-failure` reports the page and differing field names without exposing metadata values; repair with an explicit writable rebuild rather than a read-time migration.
+
+Use `nativeScore` for engine relevance and `rankScore` for final ranking when supplied. The compatibility `score` varies by result path and is not a probability; scan fallback has no native lexical relevance.
+
 ---
 
 ## Dreams (Sleep Pass)
@@ -794,13 +814,17 @@ Seven wiki dream execution modes control exactly how maintenance is applied:
 
 | Mode / Option | Setting | Description |
 |---|---|---|
-| **Explicit Modes** | `dreamwikimode` / `dreammemorymode` | Wiki: `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, or `indexes`; memory: `plan` or `apply` |
+| **Explicit Modes** | `dreamwikimode` / `dreammemorymode` | Wiki: `auto`, `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, or `indexes`; memory: `plan` or `apply` |
 | **No-write preview** | `dreamwikidryrun=true` | Opt out of writing during wiki `apply` |
 | **Structural Reorg** | `dreamwikireorg=true` | Allow structural directory and file moves |
 | **Reorg Approval** | **`dreamwikiapproval`** | Control structural approval flow (`auto`, `ask`, `never`) |
 | **JSON Reporting** | `dreamreport` | Optional path to write a JSON run report |
 
 Use `dryrun=true`, `dreamwikidryrun=true`, or the `plan` mode to preview what would change without writing anything back. Memory dreams back up their pre-dream channel state to a sibling namespace before writing; keep normal storage backups for the primary wiki.
+
+### Automatic wiki maintenance
+
+`/dream wiki auto dryrun` previews issues without a model or writes. Applying `/dream wiki auto` requires explicit `wikiaccess=rw` and authorizes supported local repairs: ingestion-journal recovery, deterministic lint/navigation repairs, retrieval rebuilds and optional validated model proposals. `dreamwikillm=false` keeps deterministic repairs only. Backups, writer locking, ownership checks and fresh verification protect recovery; conflicts remain for review. See [authorization, limits and outcomes]({{ '/advanced#automatic-wiki-maintenance' | relative_url }}).
 
 ### Wiki dreaming and reorganization
 

@@ -138,6 +138,14 @@ For live token-by-token updates in the browser, enable streaming:
 mini-a onport=8080 usestream=true
 ```
 
+For the console-oriented Advanced view, run:
+
+```bash
+mini-a onport=8080 webadvanced=true useattach=true usestream=true
+```
+
+Mini-A generates a fresh authentication token, prints an access URL and attempts to open the browser. Select **Advanced** for shared slash commands, settings, wiki operations, statistics and debug inspection. A fixed `webtoken` can be supplied instead. See [Advanced authentication, history and attachments]({{ '/advanced#web-interface-advanced' | relative_url }}).
+
 `usestream=true` uses SSE to push output progressively to the page. If you need XML-tagged `<thinking>...</thinking>` blocks surfaced as thought logs, use `showthinking=true` instead of streaming for that run.
 
 <img src="{{ '/assets/images/screenshots/s7-web-ui-first-run.png' | relative_url }}" alt="Web UI first-run with streaming" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">

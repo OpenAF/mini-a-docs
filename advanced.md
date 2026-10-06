@@ -974,6 +974,16 @@ Use `contextvirtualizationshadow=true` to dry-run the same projection while stil
 
 Neither phase is enabled silently. Configured budgets account for the serialized conversation, current prompt, tool schema estimates, a safety allowance, and an output reserve. Protected overflow stops the invocation rather than silently deleting constraints, and counts are application estimates. With `maxcontext=0`, virtualization can still shrink eligible old messages, but Mini-A does not claim a verified hard context bound. Delegates receive task-specific knowledge rather than the parent's full knowledge field, and children do not inherit the parent's History VM by default. Semantic compression is available only through the `MiniAHistoryVM` module API; the CLI and web UI use deterministic representations.
 
+### Context-budget recovery
+
+With active Phase 2 and positive `maxcontext`, an oversized request gets one emergency projection. Recent completed assistant work and complete tool exchanges may use bounded representations with recovery handles; exact originals remain in the canonical journal. Real user messages, instructions, incomplete tool exchanges and unknown/multimodal content stay exact. The provider view changes only if the complete request fits.
+
+If executor working notes still exceed the budget, isolated chunked summarization rebuilds the prompt while preserving the goal, explicit constraints, hooks and new inbox messages. There is at most one note-recovery attempt per logical request and three per run. Failed, empty or nonshrinking summaries preserve the originals. Recovery does not reset provider history, raise the budget or lower the output reserve.
+
+Terminal errors report separate estimates for protected conversation, prompt, tool schemas, separately charged instructions, safety allowance, output reserve and selected context, plus the recovery outcome. Narrow inputs/schemas or explicitly raise `maxcontext` when protected input cannot fit or canonical backing is unavailable. Auxiliary models do not recursively recover; Phase 1, shadow, legacy and `maxcontext=0` keep their existing behavior.
+
+Current runtime status takes precedence over historical/child diagnostics. Delegation metrics labeled `diagnostics_scope.scope=child_execution` and retrieved `child_diagnostics` describe that child, not the parent's History VM settings.
+
 ### Web history in S3
 
 ```bash
@@ -1112,7 +1122,7 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 | Mode | Triggered by | What happens |
 |------|-------------|--------------|
 | Memory dream | `memorych` arg is set | Loads global (and optionally session) memory, calls the LLM to consolidate, writes back |
-| Wiki dream | `usewiki=true` | Spawns a full MiniA agent with `wikiaccess=rw` that lints and fixes the wiki |
+| Wiki dream | `usewiki=true` | Runs the selected wiki workflow: deterministic maintenance, validated auto proposals, or an agent for reorg |
 | Combined | Both args set | Both modes run in sequence |
 
 ### Parameters
@@ -1122,7 +1132,7 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 | `dream` | `false` | Run in standalone dream-pass mode |
 | `dreammode` | - | Dream mode selector: `memory`, `wiki`, or `both` — controls which pass(es) run |
 | `dryrun` | `false` | Preview what would change without writing anything back |
-| `dreamwikimode` | `apply` | Wiki mode: `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, `indexes` |
+| `dreamwikimode` | `apply` | Wiki mode: `auto`, `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, `indexes` |
 | `dreammemorymode` | `apply` | Memory mode: `plan` or `apply` |
 | `dreamwikidryrun` | `false` | Propose wiki changes without writing (opt out of apply) |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
@@ -1135,8 +1145,30 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 | `maxauditrecords` | `200` | Maximum audit log entries included in the memory consolidation prompt |
 | `usewiki` | `false` | Enable the wiki dream (requires `wikiroot`, `wikibucket`, or equivalent) |
 | `model` | - | SLON/JSON model config used for the memory consolidation LLM call |
-| `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
+| `dreammaxsteps` | `40` | Total model-step limit for wiki auto/reorg |
+| `dreamwikillm` | `true` | Allow model proposals for unresolved auto-maintenance issues; `false` selects deterministic repairs only |
+| `dreamwikiinstructions` | - | Additional guidance for the existing reorg goal; does not relax tool restrictions |
 | `libs` | - | Extra comma-separated libraries to load |
+
+### Automatic wiki maintenance
+
+`/dream wiki auto` runs the same coordinator in the terminal, Advanced Dream panel and Wiki Manager. Preview with `/dream wiki auto dryrun`, then deliberately apply supported repairs with an explicit `wikiaccess=rw`:
+
+```bash
+mini-a dream=true dreammode=wiki dreamwikimode=auto \
+  usewiki=true wikiroot=./wiki wikiaccess=rw \
+  dreamwikillm=false dreamreport=wiki-auto.json
+```
+
+Auto is on-demand and local-directory-only; mounted/remote wikis and remote graphs are unsupported. Invoking it authorizes its supported repairs without per-action prompts. Dry-run calls no model and performs no writes, backups, ingestion resumes or index publication. Other Dream modes keep their approval gates.
+
+It diagnoses authoritative Markdown, resumes valid existing ingestion journals, repairs deterministic lint/navigation issues and rebuilds damaged retrieval artifacts. `dreamwikillm=true` allows tool-free model proposals for remaining issues, validated by the coordinator. Healthy pages receive no speculative reorganization. It runs at most three repair/verification cycles, stops on no progress and caps total model requests at `dreammaxsteps=40`. A missing model leaves semantic issues unresolved after deterministic work.
+
+Provenance/ingestion-owned pages are protected from generic edits. Conflicting/corrupt ingestion journals remain in place; pending absorption blocks auto and directs you to `/absorb status` and `/absorb resume <plan-id>`. Unsupported schemas, unavailable pages and unresolved ownership require review.
+
+Local mutations share `.mini-a-wiki-ingest/writer.lock`. Auto must persist original page/state contents and hashes in `.mini-a-wiki-maintenance/<run-id>/backup.json` and `journal.json` before repair; backup failure blocks writes. Stop requests cancellation, possibly after an in-flight non-streaming model call returns. Interrupted runs retain a pending marker and backups; the next pass reconciles known journal boundaries. External hash conflicts are preserved for manual review rather than overwritten. Completed work is not automatically rolled back.
+
+Fresh strict-reader checks, content reads, search probes, lint and enabled structural-graph checks determine verified fixes. The report records diagnosed issues, attempted actions, verified fixes, unresolved issues, backup location and verification coverage. Outcomes include `noop`, `complete`, `partial`, `planned`, `blocked`, `cancelled` and `interrupted`; `dreamreport` saves the JSON report. A rebuild alone does not prove success.
 
 ### Memory dream internals
 
@@ -1155,6 +1187,8 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 
 ### Wiki dream internals
 
+The following describes the pre-existing modes; auto uses the coordinator above.
+
 1. `usewiki=true` is required; `wikiaccess` is forced to `rw`.
 2. `dreamwikimode=plan`, `dryrun=true`, and `dreamwikidryrun=true` run the same no-write proposal path.
 3. Use `dreamwikimode=plan` for explicit mode selection; use `dryrun=true` when you want the generic safety flag (it also affects memory dreams).
@@ -1162,7 +1196,7 @@ Think of it as REM sleep for your agent: the active session ends, then the dream
 5. `dreamwikimode=apply` is the default and performs safe non-structural work; use `dreamwikidryrun=true` to opt out.
 6. `dreamwikimode=reorg` is structural and requires `dreamwikireorg=true` plus `dreamwikiapproval=auto`.
 7. A `MiniAWikiManager` exposes hierarchy-aware `tree`, `browse`, `backlinks`, `move`, and `lint()` operations.
-8. A full `MiniA` agent is spawned (default `maxsteps=60`, controlled by `dreammaxsteps`) with the following goal:
+8. A full `MiniA` agent is spawned (default `maxsteps=40`, controlled by `dreammaxsteps`) with the following goal:
    - Discover the hierarchy with `tree`/`browse`, search related content, inspect backlinks, and list lint issues.
    - Apply only high-confidence category moves with `move`; skip uncertain relocations.
    - Create missing section indexes and fix index links for local pages and child sections.
@@ -1305,42 +1339,141 @@ mini-a modelman=true
 
 ## Web Interface Advanced
 
-mini-a's web interface supports additional configuration for production and team deployments.
+Simple chat and the opt-in Advanced console share the same conversation. Advanced adds the terminal's command dispatcher, operation panels and local session journals.
+
+### Start Advanced
+
+```bash
+mini-a onport=8888 webadvanced=true useattach=true usestream=true
+```
+
+Configure a model first, as described in [Getting Started]({{ '/getting-started#model-configuration' | relative_url }}). With no nonblank `webtoken`, Advanced generates a 256-bit random token for this server run, prints an authenticated `http://localhost:8888/#token=<generated-token>` URL and tries to open the browser. Use the printed URL manually on headless systems. The token changes on restart and is not persisted.
+
+For a fixed token, add `webtoken="YOUR_RANDOM_TOKEN"` and open `http://localhost:8888/#token=YOUR_RANDOM_TOKEN` manually (URL-encode special characters). Select **Advanced**. No extra model request is needed to inspect settings or run ordinary inspection commands.
 
 ### Authentication
 
-mini-a's web interface does not include built-in authentication. Protect it by placing it behind a reverse proxy with authentication at that layer.
+Advanced always requires token authentication. The browser keeps the fragment token in tab session storage and sends it as `x-mini-a-token`; the SSE stream also accepts `?token=`. A fixed `webtoken` protects Simple mode too. Simple without a token remains open to anyone who can reach the port.
+
+The Advanced token grants trusted console authority, including the ability to enable shell execution and filesystem/wiki writes. Use TLS and restrict access to trusted users. A reverse proxy can provide additional authentication.
+
+### Commands and operation panels
+
+Advanced opens in **Live activity**, with searchable output and an **Auto-follow** switch. The pane selector opens Help, Settings, Models, Wiki, Graph, Ingest, Absorb, Dreams, Skills, Context, History, Statistics, Debug and Subtasks. Controls submit the same commands as the console. Resize the divider or dock the pane right, bottom, top or left; the browser remembers its layout. Narrow screens stack the panes.
+
+The composer offers slash/argument completion, Tab completion and Up/Down command recall. `/help` lists syntax, prerequisites, discovered commands and skills; **Insert command** fills the prompt without executing it. Server paths in `@file`, `/save`, ingestion and wiki operations refer to the server filesystem.
+
+| Command family | Advanced behavior |
+| --- | --- |
+| `/show [prefix]`, `/set`, `/unset`, `/toggle`, `/reset` | Filtered Settings with validation and masked credentials |
+| `/model [main\|lc\|val]`, `/models` | Model slot selection and configuration |
+| `/last [md]`, `/save [file]` | Answer reader with previous goal, Markdown/raw mode, Copy and browser Download; `/save` writes on the server, defaulting to `response.md` |
+| `/history [n]`, `/restore`, `/clear`, `/rewind [n]` | Recent goals, Insert/Edit, saved-conversation picker, shared clear/rewind |
+| `/context [llm\|analyze\|vm]`, `/compact [n]`, `/summarize [n]` | Context measurements, History VM details and generated summaries |
+| `/wiki`, `/graph`, `/ingest`, `/absorb`, `/dream` | Readers, operation results, progress and existing approval/recovery controls |
+| `/skills`, custom `/commands`, `$skill` | Discovery and shared expansion/execution |
+| `/stats [modes] [out=file.json]`, `/debug [filter]` | Statistics modes/export and trace categories |
+| `/delegate`, `/subtasks`, `/subtask` | Delegation, live task inspection and task result/cancellation commands |
+| `/edit [last]`, `/editor [last]` | Server-managed multiline Submit goal/Cancel dialog |
+| `/cls`, `/exit`, `/quit` | Clear visible activity, or end this session while leaving the server running |
+
+Wiki panels provide breadcrumbs, page/section links, Markdown/raw reading and lint severity filters. A write without content opens a multiline editor with Preview and **Write page**. Graph exports offer Copy/Download and a Mermaid preview when available; `graph answer` retrieves evidence rather than synthesizing an answer. Mount/backend access rules and ingestion/absorption/Dream approval gates still apply. Stop does not roll back completed writes.
+
+Each destination has **Previous results** and **Older results** for timestamped snapshots. Selecting a result loads it from the journal without repeating the command. A command selects its pane once when accepted; progress, reconnect and completion preserve your selected pane. `/cls` clears the visible activity but retains stored events and results. `/clear` resets current answer state and metrics; `/rewind` refreshes the previous answer/transcript while retaining subtask cancellation behavior.
+
+<figure>
+  <img src="{{ '/assets/images/screenshots/s25-advanced-overview.png' | relative_url }}" alt="Advanced overview with a demo answer and filtered Live activity" loading="lazy" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
+  <figcaption>Demo: a harmless release-checklist answer beside Live activity, filtered to model events.</figcaption>
+</figure>
+
+### Settings and structured data editor
+
+Apply Settings while the conversation is idle. Transport settings are read-only. A runtime change disposes the previous agent's resources before the next goal while preserving history. Save named presets explicitly; the default preset applies to new conversations. Credentials are masked and omitted from saved presets/settings. Saved model selections reuse server credentials only when provider type and URL match; other credential-bearing compound settings must be supplied again after restart.
+
+The **Edit data** icon on text fields in Settings, Models, forms and interaction dialogs opens nested key/value tables. Import JSON or SLON, select types, add/remove map entries, reorder arrays, and Undo/Redo. **Use value** serializes JSON or SLON into the original field; its **Apply**, **Run** or **Continue** action still controls submission. Cancel/Escape discards popup edits. Invalid numbers and duplicate keys block export, and a changed/removed originating field blocks write-back.
+
+Editing stays local and is limited to 200,000 characters, 2,000 values and 30 nesting levels. Quote SLON datetime literals as strings. Read-only settings remain read-only.
+
+<figure>
+  <img src="{{ '/assets/images/screenshots/s27-advanced-settings-editor.png' | relative_url }}" alt="Advanced Settings with the structured JSON editor open" loading="lazy" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
+  <figcaption>Demo: local JSON editor for a sample state map with an array and boolean. The sample value has not been applied.</figcaption>
+</figure>
+
+### Full-screen composer
+
+Both views have an expand icon at the prompt's top right, including on mobile. Draft text and attachments stay in place. Enter adds a newline; **Ctrl/Cmd+Enter** or **Send** submits. Collapse/Escape returns to the normal prompt without losing the draft. Success collapses it; a failed submission leaves it open. Advanced History's **Edit** action opens this composer; `/edit` and `/editor` keep their separate server-managed dialog.
+
+### Attachments in both views
+
+Start with `useattach=true`. Text files (Markdown, source, CSV, JSON and similar) allow up to 512 KB each and enter the goal as filename/content blocks. Remove an attachment chip before sending if needed.
+
+Binary attachments support PNG/JPEG, Word (`.doc`, `.docx`), Excel (`.xls`, `.xlsx`), PowerPoint (`.ppt`, `.pptx`) and PDF. Supply a question/instruction; Advanced slash and skill commands cannot take binary attachments.
+
+| Limit | Value |
+| --- | --- |
+| Binary files per request | 4 |
+| Per image | 10 MiB and 25 megapixels |
+| Per document | 20 MiB |
+| Combined binary input | 20 MiB |
+| Extracted text per document | 30,000 characters |
+| Proxy request allowance | At least 29 MiB for base64 JSON submissions |
+
+Unsupported or oversized browser selections are skipped with a warning; the server also validates uploads. Processing uses isolated, read-only readers without requiring `useutils`, `useshell` or `readwrite`. Office/PDF extraction uses Tika (preinstall for offline use); image analysis needs the active main model to support vision. See [document/image utilities]({{ '/features#reading-documents-and-images' | relative_url }}).
+
+Progress/errors name the file. If any file fails processing, no goal runs from partial results. Truncation is marked and the expanded prompt must fit `maxpromptchars`. Temporary originals are deleted after processing; history retains extracted text/image analysis for follow-ups, not originals to reprocess. OCR, embedded-image extraction, document layout rendering and spreadsheet formula evaluation are not included.
+
+### Statistics, debug and live subtasks
+
+**Statistics** renders `/stats` Summary, Detailed, Tools, Memory and Wiki with Chart.js charts and expandable values tables. **Refresh** updates them. Some counters are shared across server sessions; these are not billing guarantees.
+
+**Debug** shows a chronological sequence/kind/summary table with category filters. Select a row to fetch its full disk-backed record; **Load more** preserves selection and **Refresh** reloads the category. Inspection stays in Debug without adding Live activity entries. Credential redaction remains active. The previous goal's temporary trace is removed on session expiry or when its next goal starts.
+
+**Subtasks** displays live cards with status counts, filters, duration and expandable details/results, preserving open sections on refresh. Inspection works while the parent is busy; delegate/cancel commands wait for the parent operation to finish. **Command history (saved snapshots)** is separate from live task status.
+
+<figure>
+  <img src="{{ '/assets/images/screenshots/s26-advanced-statistics.png' | relative_url }}" alt="Advanced Statistics showing sample model usage charts" loading="lazy" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
+  <figcaption>Demo: Summary charts from the isolated demo server. Some counters are shared across server sessions; these are sample usage figures.</figcaption>
+</figure>
+
+### Conversations, reconnect and storage
+
+Switching Simple/Advanced preserves the conversation. Reload reconnects to the current session without resubmitting model requests, writes or exports. Running work and pending dialogs survive browser disconnects. Stop/Escape cancels active work; closing the browser does not. Server restarts restore saved history/settings and report interrupted jobs rather than resuming them automatically.
+
+Advanced stores conversations under the console's `~/.openaf-mini-a/history` (`homedir` relocates `.openaf-mini-a`). Settings, event journals and presets use `~/.openaf-mini-a/web` or `webadvancedpath`. Existing conversation files under `webadvancedpath` remain readable. These local console histories are separate from Simple's `historypath` and S3 settings, even though both views share current turns.
+
+New conversations and idle expiry retain Advanced history. `historyretention` governs idle session cleanup. Shared console housekeeping uses `historykeepperiod` (minutes) and `historykeepcount` on session opening and periodic cleanup; active conversations/running subtasks are protected. Pruning removes associated History VM sidecars and Advanced settings/journals. Retention applies across the shared console history folder.
 
 ### Reverse Proxy Setup
 
-Place mini-a behind a reverse proxy for TLS termination and additional security. Example nginx configuration:
+Use TLS termination and permit large attachment requests. Streaming uses SSE, so disable buffering and allow long-lived HTTP responses:
 
 ```nginx
 server {
     listen 443 ssl;
     server_name mini-a.example.com;
-
     ssl_certificate     /etc/ssl/certs/mini-a.crt;
     ssl_certificate_key /etc/ssl/private/mini-a.key;
+    client_max_body_size 29m;
 
     location / {
-        proxy_pass http://localhost:8080;
+        proxy_pass http://localhost:8888;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
-        # WebSocket support for streaming responses
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 3600s;
     }
 }
 ```
 
+Forward `x-mini-a-token` and the stream query string unchanged. `/stream` sends SSE heartbeats; it does not use a WebSocket upgrade.
+
 ### Custom Branding
 
-The web interface supports custom branding options to match your organization's look and feel when deploying mini-a internally.
+The shipped Simple and Advanced interfaces share the site's light/dark theme. Custom logos or wording require editing the frontend assets; there is no documented runtime branding parameter.
 
 ---
 
@@ -1483,6 +1616,26 @@ This displays token counts, model call counts, cost estimates, and elapsed time 
 - **[Getting Started]({{ '/getting-started' | relative_url }})** — Installation and first steps
 
 ## Wiki maintenance utilities
+
+### Guided operations manager
+
+```bash
+mini-a wikiman=true wikiroot=./wiki wikiaccess=rw usewikigraph=true
+```
+
+`wikiman=true` opens guided inspection, page editing/moves/deletion, lint, indexes, compaction, graph, Dream, ingestion and absorption/recovery menus. Inspection needs no model; access defaults to `ro`, and no current-directory wiki is silently selected. Mounts stay read-only: explicitly configure their root/backend as primary to maintain them. Do not combine this launch mode with web, worker, Dream or goal execution.
+
+Category **Advanced options** exposes operation limits; **Session → Adjust session settings** changes temporary connection/graph settings. Use `/back` to cancel text prompts. Results include elapsed time, full details/history and a sanitized replay command. **Run history / export** explicitly saves a sanitized run record; connection profiles/history are not automatically saved.
+
+Writes require review and noninteractive `confirm=true`. Reorg asks two default-No confirmations, including an external recovery point, and requires `backupconfirmed=true dreamwikireorg=true dreamwikiapproval=auto`. `dreamwikiinstructions` adds guidance without changing restrictions. Compaction previews and requires `offline=true`. Recovery discard and absorption delete/cancel do not undo written pages.
+
+```bash
+# From the Mini-A checkout/package directory
+ojob utils/wikiOps.yaml operation=wiki.lint wikiroot=./wiki
+ojob utils/wikiOps.yaml operation=wiki.reindex wikiroot=./wiki wikiaccess=rw confirm=true
+```
+
+### Compaction and offline diagnostics
 
 Local Retrieval V2 compaction rebuilds the active serving index as a base generation and reclaims unreachable serving artifacts. Preview first; stop other processes reading or writing the wiki before applying. With `wikiaccess=rw` and V2 enabled:
 

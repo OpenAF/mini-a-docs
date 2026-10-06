@@ -67,7 +67,9 @@ Removal is limited to uniquely identifiable appended contributions supported exc
 
 Apply checks plan integrity, destination identity, source inventories and hashes, and the baseline. Stale plans require replanning. Page-level findings block that page and its dependents; independent pages may still apply. Partial and failed jobs exit nonzero.
 
-Ingestion and absorption share a local writer lock. Unfinished journals block competing writers; arbitrary external editors are not locked out, so avoid destination edits during apply. `resume` recognizes already-applied writes, refuses conflicting edits and retries finalization without regenerating proposals. Finalization regenerates indexes, refreshes configured retrieval/structural graph artifacts and runs link lint. Existing broken links can leave finalization pending until repaired.
+The [Wiki operations manager]({{ "/advanced#guided-operations-manager" | relative_url }}) and [Advanced web Absorb panel]({{ "/advanced#commands-and-operation-panels" | relative_url }}) expose the same plan review/apply/resume/delete actions and confirmation rules. Wiki auto-maintenance blocks on pending absorption and directs you to its existing recovery flow; it does not discard the journal or undo applied pages.
+
+Ingestion, absorption and wiki maintenance share a local writer lock. Unfinished journals block competing writers; arbitrary external editors are not locked out, so avoid destination edits during apply. `resume` recognizes already-applied writes, refuses conflicting edits and retries finalization without regenerating proposals. Finalization regenerates indexes, refreshes configured retrieval/structural graph artifacts and runs link lint. Existing broken links can leave finalization pending until repaired.
 
 `delete <id>` removes only the saved plan and report; `cancel` is an alias. Both require write access, preserve pages/baselines/receipts, and refuse a plan needed by unfinished recovery or a busy writer. They neither stop a running apply nor undo applied changes. The standalone equivalent is `absorbop=delete absorbplan=PLAN_ID`.
 

@@ -503,6 +503,8 @@ A persistent, shared Markdown wiki that agents read from and write to across ses
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
+| `wikiman` | `false` | Open the standalone wiki operations manager; cannot combine with web, worker, Dream, model manager or goal execution |
+| `wikitarget` | - | Optional wiki target selector for the operations manager |
 | `usewiki` | `false` | Enable the wiki knowledge base |
 | `wikiaccess` | `ro` | Access mode: `ro` (read-only) or `rw` (read-write) |
 | `wikibackend` | `fs` | Backend: `fs` (filesystem), `s3`, `s3fs`, `es` (Elasticsearch/OpenSearch), or read-only `http` (`https` is an alias) |
@@ -643,6 +645,15 @@ Read-only `readPolicy=auto` adopts each generation's language/analyzer, accent f
 
 Search without a `wiki` selector includes the primary and all mounts. V2 sources share one request budget and global ranking; mixed V1/V2 selections keep their source engines and merge results before the display limit. Trusted search accepts `maxQueries`, `maxCandidates`, `maxInspected`, `maxMillis`, and `maxBytes`. Check source coverage and warnings before treating an empty or partial result as absence. See [Features → Wiki retrieval]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}).
 
+
+#### Published analysis and source reads
+
+Read-only V2 readers default to `wikiretrievalconfig='(readPolicy: auto)'`: each mount adopts its published generation's index analysis settings. Synonyms, query expansion, relevance feedback and budgets stay reader-controlled. `readPolicy: strict` requires a match and reports `incompatible-generation` with differing fields. Writable builds still use configured settings and need explicit reindexing to change the contract.
+
+`wiki op="context"` exposes `retrieval.analysis`; search/retrieve source diagnostics include policy, generation, source (`generation` or `configured`), effective settings and `differingFields`. Tight output budgets can report `analysisOmitted: "output-budget"`; use context for the full analysis. Native agent search supplies at most five compact candidates in a 4,000-character envelope, preserving partial-coverage warnings. Partial coverage cannot establish absence.
+
+Control pages (`AGENTS.md`, `index.md`, `log.md`, including section-local copies) stay excluded from passage search. Explicit open/navigate/read/grep uses bounded source reads with section/range selection, mount routing and revision-checked continuations. Ordinary content pages still need valid V2 serving bindings; corrupt artifacts remain errors. `page-metadata-binding-failure` reports the page and differing outline/metadata/title/description field names without exposing values; use an explicit writable reindex.
+
 ### Wiki Knowledge Graph
 
 An optional knowledge-graph layer built on top of the wiki's pages. When enabled, `wiki search` transparently appends related-page hints, and the graph can be queried directly via the `/graph` console command or `mcp-wiki-ops`'s `graph_build`/`graph_falkor` tools.
@@ -695,20 +706,24 @@ An LLM-powered off-line consolidation pass over persistent memory and/or the wik
 | `dream` | `false` | Run in standalone dream-pass mode instead of a regular agent session |
 | `dreammode` | - | Dream mode selector: `memory`, `wiki`, or `both` — controls which pass(es) run |
 | `dryrun` | `false` | Preview what would change without writing anything back |
-| `dreamwikimode` | `apply` | Wiki dream mode: `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, or `indexes` |
+| `dreamwikimode` | `apply` | Wiki dream mode: `auto`, `plan`, `apply`, `reorg`, `repair`, `reindex`, `graph`, or `indexes` |
 | `dreammemorymode` | `apply` | Memory dream mode: `plan` or `apply` |
 | `dreamwikidryrun` | `false` | Propose wiki changes without writing; opt out of `apply` |
 | `dreamwikiapproval` | `ask` | Reorg approval mode: `auto`, `ask`, `never` |
 | `dreamwikireorg` | `false` | Allow structural reorg operations during wiki dream |
 | `dreamreport` | - | Optional file path to write JSON run report |
 | `maxauditrecords` | `200` | Maximum audit log entries included in the memory consolidation prompt |
-| `dreammaxsteps` | `60` | Maximum agent steps for the wiki dream pass |
+| `dreammaxsteps` | `40` | Total model-step limit for wiki auto/reorg |
+| `dreamwikillm` | `true` | Allow model proposals for unresolved auto-maintenance issues; `false` selects deterministic repairs only |
+| `dreamwikiinstructions` | - | Additional guidance for the existing reorg goal; does not relax tool restrictions |
 
 The `memorych`, `memorysessionch`, `memorysessionid`, `auditch`, `usewiki`, and `model` parameters are shared with the memory and wiki subsystems. See the [Advanced — Dreams]({{ '/advanced/' | relative_url }}#dreams-sleep-pass) page for full documentation and examples.
 
+`auto` is on-demand local-directory maintenance with explicit `wikiaccess=rw` authorization, backups and journal reconciliation. Dry-run performs inspection only; see [automatic maintenance limits and recovery]({{ "/advanced#automatic-wiki-maintenance" | relative_url }}).
+
 `repair`, `reindex`, `graph`, and `indexes` are isolated maintenance operations: deterministic lint repair, search-index rebuild, graph-only rebuild (requires `usewikigraph=true`), and unconditional `index.md` regeneration respectively. They avoid the broader apply/reorganization flow.
 
-`dreamwikimode=plan` is always model-free: it never creates or calls a model, even when semantic extraction would default on for `apply`. Its proposal reports the request separately (`semanticRequested`, `semanticExecuted: false`, `semanticOmissionReason: "model-free-dry-run"`) and includes only a structural graph preview. For opt-in retrieval v2, `dreamwikimode=reindex` is the supported unattended way to build the serving generation.
+`dreamwikimode=plan` is always model-free: it never creates or calls a model, even when semantic extraction would default on for `apply`. Its proposal reports the request separately (`semanticRequested`, `semanticExecuted: false`, `semanticOmissionReason: "model-free-dry-run"`) and includes only a structural graph preview. For retrieval v2, `dreamwikimode=reindex` is the supported unattended way to build the serving generation.
 
 </div>
 
@@ -759,7 +774,10 @@ Each session UUID runs one prompt at a time. Overlapping prompts, clear and hist
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `onport` | - | Port for web UI (enables web mode) |
+| `onport` | `8888` | Web server port when web mode is selected; supplying it enables web mode |
+| `webadvanced` | `false` | Enable authenticated Advanced console operations alongside Simple chat |
+| `webadvancedpath` | `~/.openaf-mini-a/web` | Local Advanced settings, event journals and presets; `homedir` relocates the config home |
+| `webtoken` | - | Shared token; generated per server run when Advanced is enabled and no nonblank token is supplied. Simple without a token is open to anyone who can reach the port |
 | `maxpromptchars` | `120000` | Maximum accepted prompt size for incoming web `/prompt` requests |
 | `ssequeuetimeout` | `120` | Web SSE stream queue timeout in seconds |
 | `logpromptheaders` | - | Comma-separated HTTP request header names to log alongside incoming web prompts (e.g. `X-User-Id`) |
@@ -778,10 +796,12 @@ Each session UUID runs one prompt at a time. Overlapping prompts, clear and hist
 | `historys3region` | - | S3 region for history mirroring |
 | `historys3useversion1` | `false` | Use S3 path-style (v1) signing for history mirroring |
 | `historys3ignorecertcheck` | `false` | Disable TLS certificate checks for history S3 access |
-| `useattach` | `false` | Enable file attachment support in web mode |
+| `useattach` | `false` | Enable text, PNG/JPEG, Office and PDF attachments in both web views; see [limits and processing]({{ "/advanced#attachments-in-both-views" | relative_url }}) |
 | `usestream` | `false` | Stream tokens to the browser over Server-Sent Events (`GET /stream`) |
 
-Web mode reports progress in two complementary ways. `POST /result` includes a `phase` field (`planning`, `execution`, or `finished`), so the loading preview shows **Planning…** even when SSE is off or reconnecting. When `usestream=true`, `GET /stream?uuid=<uuid>[&token=<token>]` emits `ready`, `stream` (model tokens), `planner_stream` (planner tokens, which switch the UI to its planning state immediately), and `error` events, plus `: ping` heartbeat comments. Per-session queues are purged on completion or after `ssequeuetimeout`. Answer and planner tokens from delegated child agents are not mixed into the parent's stream.
+Advanced conversations share Simple/Advanced turns but use local console history under `~/.openaf-mini-a/history`, relocated by `homedir`. Advanced journals/settings use `webadvancedpath`; Simple `historypath`, `historykeep` and S3 mirroring are separate. Shared `historykeepperiod`/`historykeepcount` prune Advanced history and associated journals/History VM sidecars, protecting active sessions and running subtasks. See [Advanced startup, storage and authentication]({{ '/advanced#web-interface-advanced' | relative_url }}).
+
+Web mode reports progress in two complementary ways. `POST /result` includes a `phase` field (`planning`, `execution`, or `finished`), so the loading preview shows **Planning…** even when SSE is off or reconnecting. When `usestream=true`, `GET /stream?uuid=<uuid>[&token=<token>]` emits `ready`, `stream` (model tokens), `planner_stream` (planner tokens, which switch the UI to its planning state immediately), and `error` events, plus `ping` heartbeat events. Completed stream queues remain available for readers to drain until periodic timeout cleanup; a disconnected reader does not remove the shared queue. New runs replace stream state. Answer and planner tokens from delegated child agents are not mixed into the parent's stream.
 
 Each answer's **Activity** section groups the same thought, execution, skill, summarization, stop, and rate messages that were previously listed inline; it does not enable additional log messages. It stays open while work is in progress and collapses when the final answer completes, and `showexecs` still controls execution visibility. Mermaid diagrams offer an **Open full screen** (⛶) viewer with pinch/wheel zoom and drag-to-pan (close with **×** or **Escape**), and Markdown answers are guided to include verified photographs with captions and source links for photo requests.
 
