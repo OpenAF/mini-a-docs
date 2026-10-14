@@ -2,6 +2,11 @@
 // mini-a Documentation Custom Styles
 // =============================================
 
+// Preserve screenshot proportions when the theme limits their width.
+.post-content img[src*="/assets/images/screenshots/"] {
+  height: auto;
+}
+
 // Hero Section
 .hero {
   text-align: center;
