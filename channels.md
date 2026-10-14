@@ -26,9 +26,10 @@ mini-a creates channels internally when you pass a definition to a channel param
 | `toollog` | MCP tool input and output, one entry per tool call |
 | `debugch` | Full request/response payloads for main-model LLM calls |
 | `debuglcch` | Full request/response payloads for low-cost-model LLM calls |
-| `debugvalch` | Validation-model traffic (only when `llmcomplexity=true`) |
+| `debugdecch` | Full request/response payloads for stateless decision-model calls |
+| `debugvalch` | Validation-model traffic; validation calls using main are also logged here when no dedicated validation model is configured |
 
-All five accept a SLON channel definition. `auditch` and `toollog` are the most useful for production observability. The `debug*` parameters capture verbose traffic useful for diagnosing model behaviour.
+All six accept a SLON channel definition. `debugdecch` also accepts a native file path and is attached to each fresh decision client when OpenAF supports `setDebugCh`. `auditch` and `toollog` are the most useful for production observability. The `debug*` parameters capture verbose traffic useful for diagnosing model behaviour.
 
 ---
 

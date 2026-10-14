@@ -37,6 +37,8 @@ Set credentials directly in `OAF_MODEL`/`OAF_LC_MODEL` using `key: '...'` so con
 
 ## Dual-Model Cost Optimization
 
+Alongside `default`, `advisor` and `delegate`, `modelstrategy=auto` selects a strategy per goal. **[Supervised execution]({{ '/supervised' | relative_url }})** uses main-model preparation and LC execution of a concrete contract, completing only after current evidence passes mandatory checks/review. Both roles are required. Saving accepted contracts and discovering them for reuse are independent opt-ins; defaults remain unchanged.
+
 One of mini-a's most powerful features is its **dual-model architecture**. You can assign a cheaper, faster model to handle simple tasks (routing, summarization, classification) while reserving a more capable model for complex reasoning.
 
 ```bash
@@ -251,6 +253,8 @@ mini-a
 
 ### Web UI
 
+Advanced now includes browser input dialogs, a five-editor Prompt workspace and a Current storage / Browser storage switch for presets and saved conversations. Applied prompt changes affect the next goal; reload reconnects pending dialogs but discards unsent drafts. See [Advanced web guidance]({{ '/advanced#browser-input-dialogs' | relative_url }}).
+
 A browser-based interface with session management, conversation history, and streaming output. Each answer groups its thoughts, tool work, and status messages in a collapsible **Activity** section that stays open while the agent works and collapses when the answer completes. When planning runs, the UI shows **Planning…** as soon as the planner starts streaming. Mermaid diagrams open in a full-screen viewer with pinch-zoom and pan, and `usemaps` renders Leaflet maps with colored markers.
 
 ```bash
@@ -296,7 +300,7 @@ Recent releases added several runtime improvements that are useful in production
 - `planner_stream` SSE events distinguish planning tokens from normal answer tokens when `usestream=true`.
 - `showthinking=true` surfaces XML-tagged `<thinking>...</thinking>` blocks as thought logs for providers that emit them.
 - `debugfile=<path>` writes debug output as NDJSON instead of flooding the console with raw blocks.
-- `debugvalch` routes validation-model debugging to its own channel when `llmcomplexity=true`.
+- `debugvalch` routes validation-model debugging to its own channel; `debugdecch` captures stateless decision-model traffic.
 - `maxpromptchars` caps inbound web prompt size before any model call is made.
 - Untrusted input blocks and prompt normalization reduce prompt-injection risk from goals, chat text, and attachments.
 
@@ -344,6 +348,8 @@ Worker registration is also supported: set `workerreg` to a port to have mini-a 
 
 ### Worker Skills (A2A)
 
+Workers can advertise same-process submission recovery. If a submission response is lost, Mini-A looks up its retained receipt instead of replaying execution; expired receipts and worker restarts retain an explicit unknown outcome. See [worker recovery]({{ '/advanced#timeouts-and-retries' | relative_url }}).
+
 Workers can advertise specific capabilities as A2A skills. The parent reads each worker's `/.well-known/agent.json` AgentCard and uses declared skills to route subtasks intelligently.
 
 ```bash
@@ -384,6 +390,8 @@ mini-a useplanning=true planstyle=legacy usedelegation=true \
 Delegated agents are isolated by default: they exchange only a goal and a result. With `agentcomms`, agents in one delegation tree can also relay early findings to a parent, message peers, publish to topics, or claim work through version-checked shared state, all without a broker or an extra model. Each capability needs an explicit grant, grants are never inherited, and remote workers must opt in with `apitoken` and their own ceiling. See [Advanced → Inter-agent communication]({{ '/advanced#inter-agent-communication' | relative_url }}).
 
 ### Adaptive Orchestration
+
+A configured `modeldec`/`OAF_DECIDE_MODEL` can refine ambiguous complexity and rank dynamic/capability selections. Explicit `usedecide=true` enables selected verdict gates and the conditional automatic-skill default; `usedecide=false` disables calls. Failures retain existing paths. See [decision integration]({{ '/advanced#decision-assisted-selection-and-verdict-gates' | relative_url }}).
 
 `orchestration=auto` lets Mini-A choose planning, advisor/model strategy, and evidence-gating controls from deterministic goal-complexity and risk signals, with no extra LLM call. `manual` stays the default, explicit flags always win, and every automatic decision is recorded in the trace. See [Advanced → Adaptive orchestration]({{ '/advanced#adaptive-orchestration' | relative_url }}).
 
@@ -428,6 +436,8 @@ See [Configuration → Outer Loop]({{ '/configuration#a-outer-loop-autonomous-co
 ---
 
 ## Durable Runs, Policies, and Evaluation
+
+Evaluation reports now expose skill lifecycle deltas and decision usage; unavailable skill measurements remain `null`. An explicit Decide outcome judge complements deterministic assertions and reports judge usage separately. Supervised evaluations compare independent artifact results, cold/warm contracts and actual per-role usage. See [evaluation guidance]({{ '/advanced#skill-evaluation-and-decision-judging' | relative_url }}).
 
 Four opt-in controls for running Mini-A unattended, in restricted environments, or under test. Defaults leave existing behavior unchanged.
 
@@ -692,6 +702,8 @@ The filesystem backend also accepts local `.zip` and `.okt` archives as roots or
 
 ### Wiki ingestion
 
+`ingestlayout=source` preserves sanitized source folders for new mappings. Ingestion rewrites local Markdown page links, tracks moved destinations and refreshes referring pages when missing targets appear. Explicit `/dream reorg topics` organizes related pages under existing shallow sections with the normal approval gate. See [organization and move recovery]({{ '/advanced#source-folders-and-topic-organization' | relative_url }}).
+
 Use `mini-a-ingest.yaml` to turn a documentation folder, a local or remote git repository, or a web page into distilled wiki pages. Discovery, filtering, chunking, change detection, writing, and finalization are deterministic; distillation and image descriptions call the model.
 
 ```bash
@@ -760,6 +772,8 @@ For offline V2 cleanup and an exportable graph view, see [Advanced → Wiki main
 `mini-a wikiman=true wikiroot=./wiki` opens guided inspection without a model; add explicit `wikiaccess=rw` for reviewed writes and maintenance. Menus cover pages, lint, indexes, compaction, graphs, Dream, ingestion and absorption recovery. Mounts remain read-only. See [guided manager and replay commands]({{ '/advanced#wiki-maintenance-utilities' | relative_url }}).
 
 ### Wiki retrieval v2 and bounded retrieval
+
+Repeated writes/ingestion automatically publish a fresh base when incremental depth reaches 32. Failed publication staging is cleaned up; older complete generations may still require offline compaction. A failed configured bundle export retains ingestion recovery rather than claiming success. See [retrieval configuration]({{ '/configuration#wiki-retrieval-v2' | relative_url }}).
 
 Wiki retrieval V2 is enabled by default. Published wikis use a versioned passage index; unpublished wikis retain legacy retrieval with a warning until an explicit writable reindex. Invalid or incompatible published artifacts remain errors.
 
@@ -990,6 +1004,12 @@ mini-a extracommands=/path/to/team-commands,/path/to/project-commands
 
 ### Skills
 
+With `useskills=true`, local skill operations are available even when `useutils=false`. Mini-A ships nine bundled skills: `mini-a-files`, `mini-a-planning`, `mini-a-memory`, `mini-a-shell`, `mini-a-visual-output`, `mini-a-wiki-retrieval`, `mini-a-skill-authoring`, `mini-a-runtime-diagnostics` and `mini-a-contract-authoring`. Tool-usage skills appear only when their required tools/options are enabled. The bundle follows the running installation/checkout, including launches elsewhere; `utilsroot` does not redirect it.
+
+Root precedence is user/default, `extraskills`, plugin, then bundled, with first name winning and collision diagnostics. Bundling preserves `useskills=false` and adds no selection calls by itself. `fileallow`, filters and permissions still apply.
+
+Automatic consultation defaults on only with explicit `usedecide=true` and a configured decision model; explicit `skillsautosearch` wins. Selection uses bounded local/wiki candidates and eligible Decide → LC → main fallback. Explicit `$local:name` or `$wiki:path.md` requests skip selection. Shared budgets, pending sections, revision checks and child continuity are described in [Virtual Skills]({{ '/virtual-skills#automatic-selection-and-instruction-continuity' | relative_url }}). Loading is recorded separately from verified adherence.
+
 mini-a discovers skills from `~/.openaf-mini-a/skills/` in several formats. When a skill folder contains multiple formats, the first match in this precedence order is loaded:
 
 1. `SKILL.yaml` — self-contained YAML skill (recommended for portable/shared skills)
@@ -1092,6 +1112,8 @@ Docker containers provide a natural sandbox for shell execution — you can enab
 ---
 
 ## Security Features
+
+`fileallow` constrains built-in access to selected existing local files/directories, including skills, prompt files and wiki roots. Omitted means existing access; `[]` denies covered access. Advanced sessions cannot widen the server list. It composes with existing permissions and requires separate isolation for shell/external tools. See [file-access boundaries]({{ '/advanced#built-in-file-access-boundaries' | relative_url }}).
 
 mini-a is designed to be **secure by default**. Potentially dangerous features require explicit opt-in.
 

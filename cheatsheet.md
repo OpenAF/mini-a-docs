@@ -61,8 +61,8 @@ See [Advanced web, attachments and local history]({{ '/advanced#web-interface-ad
 | Command | Action |
 |---------|--------|
 | `/help` | Show commands |
-| `/model [main|lc|val]` | Choose a model definition for a slot (`/model` opens an interactive slot picker) |
-| `/models` | Show all configured model tiers (main, LC, validation) with provider and source |
+| `/model [main\|lc\|val\|dec]` | Choose a model definition for a slot (`/model` opens an interactive slot picker) |
+| `/models` | Show configured main, LC, validation and decision slots with provider and source |
 | `/show [prefix]` | Show active parameters |
 | `/set <key> <value>` | Update a parameter (use `"""` for multi-line values) |
 | `/toggle <key>` | Toggle a boolean parameter |
@@ -133,9 +133,9 @@ See [Advanced web, attachments and local history]({{ '/advanced#web-interface-ad
 | `usestdutils` | `false` | Expose standard tool aliases instead of legacy Mini Utils names (requires `useutils=true`; `poweruser` enables it) |
 | `mini-a-docs` | `false` | Docs-aware Mini Utils root (`markdownFiles`) when `utilsroot` is unset |
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
-| `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
+| `useskills` | `false` | Expose local skill operations; registers only skills when useutils=false |
 | `skillmaxautoload` | `1` | Maximum number of high-confidence matching skills to auto-load into bounded runtime context |
-| `skillcontextchars` | `8000` | Maximum characters read from each auto-loaded SKILL.md for runtime context |
+| `skillcontextchars` | `8000` | Initial local-skill page ceiling; complete sections load progressively |
 | `skillmanifestchars` | `1536` | Approximate character budget for skill descriptions in the system prompt manifest |
 | `usetools` | `false` | Enable tool use |
 | `usetoolslc` | `false` | Register MCP tools only on the low-cost model; main model stays in prompt/action mode |
@@ -144,6 +144,7 @@ See [Advanced web, attachments and local history]({{ '/advanced#web-interface-ad
 | `auditch` | - | Channel for agent activity audit log (tool calls, shell commands, goal events) |
 | `debugch` | - | Channel for main-model LLM request/response payloads |
 | `debuglcch` | - | Channel for low-cost model LLM request/response payloads |
+| `debugdecch` | - | Decision request/response debug channel or native file path |
 | `debugfile` | - | Write debug output to a NDJSON file (implies `debug=true`) |
 | `debugvalch` | - | Separate debug channel for the validation model |
 | `outfileall` | - | Deep research only: save full cycle outputs (not only final answer) |
@@ -187,7 +188,15 @@ See [Advanced web, attachments and local history]({{ '/advanced#web-interface-ad
 | `lcjsonretries` | `1` | Extra same-step low-cost retries on invalid reply JSON before main-model fallback (`0` disables) |
 | `lcreplytool` | `false` | Capture-only `submit_reply` MCP tool for LC recovery (OpenAI-compatible and Ollama adapters) |
 | `orchestration` | `manual` | `auto` selects planning/advisor/evidence-gate controls from deterministic complexity and risk signals |
-| `modelstrategy` | `default` | Model orchestration profile: `default` (adaptive LC-first), `advisor` (LC executor + main as selective advisor), or `delegate` (LC runs all steps including step 0) |
+| `modeldec` / `usedecide` | unset | Decision model override; explicit true enables gates/utility, false disables calls |
+| `fileallow` | unset | Built-in local file/directory allowlist; `[]` denies covered access |
+| `skillsautosearch` | conditional | Automatic selection; defaults on only with explicit usedecide and a decision model |
+| `skillsautolimit` | `5` | Combined local/wiki candidate limit |
+| `skillsmaxloaded` / `skillsmaxchars` | `3` / `12000` | Shared distinct-skill/guidance budgets |
+| `contractfile` / `contractargs` | unset / empty | Explicit supervised contract and positional inputs |
+| `savecontract` / `reusecontract` | `false` | Independent accepted-contract publication/discovery opt-ins |
+| `ingestlayout` | `flat` | New mappings: flat names or sanitized source folders |
+| `modelstrategy` | `default` | `default`, `advisor`, `delegate`, `supervised`, or `auto` |
 | `advisorenable` | `true` | Enable advisor consultations when `modelstrategy=advisor` |
 | `advisormaxuses` | `2` | Max advisor consultations per run when `modelstrategy=advisor` |
 | `advisoronrisk` | `true` | Allow advisor consults on risk signals |
@@ -233,7 +242,7 @@ See [Advanced web, attachments and local history]({{ '/advanced#web-interface-ad
 | `memorywritemax` | `20` | Maximum `memory_write` calls per run |
 | `memorymd` | `false` | Store global memory as path-keyed Markdown records in `memorych` |
 | `memorysessionheader` | — | HTTP request header name used to derive the memory session ID in web mode (e.g. `X-User-Id`) |
-| `llmcomplexity` | `false` | Validate medium-complexity routing with an LC model check |
+| `llmcomplexity` | unset | Decision-based medium-complexity refinement; false disables, true also enables LC fallback |
 | `metricsch` | - | SLON/JSON channel for recording periodic metrics snapshots — see [Channels]({{ '/channels' | relative_url }}) (note: backend options nest under `options:`, e.g. `(name: 'mini-a-metrics', type: 'mvs', options: (file: 'metrics.db'), period: 5000)`) |
 | `usedelegation` | `false` | Agent delegation |
 | `delegationtimeout` / `delegationhardtimeout` | `300000` / - | Foreground wait and initial stall timeout (activity extends it) / optional absolute limit, in ms |
@@ -292,6 +301,27 @@ See [Advanced web, attachments and local history]({{ '/advanced#web-interface-ad
 | `homedir` | — | Override the home directory used to locate the `.openaf-mini-a` folder |
 
 ## Runs, Policy, Evaluation, and Ingestion
+
+```bash
+# Choose an execution strategy per run; default stays unchanged
+mini-a modelstrategy=auto goal="Verify the repository tests and report results"
+
+# Main prepares a contract, LC executes; requires both model roles
+mini-a modelstrategy=supervised goal="Verify the report." \
+  contractargs='"/project/report.json"' savecontract=true
+
+# Explicit local skill request without automatic selection
+mini-a useskills=true skillsautosearch=false \
+  goal='Use $local:mini-a-runtime-diagnostics to inspect the available runtime.'
+
+# Preview source-folder mappings; requires a configured writable wiki to apply
+mini-a ingest=true ingestsource=./docs ingestlayout=source ingestdryrun=true
+
+# From the Mini-A checkout; calls the configured providers
+mini-a eval=true evalfile=evals/skills.yaml evalout=/tmp/skills-eval.json
+```
+
+See [Supervised Execution]({{ '/supervised' | relative_url }}) and [decision integration]({{ '/advanced#decision-assisted-selection-and-verdict-gates' | relative_url }}).
 
 ```bash
 # Durable, resumable run with a redacted JSONL trace

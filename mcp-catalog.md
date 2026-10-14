@@ -33,6 +33,7 @@ mini-a ships with **31 built-in MCP servers** covering a wide range of tasks. Lo
 | `mcp-weather` | Weather information | STDIO | `current`, `forecast` |
 | `mcp-ch` | ClickHouse database | STDIO | `query`, `listTables` |
 | `mcp-es-search` | ElasticSearch/OpenSearch full-text search | STDIO/HTTP | `search`, `get`, `read`, `info` |
+| `mcp-decide` | Stateless choice, boolean and ordinal decisions | STDIO/HTTP | `get-capabilities`, `decide` |
 | `mcp-mini-a` | Spawn sub-agents | STDIO | `delegate`, `status` |
 | `mcp-a2a` | Bridge external A2A-protocol agents as tools | STDIO/HTTP | `a2a-agents`, `a2a-task` |
 | `mcp-proxy` | MCP proxy/aggregator | STDIO | `aggregate`, `route` |
@@ -379,6 +380,39 @@ Run multiple instances side by side (one per index) using `toolPrefix` to keep t
 **Tools:** `search`, `get`, `read`, `info`
 
 ---
+
+### mcp-decide
+
+A standalone decision server requiring an updated OpenAF with `getCapabilities()`/`decideWithStats()` and server-side `OAF_DECIDE_MODEL`. It does not require `OAF_MODEL` or start a Mini-A agent.
+
+```bash
+# From the Mini-A installation/checkout; inherit OAF_DECIDE_MODEL.
+ojob mcps/mcp-decide.yaml
+# HTTP /mcp; set OJOB_MCP_AUTH_TOKEN for bearer authentication.
+ojob mcps/mcp-decide.yaml onport=8888
+```
+
+`get-capabilities` returns configured/support information without a provider call or credentials. `decide` accepts nonempty text or an object/array as `state`, named `questions`, and optional `options`; it returns OpenAF's `{response, stats}` wrapper. Example arguments:
+
+```json
+{
+  "state": {"ticket": "The customer was charged twice."},
+  "questions": {
+    "team": {
+      "type": "choice",
+      "instructions": "Choose the responsible team.",
+      "criteria": {"billing": "Payments and refunds", "technical": "Software failures"}
+    },
+    "urgent": {"type": "boolean", "instructions": "Does this require immediate attention?"},
+    "priority": {"type": "score", "instructions": "Assess urgency.", "criteria": ["Routine", "Soon", "Urgent"]}
+  },
+  "options": {"strategy": "auto"}
+}
+```
+
+Score levels are zero-based. Supported options are `strategy`, `model`, `requireProbabilities`, `providerOptions` and `images`, subject to OpenAF provider allowlists. Model overrides stay within the configured provider/endpoint; clients cannot supply credentials or endpoint URLs. Inline images use raw base64 for native Ollama or base64 data URLs for native OpenAI; paths, external URLs and structured image decisions are rejected. Actual vision requires a compatible model. Required probabilities need native support; structured confidence is not a substitute.
+
+Typed failures include `LLM_DECISION_INVALID_REQUEST`, `LLM_DECISION_UNSUPPORTED`, `LLM_DECISION_CONTRACT_UNVERIFIED`, `LLM_DECISION_PROVIDER_ERROR`, `LLM_DECISION_INVALID_RESPONSE`, and Mini-A configuration/runtime-support codes. Errors are sanitized without provider bodies. There are no retries or model fallbacks, tools executed or permissions granted. Per-run Mini-A `modeldec` does not configure this standalone server. See [internal integrations and the utility]({{ '/advanced#decision-assisted-selection-and-verdict-gates' | relative_url }}).
 
 ### mcp-mini-a
 

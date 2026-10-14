@@ -85,6 +85,10 @@ If you prefer not to keep raw model definitions in shell profile files, launch t
 mini-a modelman=true
 ```
 
+For decision-assisted selection, optionally configure `OAF_DECIDE_MODEL`, or supply `modeldec=...` for a run. `/model dec` chooses its session slot and `/models` shows all slots. An updated OpenAF must expose `getCapabilities()`/`decideWithStats()`. `usedecide=false` disables decision calls; explicit `true` enables additional gates and the conditional automatic-skill default. See [decisions]({{ '/advanced#decision-assisted-selection-and-verdict-gates' | relative_url }}).
+
+Help (`mini-a help` or `mini-a --help`) groups parameters by session, models/execution, tools/permissions, memory/knowledge, delegation/servers and output/diagnostics. For contract-based acceptance after configuring main and LC, see [Supervised Execution]({{ '/supervised' | relative_url }}).
+
 ### Model Manager
 
 mini-a includes a built-in TUI (text user interface) for managing models interactively:
@@ -171,7 +175,7 @@ When running in interactive console mode, the following commands are available:
 | Command | Description |
 |---------|-------------|
 | `/help` | Show available commands |
-| `/model [target]` | Show current model, or inspect/change `model`, `modellc`, or `modelval` |
+| `/model [target]` | Show current model, or inspect/change `model`, `modellc`, `modelval`, or `modeldec` |
 | `/show [prefix]` | Show active parameters, optionally filtered by prefix |
 | `/skills [prefix]` | List discovered skills, optionally filtered by prefix |
 | `/compact [n]` | Compact older history while keeping up to the latest `n` exchanges (default 6) |

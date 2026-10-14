@@ -25,12 +25,12 @@ This is a facade over the existing [wiki]({{ '/features#wiki-knowledge-base' | r
 | | Local skills (`SKILL.md` / `SKILL.yaml`) | Virtual skills |
 |---|---|---|
 | Storage | Files under a skills root such as `~/.openaf-mini-a/skills` | Wiki pages on any wiki backend, any size |
-| Discovery | Eagerly listed; every skill appears in `/skills` | Never listed eagerly; found through search or recommend |
+| Discovery | Discovered from local roots; prompt manifests and bundled eligibility are bounded | Found through search/recommend or bounded automatic consultation |
 | Context cost | One slash command per skill, loaded up front | Zero until a specific skill is searched, opened, or read |
 | Scale | Tens to low hundreds | 100k+ |
-| Execution | `$name` / `/name` renders `{% raw %}{{args}}{% endraw %}`, `{% raw %}{{argv}}{% endraw %}`, `{% raw %}{{arg1}}{% endraw %}` | Same rendering machinery, reached through `resolve` |
+| Invocation | `$name` / `/name` renders `{% raw %}{{args}}{% endraw %}`, `{% raw %}{{argv}}{% endraw %}`, `{% raw %}{{arg1}}{% endraw %}` | In-process `resolve` renders args; provider resolve returns a template |
 
-Both coexist and nothing about local skills changes: `/skills`, `$skill`, `extraskills`, and [Agent Plugins]({{ '/agent-plugins' | relative_url }}) behave as before. Virtual skills are reached only through an explicit surface (`/skills search ...`, the `skillwiki` tool, or an MCP client talking to `mcp-skills`), so a large library never floods the compact local skill list or a system prompt.
+Both coexist with `/skills`, `$skill`, `extraskills`, and [Agent Plugins]({{ "/agent-plugins" | relative_url }}). Virtual skills can be consulted explicitly or through bounded automatic selection. Search still returns compact candidates, so a large library stays outside the prompt.
 
 Four rules hold throughout: the full catalog is never injected into a prompt; there is never one MCP tool per skill; search never returns a full skill body; and related or referenced skills are never recursively preloaded.
 
@@ -118,10 +118,10 @@ This exposes a `skillwiki` tool to the model with the operations `context`, `sea
 
 | Parameter | Default | Bound |
 |-----------|---------|-------|
-| `skillsmaxloaded` | `3` | Distinct skills that may be `open`-ed |
-| `skillsmaxchars` | `12000` | Total skill-body characters `read` may return |
-| `skillsautolimit` | `5` | Reserved limit for future automatic search; not implemented |
-| `skillsautosearch` | `false` | Reserved for opt-in, planner-driven consultation; today the model can call the tool directly at any time, bounded the same way |
+| `skillsmaxloaded` | `3` | Shared distinct local/wiki skills consulted, including direct reads and resolve |
+| `skillsmaxchars` | `12000` | Shared guidance characters, including repeated reads, references and rendered arguments |
+| `skillsautolimit` | `5` | Combined compact local/wiki candidates for automatic selection |
+| `skillsautosearch` | conditional | On by default only with explicit `usedecide=true` and `modeldec`/`OAF_DECIDE_MODEL`; explicit true/false wins |
 
 From the interactive console:
 
@@ -136,6 +136,19 @@ From the interactive console:
 ```
 
 These subcommands activate only when a skill library is configured. Otherwise `/skills <word>` keeps its original meaning: a prefix-filtered listing of local skills.
+
+### Automatic selection and instruction continuity
+
+With `useskills=true` or `useskillswiki=true`, automatic consultation defaults off unless `usedecide=true` and a decision model is configured. Explicit `skillsautosearch=true` enables it without that default; selection tries the eligible decision model, then LC, then main. Errors/invalid responses advance to the next tier; a valid empty selection stops. Rate-limit failures abort rather than starting another provider call.
+
+`skillsautolimit=5` bounds combined candidates and `skillmaxautoload=1` bounds automatic selections. Explicit `$name` requests skip selection; `$local:name` and `$wiki:path.md` disambiguate sources. A missing explicit skill blocks affected work instead of silently ignoring the request. Set `skillsautosearch=false` to retain explicit or model-led loading.
+
+Local initial pages obey `skillcontextchars=8000`. Long procedures retain introductory and recognized mandatory/safety sections, list pending sections, and load those sections before their steps. Required guidance that cannot fit blocks loading. All agent-facing local/wiki read, render, invoke, open and resolve paths share `skillsmaxloaded` and `skillsmaxchars`; console browsing and standalone MCP servers retain their own retrieval settings. A skill's `max-context-chars` may reduce the configured ceiling. `disable-model-invocation` blocks automatic/model invocation while allowing explicit user requests.
+
+Local supporting files are loaded through `skills` with `operation=read`, `name` and a declared relative `reference`, under the same budgets and file policy. Arbitrary files are not supporting references. In-process `skillwiki resolve` also renders `args`/`argv`; provider resolve returns a bounded template and a `truncated` flag. Neither installs or executes a skill.
+
+Active instructions survive overflow recovery and are pinned in History VM when enabled. Relevant child tasks receive source-qualified references and revisions, then resolve them under their own permissions; missing or changed required sources block the child. Each run resets consultation budgets. Skills never grant permissions.
+
 
 ### Discovery is separate from execution
 
@@ -172,7 +185,7 @@ Skill libraries use ordinary wiki mounts. The `wiki` parameter of `search` and `
 
 ## Ranking, observability, and scale
 
-Results are ranked by a fixed weighted sum of lexical score and name, title, intent, tag, applies-to, compatibility, and graph signals. There is no vector or embedding search yet: `recommend` builds a lexical query from the task, environment, and capabilities. Only counters are tracked (searches, opens, reads, sections read, characters returned), and skill body content is never logged.
+Results are ranked by a fixed weighted sum of lexical score and name, title, intent, tag, applies-to, compatibility, and graph signals. There is no vector or embedding search yet: `recommend` builds a lexical query from the task, environment, and capabilities. Library retrieval counters remain available. Agent lifecycle telemetry also records discovery, selector attempts/timing, selections, loads, blocks, charged characters, consulted references, revisions and pending sections. Activity logs omit instruction bodies and invocation arguments; full model debug traces can still contain loaded guidance. Completion records `complianceVerified=false`: loading instructions does not prove adherence. See [evaluation metrics]({{ "/advanced#skill-evaluation-and-decision-judging" | relative_url }}).
 
 Indexed search avoids loading the library into the prompt; latency still depends on corpus size, cache state and retrieval budgets. The skill count and un-queried tag browsing rely on the wiki's per-page metadata cache, which is cheap when warm but takes real time on the first touch of a very large, cold corpus.
 
@@ -188,7 +201,7 @@ New pages should have `type: skill` and a nonempty `name`; a `schema` beginning 
 
 ## Not yet included
 
-Planner-level automatic consultation (`skillsautosearch`), materializing a remote skill into a portable local `SKILL.md` or Agent Plugin, semantic or vector retrieval, skill quality signals, and signed skills are future work.
+Materializing a remote skill into a portable local `SKILL.md` or Agent Plugin, semantic or vector retrieval, skill quality signals, and signed skills are future work.
 
 ## See also
 

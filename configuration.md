@@ -27,6 +27,8 @@ export MINI_A_PARAM=value
 | `model` | - | LLM model configuration in SLON/JSON style (e.g., `(type: openai, model: gpt-5-mini, key: '...')`) |
 | `modellc` | - | Lighter model for simple tasks (dual-model); set via `OAF_LC_MODEL` env var |
 | `modelval` | - | Runtime override for the validation model configuration; same format as `OAF_VAL_MODEL` |
+| `modeldec` | - | Decision model configuration for this run/session; overrides `OAF_DECIDE_MODEL`. `/model dec` selects this slot interactively |
+| `usedecide` | unset | Configured decision selection/complexity is available unless `false`; verdict gates, automatic-skill default and the utility require explicit `true` |
 | `modellock` | `auto` | Select the model tier for normal steps: `main`, `lc`, or `auto`. Recovery paths (such as invalid-JSON fallback) can still call the main model, so this is not a strict spending or provider-isolation boundary |
 | `lccontextlimit` | `0` | Escalate from low-cost model to main model when context tokens reach this threshold (`0` disables) |
 | `deescalate` | `3` | Consecutive successful steps required before switching back to the low-cost model after escalation |
@@ -34,9 +36,13 @@ export MINI_A_PARAM=value
 | `lcbudget` | `0` | Maximum total LC token budget before permanently switching to the main model (`0` = unlimited) |
 | `lcjsonretries` | `1` | Extra same-step retries for invalid low-cost-model JSON before Mini-A falls back to the main model (`0` disables retries). Retries cost tokens and provider calls and count toward `lcbudget`, but not `maxsteps` |
 | `lcreplytool` | `false` | Replace the corrective LC retry with a capture-only `submit_reply` MCP tool call on OpenAI-compatible and Ollama adapters. See [Advanced]({{ '/advanced#low-cost-json-recovery-lcjsonretries-lcreplytool' | relative_url }}) |
-| `orchestration` | `manual` | `auto` applies deterministic complexity and risk signals to the existing planning, advisor, and evidence-gate controls; explicit flags always win. See [Advanced]({{ '/advanced#adaptive-orchestration' | relative_url }}) |
-| `llmcomplexity` | `false` | Use a quick LC validation call for medium-complexity routing heuristics |
-| `modelstrategy` | `default` | Model orchestration profile: `default` (LC-first with escalation), `advisor` (LC executes, main model consulted selectively for difficult steps), or `delegate` (LC executes all steps including step 0) |
+| `orchestration` | `manual` | `auto` selects planning, model strategy and evidence-gate controls from complexity/risk, with optional decision refinement; explicit flags win. See [Advanced]({{ '/advanced#adaptive-orchestration' | relative_url }}) |
+| `llmcomplexity` | unset | Refine medium complexity with the decision model when configured; `false` disables this, `true` also enables the legacy LC fallback |
+| `modelstrategy` | `default` | `default`, `advisor`, `delegate`, `supervised` (main prepares a contract, LC executes), or `auto` (per-run selection). See [Supervised execution]({{ "/supervised" | relative_url }}) |
+| `contractfile` | - | Explicit supervised CONTRACT.md; takes precedence over plan import and automatic discovery |
+| `contractargs` | empty | Positional contract inputs with skill-style argument quoting |
+| `savecontract` | `false` | Publish an immutable contract only after accepted supervised completion |
+| `reusecontract` | `false` | Discover accepted exact-goal contracts within the current workspace; independent of saving |
 | `advisorenable` | `true` | Enable main-model advisor consultations when `modelstrategy=advisor` |
 | `advisormaxuses` | `2` | Maximum advisor consultations per run when `modelstrategy=advisor` |
 | `advisoronrisk` | `true` | Allow advisor consultations on risk signals |
@@ -79,7 +85,8 @@ export MINI_A_PARAM=value
 | `debugfile` | - | Write debug output as NDJSON to a file (implies `debug=true`) |
 | `debugch` | - | SLON channel definition for main-model LLM traffic — see [Channels]({{ '/channels' | relative_url }}) |
 | `debuglcch` | - | SLON channel definition for low-cost-model LLM traffic — see [Channels]({{ '/channels' | relative_url }}) |
-| `debugvalch` | - | SLON channel definition for validation-model traffic when `llmcomplexity=true` — see [Channels]({{ '/channels' | relative_url }}) |
+| `debugdecch` | - | SLON/JSON debug channel or native file path for each fresh decision client; requires runtime `setDebugCh` support |
+| `debugvalch` | - | SLON channel definition for validation-model traffic — see [Channels]({{ '/channels' | relative_url }}) |
 | `outfile` | - | Save final answer to file |
 | `outfileall` | - | Deep research only: save full cycle history/verdicts/learnings to file |
 | `outputfile` | - | Alternate key for `outfile`, mainly used by plan conversion flows |
@@ -118,7 +125,7 @@ export MINI_A_PARAM=value
 | `resumerun` | - | Resume an interrupted durable run by ID (does not change the existing `resume` option) |
 | `runstatus` | - | Print the persisted status of a durable run by ID |
 | `runroot` | `~/.openaf-mini-a/runs` | Durable-run storage root |
-| `capabilityselection` | `false` | Normalize MCP tools, skills, plugins, and workers into a registry and expose only a deterministic, bounded relevant subset |
+| `capabilityselection` | `false` | Normalize MCP tools, skills, plugins, and workers into a registry and expose a bounded relevant subset, optionally ranked by the decision model |
 | `capabilitylimit` | `8` | Maximum capabilities exposed when `capabilityselection=true` |
 | `policy` | - | Centralized allow/deny rules as SLON/JSON, e.g. `(shell: deny, delegation: deny)` |
 | `policyfile` | - | JSON file containing the centralized policy |
@@ -167,11 +174,12 @@ The default policy is allow-all. Supported initial rules are `shell: deny`, `del
 |-----------|---------|-------------|
 | `useutils` | `false` | Enable Mini Utils Tool utilities. With `usestdutils=true`, exposes standard aliases: `read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, and `bash` (when `useshell=true`). Legacy names (`filesystemQuery`, `filesystemModify`, etc.) are used otherwise (the default). |
 | `usestdutils` | `false` | When `useutils=true`, expose standard Mini Utils aliases (`read`, `glob`, `grep`, `webfetch`, `question`, `skill`, `todowrite`, `bash`) instead of legacy Mini Utils internal names. Presets such as `poweruser` enable it |
-| `useskills` | `false` | Expose skill operations in Mini Utils Tool (requires `useutils=true`) |
+| `useskills` | `false` | Expose local skill operations; when `useutils=false`, registers only the skills tool |
 | `skillmaxautoload` | `1` | Maximum number of high-confidence matching skills to auto-load into bounded runtime context |
-| `skillcontextchars` | `8000` | Maximum characters read from each auto-loaded SKILL.md for runtime context |
+| `skillcontextchars` | `8000` | Initial local-skill page character ceiling; long procedures load complete sections progressively |
 | `skillmanifestchars` | `1536` | Approximate character budget for skill descriptions in the system prompt manifest |
 | `utilsroot` | - | Root path used by Mini Utils file operations |
+| `fileallow` | unset | Allowlist of existing local files/directories for built-in data access; `[]` denies covered access. See [file-access boundaries]({{ "/advanced#built-in-file-access-boundaries" | relative_url }}) |
 | `mini-a-docs` | `false` | If `true` and `utilsroot` is not set, automatically uses the mini-a oPack docs path as `utilsroot` |
 | `miniadocs` | `false` | Alias for `mini-a-docs` |
 | `usetools` | `false` | Enable native tool calling on the active model (main or LC) |
@@ -581,6 +589,7 @@ ojob mini-a-ingest.yaml ingestsource=./docs wikiroot=./wiki ingestmode=normalize
 | `ingestsection` | source name | Wiki section for generated pages. Keep it stable when moving a source |
 | `ingestsourceid` | - | Optional stable logical origin identity, independent of the physical path, so a moved folder keeps its pages. Repository commits are versions, not new origins |
 | `ingestmode` | `auto` | `auto`, `normalize`, `distill`, or `raw`. Only distillation calls the model; `normalize`, `raw`, and structured `auto` never do |
+| `ingestlayout` | `flat` | New-page mapping: `flat` joins source directories with hyphens; `source` preserves sanitized directories. Existing mappings stay in place |
 | `ingestinclude` / `ingestexclude` | - | Comma-separated path fragments to include or exclude |
 | `ingestchunkchars` / `ingestmaxfilekb` | `24000` / `512` | Chunk size and maximum accepted source size |
 | `ingestconcurrency` | `4` | Parallel source distillations |
@@ -597,6 +606,8 @@ Discovery errors, changed filters or size limits, local edits, failed writes, an
 Results report `status` (`complete`, `noop`, `planned`, `partial`, `blocked`, `failed`), `ok`, `sync_complete`, missing sources, blocked prune, conflicts, deferrals, and recovery state. Wrappers exit nonzero when requested work is unsuccessful, and a dry run never claims applied synchronization.
 
 ### Ingestion formats and recovery
+
+For folder layout, rewritten links and interrupted wiki moves, see [source folders and topic organization]({{ "/advanced#source-folders-and-topic-organization" | relative_url }}). If a configured serving-bundle export fails after ingestion, the run reports failure and retains its journal. Resume or repeat ingestion to retry export without rewriting committed pages.
 
 Folders and repositories accept Markdown, text, HTML, Office documents (DOCX/DOC, XLSX/XLS, PPTX/PPT), PDF, PNG and JPEG. Passive structured formats supported by the installed oafp, such as JSON, YAML, CSV and NDJSON, are normalized into fenced JSON pages. NDJSON/NDSLON preserve every record; executable and service-query inputs are excluded. Office/PDF extraction uses Tika; scanned PDFs need OCR, which is disabled. Images require a vision-capable main model. Empty or truncated extraction fails the source without publishing a partial page. The default 512 KiB source limit also applies to documents and images.
 
@@ -625,6 +636,8 @@ Absorption combines selected knowledge from multiple local filesystem wikis thro
 | `absorbmaxtokens` | `100000` | Aggregate estimated input tokens (characters / 4), not billed usage |
 
 ### Wiki retrieval v2
+
+After 32 incremental generations, the next update rebuilds the serving base automatically (`updateWork.automaticCompaction=true`), including ingestion finalization. That update pays the full rebuild cost. Failed publication staging and incomplete abandoned staging are cleaned up; complete older generations can still require offline compaction. Read-only readers never reclaim storage.
 
 `wikiretrievalv2=true` (the default) switches search, `retrieve`, and `assembleContext` to the shared passage engine described under [Features → Wiki retrieval v2]({{ '/features#wiki-retrieval-v2-and-bounded-retrieval' | relative_url }}). Build its serving generation explicitly with `dreamwikimode=reindex`, `/wiki reindex`, the `mcp-wiki-ops` `reindex` tool, or `MiniAWikiManager.reindex()`. Readers use the same flag and never build on their own.
 
@@ -699,6 +712,8 @@ The optional graph enriches normal wiki search with related-page hints. It is ma
 
 ## 10c-1. Dreams (Sleep Pass)
 
+For explicit topic organization, set `dreamwikimode=reorg dreamwikireorg=true dreamwikiapproval=auto dreamwikiorganize=topics`. This remains a separately authorized model-driven operation; ingestion does not launch it automatically.
+
 An LLM-powered off-line consolidation pass over persistent memory and/or the wiki. Run after a session to merge duplicates, surface insights, and produce a lint-clean wiki.
 
 | Parameter | Default | Description |
@@ -739,10 +754,10 @@ A wiki whose pages carry `type: skill` front matter can serve as a searchable sk
 | `skillwikibackend` | `fs` for dedicated libraries | Backend for a *dedicated* skill wiki (`fs`, `s3`, `s3fs`, `es`, `http`); omit all three skill source settings to reuse the `usewiki` wiki |
 | `skillwikiroot` | `.` for dedicated libraries | Root directory for a dedicated `fs` skill wiki |
 | `skillwikimounts` | - | SLON/JSON read-only mounts for a dedicated skill wiki, same shape as `wikimounts` |
-| `skillsautosearch` | `false` | Reserved for opt-in automatic consultation during planning |
-| `skillsautolimit` | `5` | Reserved limit for future automatic search; not implemented |
-| `skillsmaxloaded` | `3` | Maximum distinct skills that may be `open()`-ed per agent run |
-| `skillsmaxchars` | `12000` | Maximum skill-body characters `read()` may return per agent run |
+| `skillsautosearch` | conditional | Defaults on only with explicit `usedecide=true` and a configured decision model; explicit true/false wins. Applies to local and wiki skills |
+| `skillsautolimit` | `5` | Maximum combined compact candidates for automatic skill selection |
+| `skillsmaxloaded` | `3` | Shared distinct local/wiki skills consulted per run, including direct reads and resolve |
+| `skillsmaxchars` | `12000` | Shared local/wiki guidance character budget, including repeated reads, rendered arguments and references |
 
 </div>
 

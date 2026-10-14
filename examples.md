@@ -135,6 +135,26 @@ Auto-generate API documentation from source code:
 mini-a useshell=true readwrite=true goal='Generate API documentation for all JavaScript files in src/'
 ```
 
+### Contract-based report verification
+
+With both `OAF_MODEL` and `OAF_LC_MODEL` configured, save the [example contract]({{ '/supervised#example-contract' | relative_url }}) and set its workspace to the current canonical directory. Supply an existing report with a Boolean `ok` field:
+
+```bash
+mini-a modelstrategy=supervised goal="Verify the report." \
+  contractfile=CONTRACT.md contractargs='"/absolute/project/report.json"'
+```
+
+The host verifies current evidence before accepting completion. `savecontract=true` publishes only after acceptance; `reusecontract=true` independently enables exact-goal discovery. User-authored contracts require preparation/review. To let Mini-A choose among execution strategies for another goal, set `modelstrategy=auto`.
+
+### Explicit bundled skill
+
+```bash
+mini-a useskills=true skillsautosearch=false \
+  goal='Use $local:mini-a-skill-authoring to draft a local review skill.'
+```
+
+Local skill operations do not require enabling the entire utility catalog. The requested skill still needs its declared tools/sources, file access and shared consultation budget. See [skill continuity]({{ '/virtual-skills#automatic-selection-and-instruction-continuity' | relative_url }}).
+
 ### Per-Run Validation Model Override
 
 Run deep research with a dedicated validation model without changing your shell profile:

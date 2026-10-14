@@ -8,6 +8,19 @@ permalink: /whats-new/
 
 ## Recent Updates
 
+### October 14, 2026 — Supervised contracts, decisions and skill continuity
+
+Documentation synchronized from `d7230d1` through Mini-A source commit `5ee9492`.
+
+- **[Supervised execution]({{ '/supervised' | relative_url }}):** main prepares a contract, LC executes, and current evidence must pass acceptance. Explicit contracts, positional inputs, bounded recovery, independent save/reuse and durable resume are covered. `modelstrategy=auto` selects a strategy per run; `default` remains the default.
+- **[Decision integration]({{ '/advanced#decision-assisted-selection-and-verdict-gates' | relative_url }}):** `modeldec`/`OAF_DECIDE_MODEL`, selected explicit verdict gates, the bounded utility, usage/debugging and standalone [mcp-decide]({{ '/mcp-catalog#mcp-decide' | relative_url }}).
+- **[Skill runtime]({{ '/virtual-skills#automatic-selection-and-instruction-continuity' | relative_url }}):** conditional automatic selection, Decide/LC/main fallback, source-qualified explicit requests, shared budgets, progressive loading and revision-aware child continuity. Nine bundled skills include contract authoring; local operations no longer require the full utility catalog.
+- **[File-access allowlist]({{ '/advanced#built-in-file-access-boundaries' | relative_url }}):** selected local files/directories constrain built-in reads/writes, remain server-controlled in Advanced and are inherited by children.
+- **[Wiki organization]({{ '/advanced#source-folders-and-topic-organization' | relative_url }}):** source-folder ingestion, mapped-link refresh, explicit topic reorganization and move recovery. Serving bases compact automatically after 32 incremental generations; export failures retain ingestion recovery.
+- **[Advanced web]({{ '/advanced#browser-input-dialogs' | relative_url }}):** interactive dialogs, Prompt workspace, browser/server storage, model-slot controls and reconnect behavior. Native tool rounds retain bounded context recovery; worker receipts recover ambiguous submissions without replaying execution.
+- **[Evaluation]({{ '/advanced#skill-evaluation-and-decision-judging' | relative_url }}):** skill lifecycle deltas, separate Decide judging, independently checked supervised variants and explicit unknown usage/cost. Loading a skill or skipping planning is not proof of quality or savings.
+
+
 ### October 6, 2026 — Advanced web console and verified wiki maintenance
 
 Documentation synchronized from `e10edb1` through Mini-A source commit `d7230d1`.

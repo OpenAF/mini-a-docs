@@ -46,7 +46,7 @@ mini-a goal="summarize this repository" pluginsroot=~/team-plugins
 
 `pluginsroots=` accepts additional comma-separated roots. Without an explicit root, Mini-A discovers plugins in `~/.openaf-mini-a/plugins` (adjusted by `homedir=`).
 
-Plugins compose with `extraskills` and `mcp=`. Their skill directories load after built-in and extra skill directories, so a plugin cannot shadow an existing skill name.
+Plugins compose with `extraskills` and `mcp=`. Skill roots are ordered user/default, `extraskills`, plugin, then bundled; the first matching name wins. Plugins cannot shadow user/extra skills, but can override bundled names. Collision diagnostics identify winning and ignored paths. The shared [skill runtime]({{ "/virtual-skills#automatic-selection-and-instruction-continuity" | relative_url }}) applies to plugin skills too. `fileallow` also constrains plugin manifests and local skill content; executable plugin code is not sandboxed by that list.
 
 ## MCP servers
 

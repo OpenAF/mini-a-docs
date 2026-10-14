@@ -49,25 +49,29 @@ When the light model is not set, mini-a uses the main model for everything. Sett
 
 ### Model Strategy Modes
 
-`modelstrategy` controls how Mini-A allocates work between the main model and the LC (low-cost) model when both `OAF_MODEL` and `OAF_LC_MODEL` are configured. All three modes require a dual-model setup; with only one model configured they behave identically.
+`modelstrategy` controls how Mini-A allocates work between the main model and the LC (low-cost) model when both `OAF_MODEL` and `OAF_LC_MODEL` are configured. `default`, `advisor` and `delegate` share the single-model execution path when LC is absent. `supervised` requires both roles; `auto` selects a concrete strategy per run.
 
 | Mode | When to use |
 |------|-------------|
 | `default` | General-purpose work. Mini-A starts on the main model for the first step of complex goals, then switches to LC. Automatically escalates back to main when errors or stalled reasoning are detected. Best baseline — start here unless you have a specific reason to deviate. |
 | `advisor` | Long or risky tasks where LC cost savings matter but you still want main-model judgment on hard calls. LC executes every step; the main model is consulted (not executed) only on risk signals, ambiguity, or hard-decision checkpoints. Use when you want to cap spend but cannot afford a wrong decision mid-task. |
 | `delegate` | Batch / throughput scenarios where speed and cost matter more than best-first-step quality. LC executes all steps including step 0 (skips the `default` behavior of using main for the first step on complex goals). Escalation to main is still active when error/stall thresholds are hit. Use for repetitive, well-understood tasks. |
+| `supervised` | Main prepares a concrete contract; LC executes it under host-controlled acceptance checks. See [Supervised Execution]({{ "/supervised" | relative_url }}) |
+| `auto` | Resolve a strategy once per run from resume state, contract options, model availability, complexity and verification requirements |
 
 **Quick decision guide:**
 - Single goal, unknown complexity → `default`
 - High-stakes or irreversible actions, dual-model setup → `advisor` (add `harddecision=require` for critical deployments)
 - Bulk/batch processing, cost is the primary concern → `delegate`
-- Only one model configured → mode has no effect; `modellock` is the relevant knob instead
+- Let Mini-A choose a strategy → `auto`
+- Require contract-based acceptance with both roles configured → `supervised`
+- Only one model configured → `default`; explicit supervised execution fails without LC
 
 When `advisor` mode is active and the agent encounters a difficult step, it sends a structured query to the main model and receives back a JSON assessment with `recommended_next_step`, `risk_flags`, `escalate_to_main`, and `confidence` fields. The LC model then proceeds with that guidance. If `escalate_to_main` is true, the main model takes over for that step only.
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `modelstrategy` | `default` | Model orchestration profile: `default` (adaptive LC-first with escalation), `advisor` (LC executor + main model as selective advisor), or `delegate` (LC executes all steps including step 0, escalation still active) |
+| `modelstrategy` | `default` | `default`, `advisor`, `delegate`, `supervised`, or `auto` |
 | `advisormaxuses` | `2` | Maximum advisor consultations per run |
 | `advisorcooldownsteps` | `2` | Minimum steps between consecutive consultations |
 
@@ -91,6 +95,26 @@ mini-a goal="process log files and extract errors" \
 mini-a goal="generate summaries for 50 documents" \
   modelstrategy=delegate lcbudget=100000
 ```
+
+### Automatic strategy selection
+
+`modelstrategy=auto` resolves before prompt construction. The first matching rule wins: resumed runs retain their recorded strategy; contract options select supervised; no LC or `modellock=main|lc` selects default; complex goals with verification words (test/validate/verify/ensure) or `outfile` select supervised when compatible; other complex goals select advisor; medium low-risk goals with positive `lcbudget` select delegate; remaining goals select default. Medium complexity can be refined by a configured decision model. Contract intent still requires a valid supervised configuration.
+
+`orchestration=auto` uses this resolver when `modelstrategy` is not explicit. Child tasks of an auto run resolve for their own goals. The choice is logged as `Model strategy auto -> X` and traced as `model_strategy_decision`; explicit strategies remain authoritative. The default remains `default`.
+
+### Decision-assisted selection and verdict gates
+
+Set `modeldec` or `OAF_DECIDE_MODEL` to configure a stateless decision model. It requires OpenAF `getCapabilities()` and `decideWithStats()` support. With an existing `mcpdynamic=true` or `capabilityselection=true` mode, it ranks candidate relevance; it also refines ambiguous goal complexity. Configuration alone does not enable dynamic selection. `/model dec`, `/set modeldec` and Advanced Models configure the session slot; `/models` reports its effective source. `usedecide=false` disables calls, and `llmcomplexity=false` opts out of complexity refinement.
+
+Selection preserves policy filters and capability limits. Empty/invalid selections, provider failures, catalogs above 64 candidates or requests above 48 KiB use the existing selector; no catalog is silently truncated. Decision calls have no conversational history or tools and do not grant permissions. Native probabilities are provider information, not correctness guarantees.
+
+Explicit `usedecide=true` enables bounded verdict gates: executable-plan critique and fully successful research validation can skip generative review; LC-progress decisions can defer escalation; low-value advisor consultations can be skipped, excluding risk/error-recovery signals. Complexity can select planning style, child handoffs can rank tools after explicit matches, relevant memories can be reranked, and reflected memories can be filtered for durability. Failed, ambiguous or unavailable decisions retain the original path. Research with `valtools=true` keeps its validator path.
+
+Validated identical gate answers are cached only within the run. Uncached gates obey `rpm`/`tpm`, 32-question and 48 KiB budgets. Configuration/runtime-support failure disables further gates for that run. Decision failures do not retry or switch decision providers; the original path can still make its usual LC/main calls. Automatic skill consultation has its own [selector fallback]({{ '/virtual-skills#automatic-selection-and-instruction-continuity' | relative_url }}).
+
+With explicit `useutils=true usedecide=true`, the bounded `decide` utility accepts `state` and `questions` (choice, boolean or ordinal score). It respects `utilsallow`/`utilsdeny`, permits at most 32 consultation attempts per run and 32 questions/48 KiB per request, returns `{response, stats}`, and accepts no provider/model overrides or file/image paths. Provider failures return sanitized errors without retries, fallback calls or tool-result caching.
+
+`getMetrics().decisions` reports calls, failures, fallbacks/reasons, duration and reported token usage; `usage_reports` distinguishes absent usage from reported zero. `llm_calls.total` includes main, LC, validation, advisor and decision calls. Use `debugdecch` for decision traffic, keeping full debug output private. See [standalone decision MCP]({{ '/mcp-catalog#mcp-decide' | relative_url }}).
 
 ### Low-Cost Tool Calling (`usetoolslc`)
 
@@ -458,6 +482,23 @@ mini-a readwrite=false useshell=true
 ```
 
 Set `readwrite=true` only when you explicitly want the agent to create or modify files.
+
+### Built-in file-access boundaries
+
+`fileallow` accepts existing files/directories as an array, JSON/SLON string, or comma-separated string. Files allow that exact file; directories allow descendants. Omit it to preserve existing access, or use `fileallow='[]'` to deny covered access. Empty entries, invalid lists and nonexistent entries are errors. Use arrays for paths containing commas or significant surrounding spaces. Paths resolve from the process working directory with canonical symlink, `..` and directory-boundary checks; globs are not expanded.
+
+```bash
+# These directories must already exist; include separately stored skills too.
+mini-a useutils=true utilsroot=/srv/project \
+  extraskills=/srv/skills fileallow='["/srv/project", "/srv/skills"]' \
+  goal="Review the project"
+```
+
+Coverage includes prompt/agent/plan files and automatic AGENTS.md, local skills/references, attachments from local paths, utility file/document/image operations, local-file URLs, validator and proxy parameter files, local wiki roots/mounts/index directories, ingestion/absorption inputs, evaluation files, plugin manifests and explicit output paths. `utilsroot`, `readwrite` and policy restrictions still apply. Allow the containing directory for new outputs/backups. Existing wiki indexes cannot bypass a denied root.
+
+Advanced web treats the list as server-controlled: browser settings, presets, restored sessions and agent-profile metadata cannot widen it. Children inherit it. Restart the server after changes; start a new conversation to discard previously loaded content.
+
+The list covers built-in data access. Managed runtime/history/log/cache/temp files still operate; browser uploads authorize only their staged bytes. Shell commands, external MCP servers, hooks, custom libraries and executable plugin code require separate isolation. Remote HTTP/S3/Elasticsearch content is outside this list. Canonical checks are application checks and cannot prevent concurrent filesystem replacement atomically.
 
 ### OS Sandboxing
 
@@ -851,6 +892,10 @@ When delegation is enabled, these commands are available in the interactive cons
 
 ### Timeouts and retries
 
+Workers advertising `submission-recovery-v1` and `workerInstanceId` negotiate same-process submission receipts. Identical retained submissions return the same task ID; changed payloads/instances return 409. After a lost response, Mini-A makes up to three bounded `/submission/status` lookups without replaying execution. A recovered task resumes observation; cancellation still cancels late-recovered work. Receipts expire with `taskretention`; restarts, expired receipts and older workers retain **Remote outcome unknown**, with no automatic resubmission or alternate-worker dispatch.
+
+Legacy `/task` carries `submissionId`/`workerInstanceId` together at top level; A2A carries them in metadata. `/submission/status` uses the submission bearer/IP policy. IDs allow 1–128 ASCII letters, digits, underscores or hyphens. Metrics expose `delegation.remote_submission_recoveries` and `remote_submission_recovery_failures`; remote cancellation is bounded to five seconds. Fork-state limits count serialized UTF-8 bytes, preserve the parent snapshot during trimming, and fail before execution if still oversized.
+
 `delegationtimeout` (default `300000` ms) is the foreground wait and the initial stall timeout for a local subtask. Activity extends execution, so a working child is not cut off; set `delegationhardtimeout` for an absolute limit, and `delegationstalltimeout` for the idle time before a running child counts as stalled. On a worker, `defaulttimeout` and `maxtimeout` are *total* execution limits counted from when execution starts.
 
 `delegationmaxretries` (default `2`) is the maximum number of execution attempts for confirmed failures, including the first. If a remote submission loses its response or returns no task ID, the outcome is unknown and Mini-A does **not** resubmit: the worker may already be running the goal. Failures before submission remain retryable, and cancellation is attempted only when the current attempt's remote task ID is known. A cancellation request cannot undo side effects a remote worker already completed. See `remote_poll_retries`, `remote_outcome_unknown`, and `remote_cancel_failures` under `getMetrics().delegation`.
@@ -976,6 +1021,8 @@ Neither phase is enabled silently. Configured budgets account for the serialized
 
 ### Context-budget recovery
 
+Native tool rounds check the effective budget between recursive provider calls, for streaming and non-streaming adapters. The latest synthetic goal stays exact; older eligible scaffolding may be paged, while real user instructions remain protected. Ollama exchanges retain tool-name metadata and completed Markdown/JSON examples are not redispatched as actions. Terminal errors separate protected conversation, current prompt, tool schemas, instructions, safety allowance, output reserve and selected context. Narrow oversized input/schemas or explicitly raise `maxcontext`; auxiliary models do not recursively recover. Canonical append/checkpoint writes are serialized and use unique atomic-write temporaries to avoid concurrent checkpoint collisions.
+
 With active Phase 2 and positive `maxcontext`, an oversized request gets one emergency projection. Recent completed assistant work and complete tool exchanges may use bounded representations with recovery handles; exact originals remain in the canonical journal. Real user messages, instructions, incomplete tool exchanges and unknown/multimodal content stay exact. The provider view changes only if the complete request fits.
 
 If executor working notes still exceed the budget, isolated chunked summarization rebuilds the prompt while preserving the goal, explicit constraints, hooks and new inbox messages. There is at most one note-recovery attempt per logical request and three per run. Failed, empty or nonshrinking summaries preserve the originals. Recovery does not reset provider history, raise the budget or lower the output reserve.
@@ -1077,6 +1124,24 @@ mini-a eval=true evalfile=evals/core.yaml evalbaseline=evals/baseline.json
 | `variants` | Named variants merged over the scenario, with `variant_comparisons` in the report |
 
 `variants` make one replay run as, for example, History VM Phase 1, Phase 2 shadow, and Phase 2 active without duplicating the fixture; the comparison base is `phase1` or `baseline` when present. When History VM is active, reports also include `metrics.history_vm` (ContextObjects considered and selected, L0–L4 selections, rehydrations, budget utilization, and shadow or active projection). Only provider token fields Mini-A actually received are reported, and unknown cost stays unset. The run exits nonzero when a scenario fails or a regression is detected.
+
+### Skill evaluation and decision judging
+
+From the Mini-A checkout, run `mini-a eval=true evalfile=evals/skills.yaml evalout=/tmp/skills-eval.json` with configured providers. Compare paired variants on correctness, tool failures, time/tokens and consultation activity. Keep one report per pair, alternate order and separate incomplete samples. A single pair demonstrates the experiment, not improved quality.
+
+`metrics.skills` contains run deltas for discoveries, selector attempts, selections, loads, blocks, selection duration and returned characters. Missing snapshots or unexplained counter decreases yield `null`, not measured zero. Final lifecycle state remains under `result.skill_activity` and raw metrics. Repeated reads count again; external MCPs and arbitrary file reads are outside these counters. Loaded guidance and `compliance_verified=false` do not establish instruction adherence.
+
+An additional outcome judge is explicitly opt-in:
+
+```yaml
+llm_judge:
+  enabled: true
+  backend: decide
+```
+
+It batches existing answer expectations into boolean questions; at least one is required. Deterministic answer and metric assertions still must pass. Configuration precedence is judge `args.modeldec`, scenario/shared `modeldec`, then `OAF_DECIDE_MODEL`; explicit `usedecide=false` on run or judge disables it with a failed judge. Omitting `backend` retains the isolated agent judge. The judge sees goal, answer and answer expectations, excluding variant labels and skill activity. One request is bounded to 32 checks/48 KiB; invalid, unsupported or failed responses fail without retry/fallback. Judge calls, tokens and time are separate under `result.judge`, with unavailable token usage `null`.
+
+See [supervised evaluation]({{ '/supervised#tests-and-evaluation' | relative_url }}) for independent artifact assertions, cold/warm contracts, audits and per-role estimated cost. Skipped preparation alone does not establish monetary savings.
 
 ### Evals as oJob tests
 
@@ -1184,6 +1249,16 @@ Fresh strict-reader checks, content reads, search probes, lint and enabled struc
    - **PRESERVE** all IDs of retained entries unchanged; assign new 16-char hex IDs to new entries.
 6. The consolidated snapshot is validated against the `MiniAMemoryManager` schema.
 7. Unless `dryrun=true`, the pre-dream state is backed up to a sibling namespace (`<ns>::predream-<ISO-timestamp>`), then the consolidated snapshot is written back.
+
+### Source folders and topic organization
+
+Preview folder-preserving ingestion with `/ingest ./docs reference layout=source dryrun`, then remove `dryrun` to apply. Standalone callers use `ingestlayout=source`. `Guide/Setup.md` maps to `reference/guide/setup.md`; existing source bindings retain their destinations when layout changes. Sanitized collisions receive stable source-key suffixes, and generated section indexes remain separate from source index pages.
+
+New/refreshed pages rewrite local Markdown page links against current ingestion mappings, including moved pages; anchors and external URLs remain. Unresolved links are reported in `unresolved_links`. Code fences, inline code and image links stay intact; asset copying and arbitrary HTML-link conversion are excluded. A newly available link target refreshes unchanged referring pages under normal budgets/ownership checks; unrelated new sources do not. Older link records refresh once to establish tracking, possibly calling the distillation model.
+
+For semantic organization explicitly run `/dream reorg topics`. `/set dreamwikiapproval auto` authorizes it; `ask` requires approval and `never` denies. Standalone settings are `dreamwikimode=reorg dreamwikireorg=true dreamwikiapproval=auto dreamwikiorganize=topics`. The wiki manager retains review/backup confirmations. The topic policy prefers existing sections and shallow groups, records uncertain moves and accepts `dreamwikiinstructions`. Ingestion does not start this operation automatically.
+
+Moves journal verified link repairs and ingestion destinations at `<indexRoot>/.mini-a-wiki-move/journal.json`. Changed sources then refresh at their moved destinations; manual edits and Dream content rewrites still cause ownership conflicts. Repeat the move or run writable ingestion to recover an interruption; dry-run only reports pending recovery. Other writes stay blocked until verified replay completes. Conflicting edits preserve the journal. The local lock does not coordinate remote writers on separate machines.
 
 ### Wiki dream internals
 
@@ -1403,6 +1478,30 @@ Editing stays local and is limited to 200,000 characters, 2,000 values and 30 ne
 
 Both views have an expand icon at the prompt's top right, including on mobile. Draft text and attachments stay in place. Enter adds a newline; **Ctrl/Cmd+Enter** or **Send** submits. Collapse/Escape returns to the normal prompt without losing the draft. Success collapses it; a failed submission leaves it open. Advanced History's **Edit** action opens this composer; `/edit` and `/editor` keep their separate server-managed dialog.
 
+### Browser input dialogs
+
+The input-dialog, Prompt workspace and Browser storage screenshots below use isolated sessions, public sample data and deterministic local demo responses. They illustrate the interface; no external model provider was called.
+
+With `useutils=true`, Advanced agents can call `userInput`, or `question` with `usestdutils=true`. The run pauses at **Waiting for your input**; **Continue** returns answers to the same goal. Dialogs support multiline text, masked input, allowed-character choices, single/multiple-choice lists and named forms. `question` groups questions into one dialog and uses free text without options. Prompt/help/description Markdown is rendered safely; choice values and answers stay literal. `output=index` preserves indices; `max` controls list display size, not selection count.
+
+Cancel operation, Escape or Stop cancels active work and releases pending input. Reload reconnects while the server runs, but unsent input is lost; restart interrupts the run. Concurrent requests appear sequentially. Password operations encrypt returns on the server; masked `ask` only hides typing and returns plaintext. Plaintext secrets are excluded from interaction journals/reconnect snapshots. An Advanced conversation switched to Simple retains pending dialogs; fresh Simple sessions remain noninteractive. Delegated agents do not inherit the browser adapter.
+
+<figure>
+  <img src="{{ '/assets/images/screenshots/s30-advanced-input-dialog.jpg' | relative_url }}" alt="Advanced console waiting for input with a release-note format choice and Continue button" loading="lazy" width="1920" height="874" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
+  <figcaption>Demo: a real question-tool dialog waits for input. Concise overview is selected; Continue resumes the same goal.</figcaption>
+</figure>
+
+### Prompt workspace
+
+Five multiline editors manage Agent persona (`youare`), Chatbot persona (`chatyouare`), Rules/instructions (`rules`), Knowledge/context (`knowledge`) and Goal prefix (`goalprefix`). Expand opens a viewport editor; Collapse/Escape retains drafts. Switching Advanced panes retains drafts, while reload or conversation switch clears them.
+
+**Apply changes** submits edited fields together for the next goal; **Discard edits** restores applied values. **Reset to inherited value** stages removal of a session override. Editors show draft/applied and inherited/session state; chatbot persona is inactive outside chatbot mode. Text stays literal: changing an `@file` reference does not edit the file. Related settings include `chatbotmode`, `promptprofile`, `systempromptbudget`, `noagentsmd` and `format`. Presets save applied settings, so apply/discard drafts before using them. For comparisons with fresh history, save a preset, create a new conversation and apply it there.
+
+<figure>
+  <img src="{{ '/assets/images/screenshots/s28-advanced-prompt-workspace.jpg' | relative_url }}" alt="Advanced Prompt workspace showing an unsaved persona draft and Apply changes controls" loading="lazy" width="1920" height="874" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
+  <figcaption>Demo: an unapplied persona draft beside a public sample answer. Apply changes affects the next goal.</figcaption>
+</figure>
+
 ### Attachments in both views
 
 Start with `useattach=true`. Text files (Markdown, source, CSV, JSON and similar) allow up to 512 KB each and enter the goal as filename/content blocks. Remove an attachment chip before sending if needed.
@@ -1436,6 +1535,15 @@ Progress/errors name the file. If any file fails processing, no goal runs from p
 </figure>
 
 ### Conversations, reconnect and storage
+
+The global **Current storage / Browser storage** switch selects the library for Advanced presets and saved conversations. The browser remembers this choice in `localStorage`. Current storage uses server presets under `webadvancedpath`; Browser storage keeps personal presets and existing browser-saved conversations. New browser history requires history saving enabled. Switching preserves both libraries without migration; active runs, wiki files and journals remain server-managed.
+
+Browser presets omit credentials, preserve unset fields so applying clears later overrides, and can supply the default for New conversation. Storage failures are shown and failed writes do not claim success. Browser data belongs to that profile/site origin and disappears when site data is cleared.
+
+<figure>
+  <img src="{{ '/assets/images/screenshots/s29-advanced-browser-storage.jpg' | relative_url }}" alt="Advanced Settings with Browser storage selected and a saved Documentation preview preset" loading="lazy" width="1920" height="874" style="border-radius:8px; border:1px solid rgba(160,174,192,0.3);">
+  <figcaption>Demo: Browser storage selected, with a locally saved Documentation preview preset and filtered settings.</figcaption>
+</figure>
 
 Switching Simple/Advanced preserves the conversation. Reload reconnects to the current session without resubmitting model requests, writes or exports. Running work and pending dialogs survive browser disconnects. Stop/Escape cancels active work; closing the browser does not. Server restarts restore saved history/settings and report interrupted jobs rather than resuming them automatically.
 

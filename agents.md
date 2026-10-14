@@ -244,6 +244,8 @@ youare: |
 
 ### `mini-a:`
 
+Contract options and skill consultation controls can also be configured here. For example, `modelstrategy: supervised` requires both main and LC models, while `savecontract: true` and `reusecontract: true` independently enable publication and discovery. See [Supervised Execution]({{ '/supervised' | relative_url }}). The server-controlled `fileallow` list cannot be replaced through agent-profile metadata.
+
 A key–value map where **any** mini-a CLI parameter can be set. These values override mode defaults but are themselves overridden by explicit CLI flags.
 
 ```yaml
